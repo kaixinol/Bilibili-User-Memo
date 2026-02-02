@@ -1,0 +1,51 @@
+/* Global Styles */
+
+* {
+  box-sizing: border-box;
+}
+
+/* Reset default styles */
+button {
+  font-family: inherit;
+}
+
+input {
+  font-family: inherit;
+}
+
+/* Color Variables */
+:root {
+  --primary-color: rgb(251, 114, 153);
+  --primary-hover: rgb(240, 100, 140);
+  --primary-active: rgb(230, 90, 130);
+  --text-primary: rgb(51, 51, 51);
+  --text-secondary: rgb(161, 160, 160);
+  --border-color: rgb(204, 204, 204);
+  --border-light: rgb(233, 233, 233);
+  --link-color: rgb(0, 174, 236);
+  --link-hover: rgb(0, 150, 200);
+  --shadow-light: rgba(0, 0, 0, 0.09);
+  --shadow-medium: rgba(0, 0, 0, 0.13);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text-primary: rgb(220, 220, 220);
+    --text-secondary: rgb(150, 150, 150);
+    --border-color: rgb(80, 80, 80);
+    --border-light: rgb(60, 60, 60);
+  }
+}
+.marker-dark-theme {
+  --bg-main: #18181b;
+  --bg-sub: #202024;
+  --bg-hover: #2a2a2e;
+
+  --border-main: #2f2f33;
+  --border-accent: #fb7299;
+
+  --text-main: #e5e7eb;
+  --text-sub: #a1a1aa;
+  --text-muted: #71717a;
+}

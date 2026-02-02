@@ -1,0 +1,102 @@
+<div
+  x-data="userList"
+  x-show="true"
+  class="panel-container"
+  :class="isOpen ? 'open' : 'closed'"
+>
+  <div class="panel-inner">
+    <button
+      class="panel-toggle-btn"
+      x-on:click="isOpen = !isOpen"
+      x-text="isOpen ? 'UvU' : 'UwU'"
+      :style="isOpen ? 'opacity: 1;' : 'opacity: 0.3;'"
+    ></button>
+    <div class="panel-mode-section">
+      <div class="panel-mode-label">昵称显示模式：</div>
+      <div class="panel-mode-option">
+        <input
+          type="radio"
+          name="memoMode"
+          value="0"
+          id="panel-memo-mode-0"
+        /><label for="panel-memo-mode-0">昵称</label>
+      </div>
+      <div class="panel-mode-option">
+        <input
+          type="radio"
+          name="memoMode"
+          value="1"
+          id="panel-memo-mode-1"
+        /><label for="panel-memo-mode-1">备注(昵称)</label>
+      </div>
+      <div class="panel-mode-option">
+        <input
+          type="radio"
+          name="memoMode"
+          value="2"
+          id="panel-memo-mode-2"
+        /><label for="panel-memo-mode-2">昵称(备注)</label>
+      </div>
+      <div class="panel-mode-option">
+        <input
+          type="radio"
+          name="memoMode"
+          value="3"
+          id="panel-memo-mode-3"
+        /><label for="panel-memo-mode-3">备注</label>
+      </div>
+      <div class="panel-theme-toggle" @click="toggleTheme()">
+        <img
+          x-show="!isDark"
+          src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXN1bi1pY29uIGx1Y2lkZS1zdW4iPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjQiLz48cGF0aCBkPSJNMTIgMnYyIi8+PHBhdGggZD0iTTEyIDIwdjIiLz48cGF0aCBkPSJtNC45MyA0LjkzIDEuNDEgMS40MSIvPjxwYXRoIGQ9Im0xNy42NiAxNy42NiAxLjQxIDEuNDEiLz48cGF0aCBkPSJNMiAxMmgyIi8+PHBhdGggZD0iTTIwIDEyaDIiLz48cGF0aCBkPSJtNi4zNCAxNy42Ni0xLjQxIDEuNDEiLz48cGF0aCBkPSJtMTkuMDcgNC45My0xLjQxIDEuNDEiLz48L3N2Zz4="
+          alt="sun"
+          class="w-5 h-5"
+        />
+        <img
+          x-show="isDark"
+          src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9ImN1cnJlbnRDb2xvciIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLW1vb24taWNvbiBsdWNpZGUtbW9vbiI+PHBhdGggZD0iTTIwLjk4NSAxMi40ODZhOSA5IDAgMSAxLTkuNDczLTkuNDcyYy40MDUtLjAyMi42MTcuNDYuNDAyLjgwM2E2IDYgMCAwIDAgOC4yNjggOC4yNjhjLjM0NC0uMjE1LjgyNS0uMDA0LjgwMy40MDEiLz48L3N2Zz4="
+          alt="moon"
+          class="w-5 h-5"
+        />
+      </div>
+    </div>
+    <div class="panel-control-bar">
+      <button
+        class="panel-btn"
+        @click="importData()"
+        title="导入JSON文件，支持老格式"
+      >
+        导入
+      </button>
+      <div class="panel-title">备注列表</div>
+      <button
+        class="panel-btn"
+        @click="importData()"
+        title="刷新UP主名字和头像"
+      >
+        ⚡一键刷新数据
+      </button>
+      <div class="panel-search-box">
+        <input
+          id="searchInput"
+          placeholder="搜索...."
+          class="panel-search-input"
+        />
+        <button
+          class="panel-search-clear"
+          @click="document.getElementById('searchInput').value = ''"
+        >
+          ×
+        </button>
+      </div>
+      <button class="panel-btn" @click="exportData()">导出</button>
+    </div>
+    <div class="panel-users-container">
+      <div class="panel-users-list">
+        <template x-for="user in users" :key="user.id">
+          ${boxTemplate}
+        </template>
+      </div>
+    </div>
+  </div>
+</div>

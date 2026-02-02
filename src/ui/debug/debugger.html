@@ -1,0 +1,60 @@
+<div
+  x-data="${appName}"
+  class="debugger-window"
+  :style="{ left: left + 'px', top: top + 'px' }"
+>
+  <div
+    class="debugger-header"
+    data-drag-region
+    @pointerdown="onPointerDown($event)"
+  >
+    <span class="drag-handle" data-drag-handle>⠿</span>
+    <span class="debugger-title">Bilibili Debugger</span>
+  </div>
+  <div class="debugger-content">
+    <div class="debugger-controls">
+      <input
+        x-model="selector"
+        type="text"
+        class="debugger-input"
+        placeholder="輸入 CSS 選擇器..."
+      />
+      <button @click="addRule" class="debugger-btn">加入</button>
+      <button @click="scan" class="debugger-btn">掃描</button>
+    </div>
+    <div class="debugger-rules-container">
+      <template x-for="r in rules" :key="r.id">
+        <div class="rule-item">
+          <input
+            type="checkbox"
+            :checked="r.active"
+            @change="toggleRule(r.id)"
+          />
+          <div class="rule-info">
+            <input
+              type="text"
+              :value="r.name"
+              @input="updateRuleName(r.id, $event.target.value)"
+              class="debugger-input"
+            />
+            <input
+              type="text"
+              :value="r.selector"
+              @input="updateRuleSelector(r.id, $event.target.value)"
+              class="debugger-input debugger-input-selector"
+            />
+          </div>
+          <input
+            type="color"
+            :value="r.color"
+            @input="updateRuleColor(r.id, $event.target.value)"
+            class="debugger-color-picker"
+          />
+          <button @click="removeRule(r.id)" class="debugger-btn-danger">
+            刪除
+          </button>
+        </div>
+      </template>
+    </div>
+  </div>
+</div>

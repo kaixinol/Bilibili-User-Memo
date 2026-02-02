@@ -1,0 +1,31 @@
+<div class="user-box">
+  <div class="user-avatar-wrapper">
+    <img :src="user.avatar" class="user-avatar" :alt="user.nickname" />
+  </div>
+  <div class="user-info-section">
+    <div class="user-info-label">BilibiliID</div>
+    <div class="user-id" x-text="user.id"></div>
+  </div>
+  <div class="user-nickname-section" :title="user.nickname">
+    <div class="user-info-label">昵称</div>
+    <a
+      :href="'https://space.bilibili.com/' + user.id"
+      target="_blank"
+      class="user-nickname-link"
+      x-text="user.nickname"
+    ></a>
+  </div>
+  <div class="user-note-section" x-data="{ isEditing: false }">
+    <div class="user-info-label">备注</div>
+    <input
+      :value="user.note"
+      :readonly="!isEditing"
+      :class="{ 'editing': isEditing }"
+      class="user-note-input"
+      @click="isEditing = true"
+      @blur="isEditing = false"
+      @keydown.enter="isEditing = false; $el.blur()"
+      x-init="$watch('isEditing', value => value && $nextTick(() => $el.focus()))"
+    />
+  </div>
+</div>

@@ -1,0 +1,5 @@
+.history
+.qodo
+dist
+node_modules
+./stats.html

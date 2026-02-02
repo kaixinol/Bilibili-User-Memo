@@ -1,0 +1,169 @@
+/* --- 用户列表容器：改为一行三列 --- */
+.panel-users-list {
+  display: grid;
+  /* 默认为三列布局，利用率更高 */
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px; /* 间距缩小，更紧凑 */
+  width: 100%;
+}
+
+/* --- 用户卡片单体 --- */
+.user-box {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+
+  width: 100%;
+  height: 72px; /* 高度稍微收缩，更显精致 */
+
+  padding: 0 12px;
+  background: #ffffff;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px; /* 略微减小圆角，适合紧凑布局 */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  box-sizing: border-box;
+  transition: all 0.2s ease;
+}
+
+.user-box:hover {
+  border-color: #fb7299;
+  background: #fffafc; /* 悬浮时给个淡淡的底色 */
+}
+
+/* 头像：稍微缩小一点 */
+.user-avatar-wrapper {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-right: 10px;
+}
+
+.user-avatar {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ID 部分：保持固定宽度 */
+.user-info-section {
+  width: 85px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 昵称部分：缩小间距，不再盲目扩张 */
+.user-nickname-section {
+  /* 设置一个合理的宽度或让它自适应，这里给 flex: 1.5 让它比 ID 稍微宽一点 */
+  flex: 1.5;
+  min-width: 0;
+  padding: 0 8px; /* 减小内边距，让内容靠得更近 */
+  display: flex;
+  flex-direction: column;
+}
+
+.user-nickname-link {
+  color: #00aeec;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 备注部分：靠近昵称 */
+.user-note-section {
+  flex: 1; /* 也参与分配，但整体会向左靠拢 */
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start; /* 改为左对齐，视觉上紧跟昵称 */
+}
+
+.user-info-label {
+  font-size: 10px;
+  color: #bbb;
+  margin-bottom: 2px;
+}
+
+.user-id {
+  font-size: 12px;
+  color: #666;
+}
+
+/* 默认样式 */
+.user-note-input {
+  border: none;
+  outline: none;
+  font-size: 13px;
+  width: 100%;
+  color: #fb7299;
+  background: transparent;
+  padding: 0;
+  cursor: pointer; /* 提示用户可以点击 */
+  border-bottom: 2px dashed transparent;
+  transition: all 0.2s;
+}
+
+/* 悬停时稍微显现底线 */
+.user-note-input:hover {
+  border-bottom-color: rgba(251, 114, 153, 0.3);
+}
+
+/* 编辑状态下的样式 (对应 :class="{ 'editing': isEditing }") */
+.user-note-input.editing {
+  cursor: text;
+  background: rgba(251, 114, 153, 0.05); /* 淡淡的底色提示正在输入 */
+  border-bottom: 2px solid #fb7299;
+}
+/* --- 响应式断点优化 --- */
+
+/* 屏幕不够宽时，切换为一行两列 */
+@media (max-width: 1200px) {
+  .panel-users-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* 屏幕比较窄时，切换为一行一列 */
+@media (max-width: 768px) {
+  .panel-users-list {
+    grid-template-columns: 1fr;
+  }
+  .user-box {
+    height: 65px;
+  }
+}
+.marker-dark-theme .user-box {
+  background: var(--bg-sub);
+  border-color: var(--border-main);
+  box-shadow: none;
+}
+
+.marker-dark-theme .user-box:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-accent);
+}
+
+.marker-dark-theme .user-nickname-link {
+  color: #7dd3fc;
+}
+
+.marker-dark-theme .user-info-label {
+  color: var(--text-muted);
+}
+
+.marker-dark-theme .user-id {
+  color: var(--text-sub);
+}
+
+.marker-dark-theme .user-note-input {
+  color: #fb7299;
+}
+
+.marker-dark-theme .user-note-input.editing {
+  background: rgba(251, 114, 153, 0.12);
+}

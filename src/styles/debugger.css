@@ -1,0 +1,193 @@
+.debugger-window {
+  position: fixed;
+  background: #ffffff;
+  color: #333333;
+  border: 1px solid #d1d1d1;
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  z-index: 2147483647;
+  width: 340px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-size: 13px;
+  user-select: none;
+}
+
+.debugger-header {
+  padding: 8px 12px;
+  background: #f6f8fa;
+  border-bottom: 1px solid #d1d1d1;
+  display: flex;
+  align-items: center;
+  cursor: grab;
+  border-radius: 6px 6px 0 0;
+  transition: background 0.2s;
+}
+
+.debugger-header:active {
+  cursor: grabbing;
+}
+
+.debugger-header:hover {
+  background: #f0f2f5;
+}
+
+.drag-handle {
+  margin-right: 8px;
+  color: #6a737d;
+  font-weight: bold;
+  user-select: none;
+}
+
+.debugger-title {
+  flex: 1;
+  font-weight: 600;
+  font-size: 12px;
+  pointer-events: none;
+}
+
+.debugger-content {
+  padding: 12px;
+}
+
+/* Controls Section */
+.debugger-controls {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.debugger-controls .debugger-input {
+  flex: 1;
+}
+
+/* Input Styles */
+.debugger-input {
+  background: #ffffff;
+  border: 1px solid #d1d1d1;
+  color: #24292e;
+  padding: 5px 8px;
+  border-radius: 4px;
+  outline: none;
+  font-family: monospace;
+  font-size: 11px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.debugger-input:focus {
+  border-color: #0366d6;
+  box-shadow: 0 0 0 3px rgba(3,102,214,0.1);
+}
+
+.debugger-input-selector {
+  font-size: 10px;
+  color: #6a737d;
+}
+
+/* Button Styles */
+.debugger-btn {
+  background: #fafbfc;
+  color: #24292e;
+  border: 1px solid #d1d1d1;
+  padding: 5px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 12px;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.debugger-btn:hover {
+  background: #f3f4f6;
+  border-color: #0366d6;
+}
+
+.debugger-btn:active {
+  background: #e8ebf0;
+}
+
+.debugger-btn-danger {
+  color: #d73a49;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 3px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.debugger-btn-danger:hover {
+  background: rgba(215, 58, 73, 0.1);
+  color: #cb2431;
+}
+
+/* Rules Container */
+.debugger-rules-container {
+  max-height: 300px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.debugger-rules-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.debugger-rules-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.debugger-rules-container::-webkit-scrollbar-thumb {
+  background: #d1d1d1;
+  border-radius: 3px;
+}
+
+.debugger-rules-container::-webkit-scrollbar-thumb:hover {
+  background: #b0b0b0;
+}
+
+/* Rule Item */
+.rule-item {
+  border-bottom: 1px solid #eaecef;
+  padding: 10px 0;
+  display: grid;
+  grid-template-columns: 24px 1fr 35px 45px;
+  gap: 8px;
+  align-items: center;
+  transition: background 0.2s;
+}
+
+.rule-item:hover {
+  background: #f9f9f9;
+}
+
+.rule-item:last-child {
+  border-bottom: none;
+}
+
+.rule-item input[type="checkbox"] {
+  cursor: pointer;
+  width: 16px;
+  height: 16px;
+}
+
+.rule-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+}
+
+.debugger-color-picker {
+  width: 28px;
+  height: 24px;
+  border: 1px solid #ddd;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: border-color 0.2s;
+}
+
+.debugger-color-picker:hover {
+  border-color: #0366d6;
+}

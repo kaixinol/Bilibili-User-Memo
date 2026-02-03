@@ -38,7 +38,7 @@
   width: 70px; /* 固定宽度，防止表情切换时按钮抖动 */
   height: 34px;
   border-radius: 8px 8px 0 0;
-  cursor: pointer;
+  cursor: context-menu;
   font-size: 18px;
   color: white;
   background: rgb(251, 114, 153);
@@ -80,13 +80,17 @@
   transition: all 0.2s ease;
   color: #666; /* 默认图标颜色 */
 }
-
+/* 统一处理悬停效果 */
 .panel-theme-toggle:hover {
+  color: #fb7299; /* 强制悬停变粉 */
+  transform: rotate(20deg);
   background: rgba(0, 0, 0, 0.05);
-  color: #fb7299; /* 悬停时变粉色 */
-  transform: rotate(15deg); /* 轻轻旋转一下，增加动感 */
 }
 
+/* 夜间模式悬停背景 */
+.marker-dark-theme .panel-theme-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
 /* 如果是黑夜模式，可以给个不一样的悬停色 */
 [x-cloak] {
   display: none !important;
@@ -237,14 +241,6 @@
   color-scheme: dark;
 }
 
-.marker-dark-theme .panel-theme-toggle {
-  color: var(--text-sub);
-}
-
-.marker-dark-theme .panel-theme-toggle:hover {
-  background: rgba(255, 255, 255, 0.08);
-}
-
 .marker-dark-theme .panel-btn {
   background: transparent;
   color: #fb7299;
@@ -274,9 +270,6 @@
 }
 .marker-dark-theme .panel-title {
   color: white;
-}
-.marker-dark-theme .panel-theme-toggle {
-  filter: invert(1);
 }
 /* 禁用状态的按钮样式 */
 .panel-btn:disabled,

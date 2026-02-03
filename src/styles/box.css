@@ -12,7 +12,7 @@
   display: flex;
   align-items: center;
   flex-wrap: nowrap;
-
+  position: relative;
   width: 100%;
   height: 72px; /* 高度稍微收缩，更显精致 */
 
@@ -193,4 +193,16 @@
 
 .marker-dark-theme .user-note-input.editing {
   background: rgba(251, 114, 153, 0.12);
+}
+
+.delete-btn {
+  height: 16px;
+  width: 16px;
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  color: var(--primary-color);
+}
+.delete-btn:hover {
+  stroke: red;
 }

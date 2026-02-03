@@ -23,10 +23,7 @@ interface UserListStore {
   isRefreshing: boolean;
   refreshCurrent: number;
   refreshTotal: number;
-  init(): void;
   addUser(user: BiliUser): void;
-  toggleTheme(): void;
-  applyTheme(dark: boolean): void;
   exportData(): void;
   importData(): void;
   refreshData(): void;
@@ -45,25 +42,11 @@ export function registerUserStore() {
     isRefreshing: false,
     refreshCurrent: 0,
     refreshTotal: 0,
-    init() {
-      this.applyTheme(this.isDark);
-    },
 
     addUser(user: BiliUser) {
       this.users.push(user);
     },
 
-    toggleTheme() {
-      this.isDark = !this.isDark;
-      GM_setValue("isDark", this.isDark);
-      this.applyTheme(this.isDark);
-    },
-
-    applyTheme(dark: boolean) {
-      document
-        .querySelector("html")
-        ?.classList.toggle("marker-dark-theme", dark);
-    },
     async refreshData() {
       if (this.isRefreshing || this.users.length === 0) return;
 
@@ -132,6 +115,23 @@ export function registerUserStore() {
   Alpine.store("userList", store);
 }
 
+const themeManager = {
+  isDark: GM_getValue<boolean>("isDark", false),
+
+  init() {
+    this.apply(this.isDark);
+  },
+
+  toggle() {
+    this.isDark = !this.isDark;
+    GM_setValue("isDark", this.isDark);
+    this.apply(this.isDark);
+  },
+
+  apply(dark: boolean) {
+    document.querySelector("html")?.classList.toggle("marker-dark-theme", dark);
+  },
+};
 /* =========================
  * 注入主面板
  * ========================= */
@@ -140,7 +140,38 @@ export function initMainPanel() {
 
   // 注册 store（必须在 Alpine.start 之前）
   registerUserStore();
+  Alpine.data("themeHandler", () => ({
+    isDark: themeManager.isDark,
+    toggle() {
+      themeManager.toggle();
+      this.isDark = themeManager.isDark; // 同步组件内状态
+    },
+  }));
 
+  // 3. 注册面板开关组件 (供 UwU 按钮使用)
+  Alpine.data("toggleBtn", () => ({
+    get isOpen() {
+      return (Alpine.store("userList") as UserListStore).isOpen;
+    },
+    set isOpen(val) {
+      (Alpine.store("userList") as UserListStore).isOpen = val;
+    },
+
+    openText: GM_getValue<string>("btn_open_text", "UvU"),
+    closeText: GM_getValue<string>("btn_close_text", "UwU"),
+
+    edit() {
+      const isOp = this.isOpen;
+      const key = isOp ? "btn_open_text" : "btn_close_text";
+      const n = prompt("修改文字:", isOp ? this.openText : this.closeText);
+      if (n?.trim()) {
+        if (isOp) this.openText = n.trim();
+        else this.closeText = n.trim();
+        GM_setValue(key, n.trim());
+      }
+    },
+  }));
+  themeManager.init();
   // Alpine 组件只负责 UI 绑定
   Alpine.data("userList", () => Alpine.store("userList") as UserListStore);
 

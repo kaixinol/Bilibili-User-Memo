@@ -2,4 +2,4 @@
 .qodo
 dist
 node_modules
-./stats.html
+stats.html

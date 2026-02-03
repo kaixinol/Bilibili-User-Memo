@@ -278,3 +278,26 @@
 .marker-dark-theme .panel-theme-toggle {
   filter: invert(1);
 }
+/* 禁用状态的按钮样式 */
+.panel-btn:disabled,
+.panel-btn.btn-disabled {
+  background-color: #cccccc !important;
+  color: #666666 !important;
+  cursor: not-allowed !important;
+  opacity: 0.8;
+  transform: none !important; /* 移除点击缩放效果 */
+}
+
+.loading-spinner {
+  display: inline-block;
+  animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

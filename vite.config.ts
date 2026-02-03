@@ -13,7 +13,8 @@ export default defineConfig(({ mode }) => {
           namespace: "https://github.com/kaixinol/",
           match: ["https://*.bilibili.com/*"],
           noframes: true,
-          grant: ["GM_setValue", "GM_getValue"],
+          grant: ["GM_setValue", "GM_getValue", "GM_xmlhttpRequest"],
+          connect: ["api.bilibili.com"],
         },
         build: {
           externalGlobals: {
@@ -23,9 +24,6 @@ export default defineConfig(({ mode }) => {
               "dist/querySelectorDeep.min.js",
             ),
           },
-        },
-        server: {
-          mountGmApi: true, // 开启此选项会将 GM_api 挂载到 window，解决 Dev 模式下的报错
         },
       }),
       visualizer({ filename: "stats.html" }),

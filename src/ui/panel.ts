@@ -5,6 +5,8 @@ import "../styles/panel.css";
 import "../styles/global.css";
 import "../styles/box.css";
 import { GM_getValue, GM_setValue } from "vite-plugin-monkey/dist/client";
+import { getUserInfo } from "../utils/sign";
+import { logger } from "../utils/logger";
 /* =========================
  * 类型定义
  * ========================= */
@@ -18,13 +20,16 @@ interface UserListStore {
   isOpen: boolean;
   users: BiliUser[];
   isDark: boolean;
-
+  isRefreshing: boolean;
+  refreshCurrent: number;
+  refreshTotal: number;
   init(): void;
   addUser(user: BiliUser): void;
   toggleTheme(): void;
   applyTheme(dark: boolean): void;
   exportData(): void;
   importData(): void;
+  refreshData(): void;
 }
 
 /* =========================
@@ -37,7 +42,9 @@ export function registerUserStore() {
     isOpen: __IS_DEBUG__ ? true : false,
     users: [],
     isDark: GM_getValue<boolean>("isDark", false),
-
+    isRefreshing: false,
+    refreshCurrent: 0,
+    refreshTotal: 0,
     init() {
       this.applyTheme(this.isDark);
     },
@@ -57,7 +64,39 @@ export function registerUserStore() {
         .querySelector("html")
         ?.classList.toggle("marker-dark-theme", dark);
     },
+    async refreshData() {
+      if (this.isRefreshing || this.users.length === 0) return;
 
+      // 初始化进度
+      this.isRefreshing = true;
+      this.refreshCurrent = 0;
+      this.refreshTotal = this.users.length;
+
+      // 并发执行刷新任务
+      const tasks = this.users.map(async (user) => {
+        try {
+          const newData = await getUserInfo(String(user.id));
+          logger.info(`刷新用户 [${user.id}] 数据:`, newData);
+
+          Object.assign(user, {
+            nickname: newData.nickname,
+            avatar: newData.avatar,
+          });
+        } catch (error) {
+          logger.error(`刷新用户 [${user.id}] 失败:`, error);
+        } finally {
+          // 无论成功失败，计数器增加
+          this.refreshCurrent++;
+        }
+      });
+
+      // 等待所有请求完成
+      await Promise.allSettled(tasks);
+
+      setTimeout(() => {
+        this.isRefreshing = false;
+      }, 1000);
+    },
     exportData() {
       const blob = new Blob([JSON.stringify(this.users, null, 2)], {
         type: "application/json",

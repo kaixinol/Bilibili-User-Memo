@@ -71,10 +71,20 @@
       <div class="panel-title">备注列表</div>
       <button
         class="panel-btn"
-        @click="importData()"
-        title="刷新UP主名字和头像"
+        @click="$store.userList.refreshData()"
+        :disabled="$store.userList.isRefreshing"
+        :class="{ 'btn-disabled': $store.userList.isRefreshing }"
+        :title="$store.userList.isRefreshing ? '正在同步 Bilibili 最新数据...' : '刷新UP主名字和头像'"
       >
-        ⚡一键刷新数据
+        <span x-show="!$store.userList.isRefreshing">⚡一键刷新数据</span>
+
+        <span x-show="$store.userList.isRefreshing" class="refresh-content">
+          <span class="loading-spinner">⏳</span>
+          正在刷新 (<span x-text="$store.userList.refreshCurrent"></span>/<span
+            x-text="$store.userList.refreshTotal"
+          ></span
+          >)
+        </span>
       </button>
       <div class="panel-search-box">
         <input

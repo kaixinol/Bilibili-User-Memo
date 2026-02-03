@@ -4,7 +4,20 @@
   </div>
   <div class="user-info-section">
     <div class="user-info-label">BilibiliID</div>
-    <div class="user-id" x-text="user.id"></div>
+    <div
+      class="user-id"
+      x-data="{ copied: false }"
+      x-init="$nextTick(() => { if($el.scrollWidth > $el.clientWidth) $el.classList.add('can-expand') })"
+      x-effect="user.id; $nextTick(() => { $el.classList.toggle('can-expand', $el.scrollWidth > $el.clientWidth) })"
+      x-text="copied ? '✅ 已复制' : user.id"
+      @click="
+    navigator.clipboard.writeText(String(user.id));
+    copied = true;
+    setTimeout(() => { copied = false }, 500);
+  "
+      :class="{ 'copied-status': copied }"
+      :title="copied ? '' : '点击复制 ID'"
+    ></div>
   </div>
   <div class="user-nickname-section" :title="user.nickname">
     <div class="user-info-label">昵称</div>

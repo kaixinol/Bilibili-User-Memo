@@ -46,14 +46,13 @@
   object-fit: cover;
 }
 
-/* ID 部分：保持固定宽度 */
 .user-info-section {
   width: 85px;
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  position: relative; /* 为绝对定位提供基准 */
 }
-
 /* 昵称部分：缩小间距，不再盲目扩张 */
 .user-nickname-section {
   /* 设置一个合理的宽度或让它自适应，这里给 flex: 1.5 让它比 ID 稍微宽一点 */
@@ -84,16 +83,38 @@
 }
 
 .user-info-label {
-  font-size: 10px;
-  color: #bbb;
+  font-size: 12px;
+  color: black;
   margin-bottom: 2px;
 }
-
 .user-id {
+  /* 基础样式保持不变 */
+  font-family: monospace;
   font-size: 12px;
-  color: #666;
+  width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  transition: background 0.2s;
+  cursor: pointer;
 }
 
+.user-id.can-expand:hover {
+  overflow: visible;
+  position: absolute;
+  width: fit-content;
+  z-index: 100;
+  background-color: white !important;
+  /* 关键点 1：使用透明边框作为“鼠标粘滞区” */
+  /* 这样即使鼠标稍微偏离文字，只要在边框范围内，就不会缩回去 */
+  border: 10px solid transparent;
+  margin: -10px; /* 用负外边距抵消边框位置，保持文字原地不动 */
+
+  padding: 2px 8px;
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
 /* 默认样式 */
 .user-note-input {
   border: none;
@@ -156,10 +177,16 @@
   color: var(--text-muted);
 }
 
+/* 暗色模式适配 */
 .marker-dark-theme .user-id {
-  color: var(--text-sub);
+  color: #aaa;
 }
 
+.marker-dark-theme .user-id:hover {
+  background-color: #333 !important;
+  color: #fff;
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.4);
+}
 .marker-dark-theme .user-note-input {
   color: #fb7299;
 }

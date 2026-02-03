@@ -20,12 +20,12 @@ import { initMainPanel, appendUserCard } from "./ui/panel";
     id: "1928059834",
     nickname: "圼乁UwU",
     avatar: "https://i0.hdslb.com/bfs/face/member/noface.jpg",
-    note: "测试备注",
+    memo: "测试备注",
   });
   appendUserCard({
     id: "3546763113794470",
     nickname: "圼乁UwU",
     avatar: "https://i0.hdslb.com/bfs/face/member/noface.jpg",
-    note: "测试备注",
+    memo: "测试备注",
   });
 })();

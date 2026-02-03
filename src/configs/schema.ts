@@ -1,19 +1,17 @@
-import { string, optional, object, array, record } from "valibot";
+import { string, optional, object, record, array } from "valibot";
 import { safeParse } from "valibot";
-
-// 定义单个用户对象 schema
+const UID = string();
 const UserSchema = object({
-  id: string(),
+  id: UID,
   nickname: string(),
-  avatar: optional(string()), // 可选字段
-  note: optional(string()), // 可选字段
+  avatar: optional(string()),
+  memo: string(),
 });
 
-// 定义用户数组 schema
 const UsersSchema = array(UserSchema);
 
 const UserSchemaOld = object({
-  bid: string(),
+  bid: UID,
   nickname: string(),
   memo: string(),
   avatar: optional(string()), // 可选字段
@@ -21,7 +19,7 @@ const UserSchemaOld = object({
 });
 
 // 定义用户字典 schema（key 为字符串，value 为 UserSchema）
-const UsersSchemaOld = record(string(), UserSchemaOld);
+const UsersSchemaOld = record(UID, UserSchemaOld);
 function validateEitherJSON(dataStr: string): boolean {
   let data: unknown;
   try {
@@ -40,4 +38,3 @@ function validateEitherJSON(dataStr: string): boolean {
 
   return false; // 全部失败
 }
-

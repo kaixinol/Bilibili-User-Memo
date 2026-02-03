@@ -11,10 +11,10 @@ import { logger } from "../utils/logger";
  * 类型定义
  * ========================= */
 export interface BiliUser {
-  id: string | number;
+  id: string;
   nickname: string;
   avatar: string;
-  note?: string;
+  memo: string;
 }
 interface UserListStore {
   isOpen: boolean;

@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => {
           noframes: true,
           grant: ["GM_setValue", "GM_getValue", "GM_xmlhttpRequest"],
           connect: ["api.bilibili.com"],
+          "run-at": "document-end",
         },
         build: {
           externalGlobals: {
@@ -25,6 +26,7 @@ export default defineConfig(({ mode }) => {
             ),
           },
         },
+        server: { mountGmApi: isDebug ? true : false },
       }),
       visualizer({ filename: "stats.html" }),
     ],

@@ -1,4 +1,4 @@
-enum InjectionMode {
+export enum InjectionMode {
   Static = 1, // 適合：一次性全局樣式
   Dynamic = 2, // 適合：需要監聽元素變化並實時修改
 }
@@ -6,7 +6,7 @@ enum InjectionMode {
 /**
  * 定義樣式的影響深度
  */
-enum StyleScope {
+export enum StyleScope {
   /** 显示修改的名稱 */
   Minimal = 1,
   /** 显示修改的名稱 + 點擊文字修改名字 */
@@ -14,9 +14,6 @@ enum StyleScope {
   /** 显示修改的名稱 + 相關交互按鈕 */
   Extended = 3,
 }
-
-export const { Static, Dynamic } = InjectionMode;
-export const { Minimal, Editable, Extended } = StyleScope;
 
 /**
  * 基礎規則接口
@@ -61,7 +58,7 @@ interface StaticPageRule extends BasePageRule {
 interface DynamicPageRule extends BasePageRule {
   injectMode: InjectionMode.Dynamic;
   trigger: {
-    watch: "元素";
+    watch: string;
     interval: number;
   };
 }
@@ -80,8 +77,8 @@ export const config: SiteConfig = new Map([
     /^https:\/\/www\.bilibili\.com\/(video|list)\/.*/,
     {
       name: "视频页面",
-      injectMode: Static,
-      styleScope: Extended,
+      injectMode: InjectionMode.Static,
+      styleScope: StyleScope.Extended,
       aSelector: "#user-name ,.up-name",
     },
   ],
@@ -89,18 +86,17 @@ export const config: SiteConfig = new Map([
     /^https:\/\/space\.bilibili\.com\/.*/,
     {
       name: "空间",
-      injectMode: Dynamic,
-      styleScope: Editable,
+      injectMode: InjectionMode.Static,
+      styleScope: StyleScope.Editable,
       aSelector: ".nickname",
-      trigger: { watch: "元素", interval: 500 },
     },
   ],
   [
     /^https:\/\/space\.bilibili\.com\/\d+\/favlist?fid=\d+&ftype=create/,
     {
       name: "空间收藏夹",
-      injectMode: Dynamic,
-      styleScope: Minimal,
+      injectMode: InjectionMode.Dynamic,
+      styleScope: StyleScope.Minimal,
       aSelector: ".bili-video-card__author",
       trigger: { watch: "元素", interval: 500 },
     },

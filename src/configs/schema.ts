@@ -38,3 +38,5 @@ function validateEitherJSON(dataStr: string): boolean {
 
   return false; // 全部失败
 }
+
+export { validateEitherJSON };

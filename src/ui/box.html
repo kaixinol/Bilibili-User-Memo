@@ -25,26 +25,26 @@
       :href="'https://space.bilibili.com/' + user.id"
       target="_blank"
       class="user-nickname-link"
-      x-text="user.nickname"
+      x-text="$store.userList.formatDisplayName(user)"
     ></a>
   </div>
   <div class="user-note-section" x-data="{ isEditing: false }">
     <div class="user-info-label">备注</div>
     <input
-      :value="user.note"
+      :value="user.memo"
       :readonly="!isEditing"
       :class="{ 'editing': isEditing }"
       class="user-note-input"
       @click="isEditing = true"
-      @blur="isEditing = false"
-      @keydown.enter="isEditing = false; $el.blur()"
+      @blur="isEditing = false; $store.userList.updateUser(user.id, { memo: $el.value })"
+      @keydown.enter="isEditing = false; $store.userList.updateUser(user.id, { memo: $el.value })"
       x-init="$watch('isEditing', value => value && $nextTick(() => $el.focus()))"
     />
   </div>
   <svg
     class="delete-btn"
     style="cursor: pointer; z-index: 10"
-    @click="if(confirm('确定要删除吗？')) { /* 这里写你的删除逻辑 */ }"
+    @click="if(confirm('确定要删除吗？')) { $store.userList.removeUser(user.id) }"
     title="删除用户"
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"

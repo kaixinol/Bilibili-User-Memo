@@ -15,7 +15,7 @@ export default defineConfig(({ mode }) => {
           noframes: true,
           grant: ["GM_setValue", "GM_getValue", "GM_xmlhttpRequest"],
           connect: ["api.bilibili.com"],
-          "run-at": "document-end",
+          "run-at": "document-start",
         },
         build: {
           externalGlobals: {

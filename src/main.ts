@@ -1,12 +1,14 @@
 import Alpine from "alpinejs";
 import "./styles/global.css";
 import { initMainPanel, appendUserCard } from "./ui/panel";
-// import { initPageInjection } from "./core/injector";
+import { initPageInjection } from "./core/injector";
+import { logger } from "./utils/logger";
 
 (async () => {
   // 1. 初始化页面注入
-  // initPageInjection();
-
+  logger.debug("initPageInjection");
+  initPageInjection();
+  logger.debug("initPageInjection OK");
   // 2. 注册主面板（只注入 HTML 和定义 data，不 start）
   initMainPanel();
 

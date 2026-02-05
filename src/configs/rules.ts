@@ -53,7 +53,7 @@ interface StaticPageRule extends BasePageRule {
 }
 
 /**
- * 動態模式：trigger 為必填
+ * 動態模式：trigger 為必填（觀察 watch、用 interval 防抖）
  */
 interface DynamicPageRule extends BasePageRule {
   injectMode: InjectionMode.Dynamic;
@@ -71,7 +71,7 @@ type PageRule = StaticPageRule | DynamicPageRule;
 /**
  * SiteConfig 定義為 Map
  */
-type SiteConfig = Map<RegExp | string, PageRule>;
+type SiteConfig = Map<RegExp, PageRule>;
 export const config: SiteConfig = new Map([
   [
     /^https:\/\/www\.bilibili\.com\/(video|list)\/.*/,
@@ -79,7 +79,7 @@ export const config: SiteConfig = new Map([
       name: "视频页面",
       injectMode: InjectionMode.Static,
       styleScope: StyleScope.Extended,
-      aSelector: "#user-name ,.up-name",
+      aSelector: ".up-name",
     },
   ],
   [
@@ -98,7 +98,17 @@ export const config: SiteConfig = new Map([
       injectMode: InjectionMode.Dynamic,
       styleScope: StyleScope.Minimal,
       aSelector: ".bili-video-card__author",
-      trigger: { watch: "元素", interval: 500 },
+      trigger: { watch: ".favlist-main", interval: 1000 },
+    },
+  ],
+  [
+    /^https:\/\/[a-z0-9.]+\.bilibili\.com\/.*/,
+    {
+      name: "评论区",
+      injectMode: InjectionMode.Dynamic,
+      styleScope: StyleScope.Extended,
+      aSelector: "#user-name a",
+      trigger: { watch: "#contents", interval: 1000 },
     },
   ],
 ]);

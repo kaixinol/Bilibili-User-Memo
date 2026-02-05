@@ -105,7 +105,7 @@
   position: absolute;
   width: fit-content;
   z-index: 100;
-  background-color: white !important;
+  background-color: white;
   /* 关键点 1：使用透明边框作为“鼠标粘滞区” */
   /* 这样即使鼠标稍微偏离文字，只要在边框范围内，就不会缩回去 */
   border: 10px solid transparent;
@@ -182,8 +182,8 @@
   color: #aaa;
 }
 
-.marker-dark-theme .user-id:hover {
-  background-color: #333 !important;
+.marker-dark-theme .user-id.can-expand:hover {
+  background-color: #333;
   color: #fff;
   box-shadow: 4px 0 10px rgba(0, 0, 0, 0.4);
 }

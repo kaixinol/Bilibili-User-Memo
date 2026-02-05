@@ -9,6 +9,7 @@ import { getUserInfo } from "../utils/sign";
 import { logger } from "../utils/logger";
 import { refreshPageInjection } from "../core/injector";
 import { validateEitherJSON } from "../configs/schema";
+import { parse } from "css-tree";
 /* =========================
  * 类型定义
  * ========================= */
@@ -18,15 +19,16 @@ export interface BiliUser {
   avatar: string;
   memo: string;
 }
+
 interface UserListStore {
   isOpen: boolean;
   users: BiliUser[];
-  filteredUsers: BiliUser[];
+  readonly filteredUsers: BiliUser[]; // 变更为只读的计算属性
   isDark: boolean;
   isRefreshing: boolean;
   refreshCurrent: number;
   refreshTotal: number;
-  displayMode: number; // 0:昵称 1:备注(昵称) 2:昵称(备注) 3:备注
+  displayMode: number;
   searchQuery: string;
   addUser(user: BiliUser): void;
   updateUser(id: string, updates: Partial<BiliUser>): void;
@@ -35,7 +37,6 @@ interface UserListStore {
   exportData(): void;
   importData(): void;
   refreshData(): void;
-  searchUsers(query: string): void;
   formatDisplayName(user: BiliUser): string;
 }
 
@@ -44,30 +45,55 @@ interface UserListStore {
  * ========================= */
 export function registerUserStore() {
   if (Alpine.store("userList")) return;
+
   const loadAndDeduplicate = (): BiliUser[] => {
     const raw = GM_getValue<BiliUser[]>("biliUsers", []);
     if (!Array.isArray(raw)) return [];
-
-    // 利用 Map 按 id 去重
     const userMap = new Map(raw.map((u) => [u.id, u]));
     return Array.from(userMap.values());
   };
+
   const initialUsers = loadAndDeduplicate();
+
   const store: UserListStore = {
     isOpen: __IS_DEBUG__ ? true : false,
     users: initialUsers,
-    filteredUsers: [...initialUsers], // 这个会在registerUserStore函数结束时被填充
     isDark: GM_getValue<boolean>("isDark", false),
     isRefreshing: false,
     refreshCurrent: 0,
     refreshTotal: 0,
     displayMode: GM_getValue<number>("displayMode", 2),
     searchQuery: "",
+
+    // 【核心修改】使用 Getter 自动计算过滤后的列表
+    get filteredUsers() {
+      const query = this.searchQuery.trim().toLowerCase();
+
+      // 如果没有搜索词，直接返回所有用户
+      if (!query) return this.users;
+
+      // 执行搜索过滤
+      return this.users.filter((user) => {
+        // 提前处理字段，防止 null 报错
+        const id = String(user.id || "");
+        const nickname = (user.nickname || "").toLowerCase();
+        const memo = (user.memo || "").toLowerCase();
+
+        return (
+          id.includes(query) || nickname.includes(query) || memo.includes(query)
+        );
+      });
+    },
+
     addUser(user: BiliUser) {
+      if (this.users.some((u) => u.id === user.id)) {
+        logger.warn(`用户 [${user.id}] 已存在，跳过添加`);
+        return;
+      }
       logger.debug(`添加用户 [${user.id}]:`, user);
-      this.users.splice(this.users.length, 0, user);
+      this.users.push(user);
       this.saveUsers();
-      this.searchUsers("");
+      // 不需要手动调用 searchUsers，getter 会自动响应
     },
 
     updateUser(id: string, updates: Partial<BiliUser>) {
@@ -75,8 +101,6 @@ export function registerUserStore() {
       if (index !== -1) {
         this.users[index] = { ...this.users[index], ...updates };
         this.saveUsers();
-        this.searchUsers("");
-        refreshPageInjection(); // 刷新页面显示
       }
     },
 
@@ -85,8 +109,7 @@ export function registerUserStore() {
       if (index !== -1) {
         this.users.splice(index, 1);
         this.saveUsers();
-        this.searchUsers("");
-        refreshPageInjection(); // 刷新页面显示
+        refreshPageInjection();
       }
     },
 
@@ -94,32 +117,17 @@ export function registerUserStore() {
       GM_setValue("biliUsers", this.users);
     },
 
-    searchUsers(query: string) {
-      this.searchQuery = query;
-      if (!query.trim()) {
-        this.filteredUsers = [...this.users];
-      } else {
-        const lowerQuery = query.toLowerCase();
-        this.filteredUsers = this.users.filter(
-          (user) =>
-            user.id.toLowerCase().includes(lowerQuery) ||
-            user.nickname.toLowerCase().includes(lowerQuery) ||
-            user.memo.toLowerCase().includes(lowerQuery),
-        );
-      }
-    },
-
     formatDisplayName(user: BiliUser): string {
       switch (this.displayMode) {
-        case 0: // 昵称
+        case 0:
           return user.nickname;
-        case 1: // 备注(昵称)
+        case 1:
           return (
             user.memo + (user.memo ? "(" + user.nickname + ")" : user.nickname)
           );
-        case 2: // 昵称(备注)
+        case 2:
           return user.nickname + (user.memo ? "(" + user.memo + ")" : "");
-        case 3: // 备注
+        case 3:
           return user.memo || user.nickname;
         default:
           return user.nickname;
@@ -128,62 +136,51 @@ export function registerUserStore() {
 
     async refreshData() {
       if (this.isRefreshing || this.users.length === 0) return;
-
-      // 初始化进度
       this.isRefreshing = true;
       this.refreshCurrent = 0;
       this.refreshTotal = this.users.length;
 
-      // 并发执行刷新任务
       const tasks = this.users.map(async (user) => {
         try {
           const newData = await getUserInfo(String(user.id));
-          logger.info(`刷新用户 [${user.id}] 数据:`, newData);
+          if (!newData.nickname) return;
 
-          const index = this.users.findIndex((u) => u.id === user.id);
-          if (index !== -1) {
-            this.users.splice(index, 1, {
-              ...user,
-              nickname: newData.nickname,
-              avatar: newData.avatar,
-            });
+          // 直接查找索引更新，不需要 map 和 splice 整个数组，保持引用稳定
+          const target = this.users.find((u) => u.id === user.id);
+          if (target) {
+            target.nickname = newData.nickname;
+            target.avatar = newData.avatar;
           }
         } catch (error) {
           logger.error(`刷新用户 [${user.id}] 失败:`, error);
         } finally {
-          // 无论成功失败，计数器增加
           this.refreshCurrent++;
         }
       });
 
-      // 等待所有请求完成
       await Promise.allSettled(tasks);
-
+      this.saveUsers();
+      // 不需要 searchUsers，UI 会自动更新
       setTimeout(() => {
         this.isRefreshing = false;
       }, 1000);
     },
+
     exportData() {
-      // 确保导出的数据格式一致
       const exportData = this.users.map((user) => ({
         id: user.id,
         nickname: user.nickname,
         avatar: user.avatar || "",
         memo: user.memo || "",
       }));
-
       const jsonContent = JSON.stringify(exportData, null, 2);
-      const blob = new Blob([jsonContent], {
-        type: "application/json",
-      });
+      const blob = new Blob([jsonContent], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
       a.download = `bili-user-notes-${new Date().toISOString().split("T")[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
-
-      // 显示成功提示
       alert(`导出成功！\n已导出 ${this.users.length} 个用户的数据`);
     },
 
@@ -200,27 +197,22 @@ export function registerUserStore() {
           const fileContent = await file.text();
           const parsedData = JSON.parse(fileContent);
 
-          // 验证JSON格式是否合法
           if (!validateEitherJSON(fileContent)) {
             alert("导入失败：不支持的JSON格式");
             return;
           }
 
           let importedUsers: BiliUser[] = [];
-
-          // 处理数组格式（新格式）
           if (Array.isArray(parsedData)) {
             importedUsers = parsedData.map((user) => ({
-              id: user.id || user.bid, // 兼容旧格式的bid字段
+              id: user.id || user.bid,
               nickname: user.nickname || "",
               avatar: user.avatar || "",
               memo: user.memo || "",
             }));
-          }
-          // 处理对象格式（旧格式）
-          else if (typeof parsedData === "object") {
+          } else if (typeof parsedData === "object") {
             importedUsers = Object.values(parsedData).map((user: any) => ({
-              id: user.id || user.bid, // 兼容旧格式的bid字段
+              id: user.id || user.bid,
               nickname: user.nickname || "",
               avatar: user.avatar || "",
               memo: user.memo || "",
@@ -230,17 +222,14 @@ export function registerUserStore() {
             return;
           }
 
-          // 过滤掉无效数据
           importedUsers = importedUsers.filter(
             (user) => user.id && user.nickname,
           );
-
           if (importedUsers.length === 0) {
             alert("导入失败：没有有效的用户数据");
             return;
           }
 
-          // 合并数据：新导入的数据覆盖已有数据
           const existingIds = new Set(this.users.map((u) => u.id));
           const newUsers = importedUsers.filter(
             (user) => !existingIds.has(user.id),
@@ -249,44 +238,35 @@ export function registerUserStore() {
             existingIds.has(user.id),
           );
 
-          // 更新现有用户 - 使用响应式方式
           updatedUsers.forEach((importedUser) => {
             const index = this.users.findIndex((u) => u.id === importedUser.id);
             if (index !== -1) {
-              // 使用Alpine的响应式更新方式
               this.users.splice(index, 1, importedUser);
             }
           });
 
-          // 添加新用户 - 使用响应式方式
           if (newUsers.length > 0) {
             this.users.splice(this.users.length, 0, ...newUsers);
           }
 
-          // 保存到存储
           this.saveUsers();
+          refreshPageInjection(); // 刷新页面其他部分的注入
+          // 列表显示会自动更新，无需调用 searchUsers
 
-          // 更新搜索结果
-          this.searchUsers(this.searchQuery);
-
-          // 刷新页面显示
-          refreshPageInjection();
-
-          const message = `导入成功！\n新增：${newUsers.length} 个用户\n更新：${updatedUsers.length} 个用户`;
-          alert(message);
+          alert(
+            `导入成功！\n新增：${newUsers.length} 个用户\n更新：${updatedUsers.length} 个用户`,
+          );
         } catch (error) {
           console.error("Import error:", error);
           alert("导入失败：JSON 格式错误或数据解析失败");
         }
       };
-
       input.click();
     },
   };
 
   Alpine.store("userList", store);
 }
-
 const themeManager = {
   isDark: GM_getValue<boolean>("isDark", false),
 

@@ -129,27 +129,26 @@
       <div class="panel-search-box">
         <input
           id="searchInput"
-          placeholder="搜索...."
+          placeholder="搜索昵称、备注或ID..."
           class="panel-search-input"
-          x-model.debounce.300ms="searchQuery"
-          @input="$store.userList.searchUsers($el.value)"
+          x-model.debounce="searchQuery"
         />
-        <button
-          class="panel-search-clear"
-          @click="document.getElementById('searchInput').value = ''; $store.userList.searchUsers('')"
-        >
-          ×
-        </button>
+        <button class="panel-search-clear" @click="searchQuery = ''">×</button>
       </div>
       <button class="panel-btn" @click="exportData()">导出</button>
     </div>
     <div class="panel-users-container">
       <div class="panel-users-list">
-        <template x-if="$store.userList">
-          <template x-for="user in $store.userList.users" :key="user.id">
-            ${boxTemplate}
-          </template>
+        <template x-for="user in $store.userList.filteredUsers" :key="user.id">
+          ${boxTemplate}
         </template>
+
+        <div
+          x-show="$store.userList.filteredUsers.length === 0"
+          style="text-align: center; padding: 20px; color: #888"
+        >
+          没有找到用户
+        </div>
       </div>
     </div>
   </div>

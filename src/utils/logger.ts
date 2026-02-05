@@ -15,6 +15,14 @@ export const logger = {
       ...args,
     );
   },
+  warn: (msg: string, ...args: any[]) => {
+    console.warn(
+      `%c${PREFIX}%c ${msg}`,
+      "background: orange; " + LOG_STYLE,
+      "",
+      ...args,
+    );
+  },
   // 生产环境可以把这个函数设为空，实现“一键静音”
   debug: (msg: string, ...args: any[]) => {
     if (import.meta.env.DEV) {

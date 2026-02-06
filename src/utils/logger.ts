@@ -1,7 +1,7 @@
 // 这里的样式你可以根据个人喜好调整
 const LOG_STYLE =
   "color: white; background: #2196F3; padding: 2px 4px; border-radius: 3px; font-weight: bold;";
-const PREFIX = "[Bilibili-User-Remark]";
+const PREFIX = "[Bili-User-Memo]";
 
 export const logger = {
   info: (msg: any, ...args: any[]) => {

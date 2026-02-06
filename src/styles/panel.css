@@ -88,7 +88,7 @@
 }
 
 /* 夜间模式悬停背景 */
-.marker-dark-theme .panel-theme-toggle:hover {
+.memo-container-dark-theme .panel-theme-toggle:hover {
   background: rgba(255, 255, 255, 0.08);
 }
 /* 如果是黑夜模式，可以给个不一样的悬停色 */
@@ -221,54 +221,54 @@
   background: #ccc;
 }
 
-.marker-dark-theme .panel-container {
+.memo-container-dark-theme .panel-container {
   background: var(--bg-main);
   border-top-color: var(--border-accent);
   box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.5);
 }
 
-.marker-dark-theme .panel-toggle-btn {
+.memo-container-dark-theme .panel-toggle-btn {
   background: #fb7299;
   color: #fff;
 }
 
-.marker-dark-theme .panel-mode-label {
+.memo-container-dark-theme .panel-mode-label {
   color: var(--text-main);
 }
 
-.marker-dark-theme .panel-mode-option {
+.memo-container-dark-theme .panel-mode-option {
   color: var(--text-sub);
   color-scheme: dark;
 }
 
-.marker-dark-theme .panel-btn {
+.memo-container-dark-theme .panel-btn {
   background: transparent;
   color: #fb7299;
   border-color: #fb7299;
 }
 
-.marker-dark-theme .panel-btn:hover {
+.memo-container-dark-theme .panel-btn:hover {
   background: #fb7299;
   color: #000;
 }
 
-.marker-dark-theme .panel-search-box {
+.memo-container-dark-theme .panel-search-box {
   background: var(--bg-sub);
   border-color: 2px solid var(--border-accent);
 }
 
-.marker-dark-theme .panel-search-input {
+.memo-container-dark-theme .panel-search-input {
   color: var(--text-main);
 }
 
-.marker-dark-theme .panel-search-clear {
+.memo-container-dark-theme .panel-search-clear {
   color: var(--text-muted);
 }
 
-.marker-dark-theme .panel-users-container::-webkit-scrollbar-thumb {
+.memo-container-dark-theme .panel-users-container::-webkit-scrollbar-thumb {
   background: #3f3f46;
 }
-.marker-dark-theme .panel-title {
+.memo-container-dark-theme .panel-title {
   color: white;
 }
 /* 禁用状态的按钮样式 */

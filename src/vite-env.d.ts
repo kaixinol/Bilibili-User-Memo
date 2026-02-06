@@ -6,7 +6,10 @@ declare module "*.html?raw" {
   const content: string;
   export default content;
 }
-
+declare module "*.css?inline" {
+  const content: string;
+  export default content;
+}
 // 引入类型（使用 type-only import 避免运行时副作用）
 import type Alpine from "alpinejs";
 

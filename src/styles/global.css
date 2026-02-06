@@ -37,7 +37,7 @@ input {
     --border-light: rgb(60, 60, 60);
   }
 }
-.marker-dark-theme {
+.memo-container-dark-theme {
   --bg-main: #18181b;
   --bg-sub: #202024;
   --bg-hover: #2a2a2e;

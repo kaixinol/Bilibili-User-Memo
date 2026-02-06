@@ -281,14 +281,16 @@ const themeManager = {
   },
 
   apply(dark: boolean) {
-    document.querySelector("html")?.classList.toggle("marker-dark-theme", dark);
+    document
+      .querySelector("html")
+      ?.classList.toggle("memo-container-dark-theme", dark);
   },
 };
 /* =========================
  * 注入主面板
  * ========================= */
 export function initMainPanel() {
-  if (document.getElementById("bili-user-marker")) return;
+  if (document.getElementById("bili-memo-container")) return;
   logger.debug("initMainPanel");
   // 注册 store（必须在 Alpine.start 之前）
   registerUserStore();
@@ -332,7 +334,7 @@ export function initMainPanel() {
     .replace("${boxTemplate}", boxHtml);
 
   const container = document.createElement("div");
-  container.id = "bili-user-marker";
+  container.id = "bili-memo-container";
   container.innerHTML = finalHtml;
   document.body.appendChild(container);
 

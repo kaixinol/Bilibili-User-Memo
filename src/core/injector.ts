@@ -7,7 +7,7 @@ import {
   querySelectorDeep,
 } from "query-selector-shadow-dom";
 import { sleep } from "../utils/sleep";
-import allStyle from "../styles/inject.css?inline";
+import allStyle from "../styles/memo.css?inline";
 const GLOBAL_STYLE_SHEET = new CSSStyleSheet();
 GLOBAL_STYLE_SHEET.replaceSync(allStyle);
 interface BiliUser {
@@ -247,7 +247,7 @@ class PageInjector {
 
     if (uid) {
       const user = this.users.find((u) => u.id === uid);
-      this.injectRemark(el, user, rule);
+      this.injectMemo(el, user, rule);
       logger.debug(
         `✅ 已为 UID:${uid} (${user?.nickname || el.textContent}) 注入备注`,
       );
@@ -300,7 +300,7 @@ class PageInjector {
   /**
    * 核心修改：实现就地编辑功能
    */
-  private injectRemark(
+  private injectMemo(
     el: HTMLElement,
     user: BiliUser | undefined,
     rule: PageRule,
@@ -375,7 +375,7 @@ class PageInjector {
     const input = document.createElement("input");
     input.type = "text";
     input.value = currentMemo;
-    input.className = "bili-remark-input";
+    input.className = "bili-memo-input";
 
     // 继承基础样式并微调
     input.style.cssText = `
@@ -434,7 +434,7 @@ class PageInjector {
   /**
    * 抽离样式设置
    */
-  private applyRemarkStyle(el: HTMLElement) {
+  private applyMemoStyle(el: HTMLElement) {
     el.style.cssText = `
       color: #ff6699 !important;
       font-size: 12px !important;
@@ -482,7 +482,7 @@ class PageInjector {
     }, 100);
   }
   private syncAllTagsOnPage(uid: string, newMemo: string) {
-    const allTags = document.querySelectorAll(`.bili-remark-tag`);
+    const allTags = document.querySelectorAll(`.bili-memo-tag`);
     allTags.forEach((tag) => {
       // 这里的逻辑需要确保能找到父元素关联的 UID
       const parent = tag.parentElement;

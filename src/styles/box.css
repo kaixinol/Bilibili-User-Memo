@@ -158,40 +158,40 @@
     height: 65px;
   }
 }
-.marker-dark-theme .user-box {
+.memo-container-dark-theme .user-box {
   background: var(--bg-sub);
   border-color: var(--border-main);
   box-shadow: none;
 }
 
-.marker-dark-theme .user-box:hover {
+.memo-container-dark-theme .user-box:hover {
   background: var(--bg-hover);
   border-color: var(--border-accent);
 }
 
-.marker-dark-theme .user-nickname-link {
+.memo-container-dark-theme .user-nickname-link {
   color: #7dd3fc;
 }
 
-.marker-dark-theme .user-info-label {
+.memo-container-dark-theme .user-info-label {
   color: var(--text-muted);
 }
 
 /* 暗色模式适配 */
-.marker-dark-theme .user-id {
+.memo-container-dark-theme .user-id {
   color: #aaa;
 }
 
-.marker-dark-theme .user-id.can-expand:hover {
+.memo-container-dark-theme .user-id.can-expand:hover {
   background-color: #333;
   color: #fff;
   box-shadow: 4px 0 10px rgba(0, 0, 0, 0.4);
 }
-.marker-dark-theme .user-note-input {
+.memo-container-dark-theme .user-note-input {
   color: #fb7299;
 }
 
-.marker-dark-theme .user-note-input.editing {
+.memo-container-dark-theme .user-note-input.editing {
   background: rgba(251, 114, 153, 0.12);
 }
 

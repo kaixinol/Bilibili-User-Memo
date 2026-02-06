@@ -1,0 +1,71 @@
+.editable-textarea {
+  font-size: 20px;
+  font-weight: 600;
+  min-width: 2ch;
+  color: #1f1f1f;
+  margin-right: 8px;
+  padding: 4px 6px;
+  display: inline-block;
+  white-space: nowrap;
+  background: rgba(255, 255, 255, 0.35);
+  border: none;
+  border-bottom: 2px solid rgba(0, 0, 0, 0.25);
+  outline: none;
+
+  border-radius: 6px 6px 0 0;
+
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    opacity 0.2s ease;
+
+  opacity: 0.85;
+}
+
+/* hover 状态 */
+.editable-textarea:hover {
+  background: rgba(255, 255, 255, 0.55);
+}
+
+/* 聚焦高亮 */
+.editable-textarea:focus {
+  border-bottom-color: #2196f3;
+  background: rgba(255, 255, 255, 0.75);
+  opacity: 1;
+}
+.edit-button {
+  font-size: 14px;
+  font-weight: 600;
+
+  padding: 6px 10px;
+  border: none;
+  outline: none;
+
+  background: rgba(0, 0, 0, 0.06);
+  color: #333;
+
+  border-radius: 8px;
+  cursor: pointer;
+
+  transition:
+    background 0.15s ease,
+    transform 0.05s ease,
+    box-shadow 0.15s ease;
+}
+
+/* hover */
+.edit-button:hover {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+/* 点击反馈 */
+.edit-button:active {
+  transform: scale(0.96);
+}
+
+/* 键盘聚焦 */
+.edit-button:focus-visible {
+  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.35);
+}

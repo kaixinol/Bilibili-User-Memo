@@ -7,7 +7,9 @@ import {
   querySelectorDeep,
 } from "query-selector-shadow-dom";
 import { sleep } from "../utils/sleep";
-
+import allStyle from "../styles/inject.css?inline";
+const GLOBAL_STYLE_SHEET = new CSSStyleSheet();
+GLOBAL_STYLE_SHEET.replaceSync(allStyle);
 interface BiliUser {
   id: string;
   nickname: string;
@@ -103,8 +105,6 @@ class PageInjector {
       if (this.ruleObservers.has(rule)) return;
       this.attachObserverWhenReady(rule);
     });
-
-    logger.debug(`👀 已挂载 ${dynamicRules.length} 条动态规则观察器`);
   }
 
   private attachObserverWhenReady(
@@ -198,7 +198,7 @@ class PageInjector {
   }
 
   private async scanAndInjectRule(rule: PageRule) {
-    logger.debug(`🔍 正在处理规则 [${rule.name}]`);
+    logger.debug(`🔍 正在处理规则 [${rule.name}] ${rule.aSelector}`);
     if (
       rule.injectMode === InjectionMode.Static &&
       this.staticRetired.has(rule)
@@ -208,7 +208,7 @@ class PageInjector {
     const selector = `${rule.aSelector}:not([data-bili-processed])`;
 
     if (rule.injectMode === InjectionMode.Static) {
-      let element: Element | null = null;
+      let element: HTMLElement | null = null;
       const maxRetries = 15; // 增加重试次数，覆盖约 3-5 秒
 
       for (let i = 0; i < maxRetries; i++) {
@@ -242,17 +242,15 @@ class PageInjector {
     });
   }
 
-  private applyRuleToElement(el: Element, rule: PageRule) {
+  private applyRuleToElement(el: HTMLElement, rule: PageRule) {
     const uid = this.extractUid(el);
 
     if (uid) {
       const user = this.users.find((u) => u.id === uid);
-      if (user && user.memo) {
-        this.injectRemark(el, user, rule);
-        logger.debug(`✅ 已为 UID:${uid} (${user.nickname}) 注入备注`);
-      } else if (user) {
-        logger.debug(`⏭️ UID:${uid} 已匹配但无备注，跳过`);
-      }
+      this.injectRemark(el, user, rule);
+      logger.debug(
+        `✅ 已为 UID:${uid} (${user?.nickname || el.textContent}) 注入备注`,
+      );
     } else {
       logger.warn(`❌ 无法从元素提取 UID:`, el);
     }
@@ -263,12 +261,10 @@ class PageInjector {
   private getMatchedRules(modes?: InjectionMode[]) {
     const currentUrl = window.location.href;
     const allowedModes = modes ? new Set(modes) : null;
-    logger.debug(`🔍 正在匹配规则 (${currentUrl})`);
     // 1. 获取所有匹配当前 URL 的规则
     const matchedEntries = Array.from(config.entries()).filter(([pattern]) => {
       return pattern.test(currentUrl);
     });
-    logger.debug(` Matched ${matchedEntries.length} rules`);
     if (matchedEntries.length === 0) return [];
 
     return (
@@ -304,12 +300,70 @@ class PageInjector {
   /**
    * 核心修改：实现就地编辑功能
    */
-  private injectRemark(el: Element, user: BiliUser, rule: any) {
-    if (el.querySelector(".bili-remark-tag")) return;
-    logger.debug(`✏️ 正在为 UID:${user.id} (${user.nickname}) 创建备注输入框`);
-    logger.debug(String(el));
-  }
+  private injectRemark(
+    el: HTMLElement,
+    user: BiliUser | undefined,
+    rule: PageRule,
+  ) {
+    /**
+     * 辅助函数：确保元素所在的 Root（Document 或 ShadowRoot）加载了样式
+     */
+    const ensureStyles = (target: HTMLElement) => {
+      const root = target.getRootNode();
+      if (root instanceof ShadowRoot || root instanceof Document) {
+        // 如果样式表还没被“收养”，就把它加进去
+        if (!root.adoptedStyleSheets.includes(GLOBAL_STYLE_SHEET)) {
+          root.adoptedStyleSheets = [
+            ...root.adoptedStyleSheets,
+            GLOBAL_STYLE_SHEET,
+          ];
+        }
+      }
+    };
 
+    const createEditableTag = (text: string) => {
+      const span = document.createElement("span");
+      span.textContent = text || "";
+      span.contentEditable = "true";
+      span.classList.add("editable-textarea");
+      return span;
+    };
+
+    const createEditButton = () => {
+      const button = document.createElement("button");
+      button.textContent = "备注";
+      button.classList.add("edit-button");
+      return button;
+    };
+
+    // 逻辑执行
+    switch (rule.styleScope) {
+      case StyleScope.Minimal:
+        if (!user) return;
+        el.textContent = user.memo;
+        break;
+
+      case StyleScope.Editable: {
+        el.style.display = "none";
+        const tag = createEditableTag(user?.memo || el.textContent || "");
+        el.insertAdjacentElement("afterend", tag);
+        // 关键：插入后立即查找 root 并注入样式表
+        ensureStyles(tag);
+        break;
+      }
+
+      case StyleScope.Extended: {
+        const btn = createEditButton();
+        el.insertAdjacentElement("afterend", btn);
+        // 关键：插入后立即查找 root 并注入样式表
+        ensureStyles(btn);
+        break;
+      }
+
+      default:
+        logger.warn(`⚠️ 不支持的样式作用域: ${rule.styleScope}`);
+    }
+  }
   /**
    * 进入行内编辑模式
    */

@@ -4,33 +4,42 @@ const LOG_STYLE =
 const PREFIX = "[Bilibili-User-Remark]";
 
 export const logger = {
-  info: (msg: string, ...args: any[]) => {
-    console.log(`%c${PREFIX}%c ${msg}`, LOG_STYLE, "color: unset;", ...args);
-  },
-  error: (msg: string, ...args: any[]) => {
-    console.error(
-      `%c${PREFIX}%c ${msg}`,
-      "background: #f44336; " + LOG_STYLE,
+  info: (msg: any, ...args: any[]) => {
+    console.log(
+      `%c${PREFIX}%c`,
+      "background: #9e9e9e; " + LOG_STYLE,
       "",
+      msg,
       ...args,
     );
   },
-  warn: (msg: string, ...args: any[]) => {
-    console.warn(
-      `%c${PREFIX}%c ${msg}`,
-      "background: orange; " + LOG_STYLE,
+  error: (msg: any, ...args: any[]) => {
+    console.error(
+      `%c${PREFIX}%c`,
+      "background: #9e9e9e; " + LOG_STYLE,
       "",
+      msg,
+      ...args,
+    );
+  },
+  warn: (msg: any, ...args: any[]) => {
+    console.warn(
+      `%c${PREFIX}%c`,
+      "background: #9e9e9e; " + LOG_STYLE,
+      "",
+      msg,
       ...args,
     );
   },
   // 生产环境可以把这个函数设为空，实现“一键静音”
-  debug: (msg: string, ...args: any[]) => {
+  debug: (msg: any, ...args: any[]) => {
     if (import.meta.env.DEV) {
       // 利用 Vite 的环境变量
       console.debug(
-        `%c${PREFIX}[DEBUG]%c ${msg}`,
+        `%c${PREFIX}[DEBUG]%c`,
         "background: #9e9e9e; " + LOG_STYLE,
         "",
+        msg,
         ...args,
       );
     }

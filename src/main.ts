@@ -5,19 +5,9 @@ import { initPageInjection } from "./core/injector";
 import { logger } from "./utils/logger";
 
 (async () => {
-  // 1. 初始化页面注入
-  logger.debug("initPageInjection");
   initPageInjection();
-  logger.debug("initPageInjection OK");
-  // 2. 注册主面板（只注入 HTML 和定义 data，不 start）
   initMainPanel();
 
-  // 2. 调试模式处理
-  if (__IS_DEBUG__) {
-    console.debug("调试模式已启用");
-    const mod = await import("./ui/debug/debugger");
-    mod.initDebugger();
-  }
   window.Alpine = Alpine;
   Alpine.start();
 
@@ -33,4 +23,9 @@ import { logger } from "./utils/logger";
     avatar: "https://i0.hdslb.com/bfs/face/member/noface.jpg",
     memo: "测试备注",
   });
+  if (__IS_DEBUG__) {
+    console.debug("调试模式已启用");
+    const mod = await import("./ui/debug/debugger");
+    mod.initDebugger();
+  }
 })();

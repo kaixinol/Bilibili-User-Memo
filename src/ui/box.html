@@ -25,7 +25,7 @@
       :href="'https://space.bilibili.com/' + user.id"
       target="_blank"
       class="user-nickname-link"
-      x-text="$store.userList.formatDisplayName(user)"
+      x-text="user.nickname"
     ></a>
   </div>
   <div class="user-note-section" x-data="{ isEditing: false }">

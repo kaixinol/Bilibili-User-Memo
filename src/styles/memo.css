@@ -1,8 +1,13 @@
+/* TODO
+1. rules添加自定义字体大小功能 var(--custom-font-size, 14px)
+2. 添加自定义颜色功能 var(--custom-font-color, #000)
+以上方式用 setProperty 设置变量即可
+*/
 .editable-textarea {
   font-size: 20px;
   font-weight: 600;
   min-width: 2ch;
-  color: #1f1f1f;
+  color: var(--primary-color);
   margin-right: 8px;
   padding: 4px 6px;
   display: inline-block;
@@ -27,6 +32,7 @@
 /* hover 状态 */
 .editable-textarea:hover {
   background: rgba(255, 255, 255, 0.55);
+  color: var(--primary-hover);
 }
 
 /* 聚焦高亮 */
@@ -34,6 +40,7 @@
   border-bottom-color: #2196f3;
   background: rgba(255, 255, 255, 0.75);
   opacity: 1;
+  color: var(--primary-active);
 }
 .edit-button {
   font-size: 14px;
@@ -43,7 +50,7 @@
   border: none;
   outline: none;
 
-  background: rgba(0, 0, 0, 0.06);
+  background: transparent;
   color: #333;
 
   border-radius: 8px;
@@ -68,4 +75,28 @@
 /* 键盘聚焦 */
 .edit-button:focus-visible {
   box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.35);
+}
+
+.bili-memo-tag {
+  font-size: 14px;
+  margin-left: 4px;
+  font-weight: bold;
+  cursor: pointer;
+  display: inline;
+  vertical-align: middle;
+}
+
+.bili-memo-input {
+  background: #fff;
+  border: 1px solid #ff6699;
+  font-size: 14px;
+  padding: 0 4px;
+  margin-left: 4px;
+  border-radius: 4px;
+  outline: none;
+  width: var(--memo-input-width, 60px);
+  display: inline-block;
+  height: 18px;
+  line-height: 18px;
+  vertical-align: middle;
 }

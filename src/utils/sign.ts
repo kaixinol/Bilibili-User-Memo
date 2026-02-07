@@ -160,9 +160,7 @@ async function _getUserInfo(mid: string): Promise<UserInfo> {
 
 const cache = new Map<string, { data: any; time: number }>();
 
-export function withSmartCache<T extends (...args: any[]) => Promise<any>>(
-  fn: T,
-): T {
+function withSmartCache<T extends (...args: any[]) => Promise<any>>(fn: T): T {
   return (async (...args: any[]) => {
     const key = JSON.stringify(args);
     const now = Date.now();

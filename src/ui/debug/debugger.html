@@ -12,6 +12,20 @@
     <span class="debugger-title">Bilibili Debugger</span>
   </div>
   <div class="debugger-content">
+    <div class="debugger-perf" title="当前页面性能监视器">
+      <div class="perf-item">
+        <span class="perf-label">FPS</span>
+        <span class="perf-value" x-text="perf.fps"></span>
+      </div>
+      <div class="perf-item">
+        <span class="perf-label">Long/s</span>
+        <span class="perf-value" x-text="perf.longTasks"></span>
+      </div>
+      <div class="perf-item">
+        <span class="perf-label">Heap</span>
+        <span class="perf-value" x-text="perf.memory"></span>
+      </div>
+    </div>
     <div class="debugger-controls">
       <input
         x-model="selector"

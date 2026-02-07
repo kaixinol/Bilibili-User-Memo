@@ -24,7 +24,7 @@
           value="0"
           id="panel-memo-mode-0"
           :checked="$store.userList.displayMode === 0"
-          @change="$store.userList.displayMode = 0; GM_setValue('displayMode', 0)"
+          @change="$store.userList.setDisplayMode(0)"
         /><label for="panel-memo-mode-0">昵称</label>
       </div>
       <div class="panel-mode-option">
@@ -34,7 +34,7 @@
           value="1"
           id="panel-memo-mode-1"
           :checked="$store.userList.displayMode === 1"
-          @change="$store.userList.displayMode = 1; GM_setValue('displayMode', 1)"
+          @change="$store.userList.setDisplayMode(1)"
         /><label for="panel-memo-mode-1">备注(昵称)</label>
       </div>
       <div class="panel-mode-option">
@@ -44,7 +44,7 @@
           value="2"
           id="panel-memo-mode-2"
           :checked="$store.userList.displayMode === 2"
-          @change="$store.userList.displayMode = 2; GM_setValue('displayMode', 2)"
+          @change="$store.userList.setDisplayMode(2)"
         /><label for="panel-memo-mode-2">昵称(备注)</label>
       </div>
       <div class="panel-mode-option">
@@ -54,7 +54,7 @@
           value="3"
           id="panel-memo-mode-3"
           :checked="$store.userList.displayMode === 3"
-          @change="$store.userList.displayMode = 3; GM_setValue('displayMode', 3)"
+          @change="$store.userList.setDisplayMode(3)"
         /><label for="panel-memo-mode-3">备注</label>
       </div>
       <div class="panel-theme-toggle" x-data="themeHandler" @click="toggle()">

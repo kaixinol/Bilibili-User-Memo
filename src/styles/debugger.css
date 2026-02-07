@@ -4,12 +4,40 @@
   color: #333333;
   border: 1px solid #d1d1d1;
   border-radius: 6px;
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   z-index: 2147483647;
-  width: 340px;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+
+  width: clamp(260px, 40vw, 90vw);
+  height: clamp(180px, 50vh, 90vh);
+
+  display: flex;
+  flex-direction: column;
+  resize: both;
+  overflow: hidden;
+
+  font-family:
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   font-size: 13px;
   user-select: none;
+}
+
+.debugger-overlay-container {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.debugger-overlay {
+  position: fixed;
+  border: 2px solid var(--overlay-color);
+  background-color: var(--overlay-bg);
+  box-sizing: border-box;
+  pointer-events: none;
+  transition: none;
 }
 
 .debugger-header {
@@ -43,13 +71,48 @@
   font-weight: 600;
   font-size: 12px;
   pointer-events: none;
+  min-width: 0;
 }
 
 .debugger-content {
   padding: 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  min-height: 0;
+  min-width: 0;
 }
 
-/* Controls Section */
+.debugger-perf {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: #f6f8fa;
+  border: 1px solid #e1e4e8;
+  border-radius: 4px;
+  padding: 6px 8px;
+  margin-bottom: 10px;
+  font-size: 11px;
+}
+
+.perf-item {
+  display: flex;
+  gap: 4px;
+  align-items: baseline;
+}
+
+.perf-label {
+  color: #6a737d;
+}
+
+.perf-value {
+  color: #24292e;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
 .debugger-controls {
   display: flex;
   gap: 8px;
@@ -60,7 +123,6 @@
   flex: 1;
 }
 
-/* Input Styles */
 .debugger-input {
   background: #ffffff;
   border: 1px solid #d1d1d1;
@@ -70,12 +132,15 @@
   outline: none;
   font-family: monospace;
   font-size: 11px;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+  min-width: 0;
 }
 
 .debugger-input:focus {
   border-color: #0366d6;
-  box-shadow: 0 0 0 3px rgba(3,102,214,0.1);
+  box-shadow: 0 0 0 3px rgba(3, 102, 214, 0.1);
 }
 
 .debugger-input-selector {
@@ -83,7 +148,6 @@
   color: #6a737d;
 }
 
-/* Button Styles */
 .debugger-btn {
   background: #fafbfc;
   color: #24292e;
@@ -93,7 +157,9 @@
   cursor: pointer;
   font-weight: 500;
   font-size: 12px;
-  transition: background 0.2s, border-color 0.2s;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
 }
 
 .debugger-btn:hover {
@@ -113,7 +179,9 @@
   font-size: 12px;
   padding: 4px 8px;
   border-radius: 3px;
-  transition: background 0.2s, color 0.2s;
+  transition:
+    background 0.2s,
+    color 0.2s;
 }
 
 .debugger-btn-danger:hover {
@@ -121,11 +189,13 @@
   color: #cb2431;
 }
 
-/* Rules Container */
 .debugger-rules-container {
-  max-height: 300px;
+  flex: 1;
   overflow-y: auto;
   padding-right: 4px;
+
+  min-height: 0;
+  min-width: 0;
 }
 
 .debugger-rules-container::-webkit-scrollbar {
@@ -145,7 +215,6 @@
   background: #b0b0b0;
 }
 
-/* Rule Item */
 .rule-item {
   border-bottom: 1px solid #eaecef;
   padding: 10px 0;
@@ -175,6 +244,7 @@
   flex-direction: column;
   gap: 4px;
   overflow: hidden;
+  min-width: 0;
 }
 
 .debugger-color-picker {

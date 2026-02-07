@@ -2,7 +2,7 @@
   "name": "bili-user-memo",
   "version": "1.0.0",
   "description": "B站一键备注 Rev的重写版本",
-  "main": "index.js",
+  "main": "main.js",
   "scripts": {
     "dev": "vite --mode debug",
     "build": "vite build --mode production"

@@ -62,12 +62,47 @@ class PageInjector {
     });
   }
   public refreshData() {
+    const prevUsers = this.users;
+    const prevDisplayMode = this.displayMode;
+
     this.users = GM_getValue<BiliUser[]>("biliUsers", []);
     this.displayMode = GM_getValue<number>("displayMode", 2);
+
+    // 计算差异 UID（新增、删除、修改）
+    const prevMap = new Map(prevUsers.map((u) => [u.id, u]));
+    const changedUids = new Set<string>();
+    this.users.forEach((u) => {
+      const prev = prevMap.get(u.id);
+      if (
+        !prev ||
+        prev.memo !== u.memo ||
+        prev.nickname !== u.nickname ||
+        prev.avatar !== u.avatar
+      ) {
+        changedUids.add(u.id);
+      }
+    });
+    prevMap.forEach((_, uid) => {
+      if (!this.users.find((u) => u.id === uid)) changedUids.add(uid);
+    });
+
+    // 重置静态规则退休状态，仅在需要时重新扫描
+    this.staticRetired = new WeakSet<PageRule>();
+
     logger.debug(
       `📊 数据已刷新: 记录数=${this.users.length}, 显示模式=${this.displayMode}`,
     );
+
     if (this.domReady) {
+      // 优先更新已有节点文本
+      this.refreshInjectedContent(
+        prevDisplayMode !== this.displayMode ? undefined : changedUids,
+      );
+
+      // 仅清理受影响 UID 的处理标记，减少无谓重扫
+      this.clearProcessedFlags(changedUids);
+
+      // 动态区域需继续监听新节点
       this.scanMatchedRules([InjectionMode.Dynamic], "数据刷新触发");
     }
   }
@@ -190,20 +225,48 @@ class PageInjector {
       `💉 正在处理注入 (${new Date().toLocaleTimeString()}) | ${reason}`,
     );
 
-    rules.forEach((rule) => {
-      this.scanAndInjectRule(rule);
-    });
+    const queue = [...rules];
 
-    console.groupEnd();
+    const runChunk = (deadline: IdleDeadline) => {
+      const timeLeft =
+        typeof deadline.timeRemaining === "function"
+          ? () => deadline.timeRemaining()
+          : () => 0;
+
+      const processNext = async () => {
+        while (queue.length > 0 && timeLeft() > 1) {
+          const rule = queue.shift()!;
+          await this.scanAndInjectRule(rule);
+        }
+
+        if (queue.length > 0) {
+          this.requestIdle(runChunk);
+        } else {
+          console.groupEnd();
+        }
+      };
+
+      processNext();
+    };
+
+    this.requestIdle(runChunk);
   }
 
-  private async scanAndInjectRule(rule: PageRule) {
+  private requestIdle(cb: (deadline: IdleDeadline) => void) {
+    const ric =
+      (window as any).requestIdleCallback ||
+      ((fn: (deadline: IdleDeadline) => void) =>
+        window.setTimeout(() => fn({ timeRemaining: () => 16 } as any), 16));
+    ric(cb, { timeout: 1000 });
+  }
+
+  private async scanAndInjectRule(rule: PageRule): Promise<number> {
     logger.debug(`🔍 正在处理规则 [${rule.name}] ${rule.aSelector}`);
     if (
       rule.injectMode === InjectionMode.Static &&
       this.staticRetired.has(rule)
     ) {
-      return;
+      return 0;
     }
     const selector = `${rule.aSelector}:not([data-bili-processed])`;
 
@@ -214,6 +277,13 @@ class PageInjector {
       for (let i = 0; i < maxRetries; i++) {
         element = querySelectorDeep(selector);
         if (element) break;
+
+        // 如果存在已处理的元素，说明之前已注入，直接退出不警告
+        const processed = querySelectorDeep(rule.aSelector);
+        if (processed && processed.hasAttribute("data-bili-processed")) {
+          this.staticRetired.add(rule);
+          return 0;
+        }
 
         // 这里的 sleep 很重要，B站有些组件是滚动到位置或者异步脚本加载后才出的
         const delay = 200 + Math.random() * 300;
@@ -228,7 +298,7 @@ class PageInjector {
       }
 
       this.staticRetired.add(rule);
-      return;
+      return element ? 1 : 0;
     }
 
     const elements = querySelectorAllDeep(selector);
@@ -240,22 +310,27 @@ class PageInjector {
     elements.forEach((el) => {
       this.applyRuleToElement(el, rule);
     });
+    return elements.length;
   }
 
   private applyRuleToElement(el: HTMLElement, rule: PageRule) {
     const uid = this.extractUid(el);
+    const originalName = this.getElementDisplayName(el, rule);
 
-    if (uid) {
-      const user = this.users.find((u) => u.id === uid);
-      this.injectMemo(el, user, rule);
-      logger.debug(
-        `✅ 已为 UID:${uid} (${user?.nickname || el.textContent}) 注入备注`,
-      );
-    } else {
+    if (!uid) {
       logger.warn(`❌ 无法从元素提取 UID:`, el);
+      return;
     }
 
-    el.setAttribute("data-bili-processed", "true");
+    const user = this.users.find((u) => u.id === uid);
+    const applied = this.injectMemo(el, user, rule, { uid, originalName });
+
+    if (applied) {
+      el.setAttribute("data-bili-processed", "true");
+      logger.debug(
+        `✅ 已为 UID:${uid} (${user?.nickname || originalName}) 注入备注`,
+      );
+    }
   }
 
   private getMatchedRules(modes?: InjectionMode[]) {
@@ -297,6 +372,32 @@ class PageInjector {
     return null;
   }
 
+  private getElementDisplayName(el: HTMLElement, rule: PageRule): string {
+    if (rule.textSelector) {
+      const target = el.querySelector(rule.textSelector) as HTMLElement | null;
+      if (target?.textContent) return target.textContent.trim();
+    }
+    return el.textContent?.trim() || "";
+  }
+
+  private formatDisplayName(user: BiliUser, fallbackName: string): string {
+    const nickname = (user?.nickname || fallbackName || "").trim();
+    const memo = (user?.memo || "").trim();
+
+    switch (this.displayMode) {
+      case 0:
+        return nickname;
+      case 1:
+        return memo ? `${memo}(${nickname})` : nickname;
+      case 2:
+        return memo ? `${nickname}(${memo})` : nickname;
+      case 3:
+        return memo || nickname;
+      default:
+        return nickname;
+    }
+  }
+
   /**
    * 核心修改：实现就地编辑功能
    */
@@ -304,72 +405,121 @@ class PageInjector {
     el: HTMLElement,
     user: BiliUser | undefined,
     rule: PageRule,
-  ) {
-    /**
-     * 辅助函数：确保元素所在的 Root（Document 或 ShadowRoot）加载了样式
-     */
-    const ensureStyles = (target: HTMLElement) => {
-      const root = target.getRootNode();
-      if (root instanceof ShadowRoot || root instanceof Document) {
-        // 如果样式表还没被“收养”，就把它加进去
-        if (!root.adoptedStyleSheets.includes(GLOBAL_STYLE_SHEET)) {
-          root.adoptedStyleSheets = [
-            ...root.adoptedStyleSheets,
-            GLOBAL_STYLE_SHEET,
-          ];
-        }
-      }
-    };
+    meta: { uid: string; originalName: string },
+  ): boolean {
+    const { uid, originalName } = meta;
 
-    const createEditableTag = (text: string) => {
-      const span = document.createElement("span");
-      span.textContent = text || "";
-      span.contentEditable = "true";
-      span.classList.add("editable-textarea");
-      return span;
-    };
+    if (!user) {
+      user = this.ensureUserRecord(uid, originalName);
+      logger.debug(
+        `[injectMemo] 为缺失用户创建占位 | UID:${uid} nickname="${user.nickname}"`,
+      );
+    }
+
+    const displayText = this.formatDisplayName(user, originalName);
+    const scopeName = (StyleScope as any)[rule.styleScope] ?? rule.styleScope;
+    logger.debug(
+      `[injectMemo] 准备注入 | UID:${uid} scope=${scopeName} mode=${this.displayMode} original="${originalName}" display="${displayText}"`,
+    );
 
     const createEditButton = () => {
       const button = document.createElement("button");
       button.textContent = "备注";
       button.classList.add("edit-button");
+      button.dataset.biliUid = uid;
+      button.dataset.biliScope = String(rule.styleScope);
       return button;
     };
-
+    const createEditableSpan = () => {
+      const tag = document.createElement("span");
+      tag.textContent = displayText;
+      tag.classList.add("editable-textarea", "bili-memo-tag");
+      tag.dataset.biliUid = uid;
+      tag.dataset.biliScope = String(rule.styleScope);
+      tag.dataset.biliOriginal = originalName;
+      tag.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.enterEditMode(tag, user);
+      });
+      return tag;
+    };
     // 逻辑执行
     switch (rule.styleScope) {
-      case StyleScope.Minimal:
-        if (!user) return;
-        el.textContent = user.memo;
-        break;
+      case StyleScope.Minimal: {
+        el.textContent = displayText;
+        el.classList.add("bili-memo-tag");
+        el.dataset.biliUid = uid;
+        el.dataset.biliScope = String(rule.styleScope);
+        el.dataset.biliOriginal = originalName;
+        this.ensureStyles(el);
+        logger.debug(`[injectMemo] Minimal 应用完成 -> ${displayText}`);
+        return true;
+      }
 
       case StyleScope.Editable: {
         el.style.display = "none";
-        const tag = createEditableTag(user?.memo || el.textContent || "");
+        const tag = createEditableSpan();
         el.insertAdjacentElement("afterend", tag);
-        // 关键：插入后立即查找 root 并注入样式表
-        ensureStyles(tag);
-        break;
+        this.ensureStyles(tag);
+        logger.debug(`[injectMemo] Editable 应用完成 -> ${displayText}`);
+        return true;
       }
 
       case StyleScope.Extended: {
-        const btn = createEditButton();
-        el.insertAdjacentElement("afterend", btn);
-        // 关键：插入后立即查找 root 并注入样式表
-        ensureStyles(btn);
-        break;
+        // 显示部分直接复用原元素，按钮提供编辑入口
+        el.textContent = displayText;
+        el.classList.add("bili-memo-tag");
+        el.dataset.biliUid = uid;
+        el.dataset.biliScope = String(rule.styleScope);
+        el.dataset.biliOriginal = originalName;
+
+        // 若已有按钮，避免重复添加
+        const existingBtn = el.nextElementSibling as HTMLElement | null;
+        const canReuse =
+          existingBtn?.classList.contains("edit-button") &&
+          existingBtn.dataset.biliUid === uid;
+
+        const btn = canReuse && existingBtn ? existingBtn : createEditButton();
+        if (!btn) return false;
+        if (!canReuse && btn) {
+          btn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this.enterEditMode(el, user);
+          });
+          el.insertAdjacentElement("afterend", btn);
+        }
+        if (btn) this.ensureStyles(btn);
+        logger.debug(`[injectMemo] Extended 应用完成 -> ${displayText}`);
+        return true;
       }
 
       default:
         logger.warn(`⚠️ 不支持的样式作用域: ${rule.styleScope}`);
+        return false;
     }
+  }
+
+  private ensureUserRecord(uid: string, originalName: string): BiliUser {
+    const existing = this.users.find((u) => u.id === uid);
+    if (existing) return existing;
+    const nickname = originalName || uid;
+    const newUser: BiliUser = {
+      id: uid,
+      nickname,
+      avatar: "",
+      memo: "",
+    };
+    this.users.push(newUser);
+    return newUser;
   }
   /**
    * 进入行内编辑模式
    */
   private enterEditMode(tag: HTMLElement, user: BiliUser) {
-    const originalText = tag.textContent;
-    const currentMemo = user.memo || "";
+    if (!user) return;
+    const originalName = tag.textContent;
+    const currentMemo = user?.memo || originalName;
+    let finished = false;
 
     // 创建输入框
     const input = document.createElement("input");
@@ -377,22 +527,10 @@ class PageInjector {
     input.value = currentMemo;
     input.className = "bili-memo-input";
 
-    // 继承基础样式并微调
-    input.style.cssText = `
-      background: #fff !important;
-      border: 1px solid #ff6699 !important;
-      color: #ff6699 !important;
-      font-size: 12px !important;
-      padding: 0 4px !important;
-      margin-left: 4px !important;
-      border-radius: 4px !important;
-      outline: none !important;
-      width: ${Math.max(currentMemo.length * 12, 60)}px !important;
-      display: inline-block !important;
-      height: 18px !important;
-      line-height: 18px !important;
-      vertical-align: middle !important;
-    `;
+    input.style.setProperty(
+      "--memo-input-width",
+      `${Math.max(currentMemo.length * 12, 60)}px`,
+    );
 
     // 替换原有的 span 内容（或直接替换 span）
     const parent = tag.parentElement;
@@ -405,13 +543,19 @@ class PageInjector {
 
     // 结束编辑的逻辑
     const finishEdit = (isSave: boolean) => {
+      if (finished) return;
+      finished = true;
       if (input.parentNode) {
         input.parentNode.removeChild(input);
       }
       tag.style.display = "inline"; // 恢复原标签
 
       if (isSave && input.value !== currentMemo) {
-        this.updateUserMemo(user.id, input.value.trim());
+        this.updateUserMemo(
+          user.id,
+          input.value.trim(),
+          tag.dataset.biliOriginal || tag.textContent || "",
+        );
       }
     };
 
@@ -431,44 +575,56 @@ class PageInjector {
     input.onclick = (e) => e.stopPropagation();
   }
 
-  /**
-   * 抽离样式设置
-   */
-  private applyMemoStyle(el: HTMLElement) {
-    el.style.cssText = `
-      color: #ff6699 !important;
-      font-size: 12px !important;
-      margin-left: 4px !important;
-      font-weight: bold !important;
-      cursor: pointer !important;
-      display: inline !important;
-      vertical-align: middle !important;
-    `;
-  }
-
-  private updateUserMemo(uid: string, newMemo: string) {
+  private updateUserMemo(uid: string, newMemo: string, fallbackName = "") {
     this.isSystemChanging = true;
     // 1. 更新 Injector 内部的缓存
-    const userIndex = this.users.findIndex((u) => u.id === uid);
-    if (userIndex === -1) return;
+    let userIndex = this.users.findIndex((u) => u.id === uid);
+    if (userIndex === -1) {
+      const newUser: BiliUser = {
+        id: uid,
+        nickname: fallbackName || uid,
+        avatar: "",
+        memo: newMemo,
+      };
+      this.users.push(newUser);
+      userIndex = this.users.length - 1;
+    } else {
+      this.users[userIndex].memo = newMemo;
+    }
 
-    this.users[userIndex].memo = newMemo;
-
-    // 2. 持久化到油猴存储
-    GM_setValue("biliUsers", this.users);
-    logger.info(`📝 备注已更新 | UID:${uid} -> ${newMemo}`);
+    // 如果备注被清空，直接删除该用户记录
+    if (newMemo.trim() === "") {
+      this.users.splice(userIndex, 1);
+      GM_setValue("biliUsers", this.users);
+      logger.info(`🗑️ 备注清空，已删除用户记录 | UID:${uid}`);
+    } else {
+      // 2. 持久化到油猴存储
+      GM_setValue("biliUsers", this.users);
+      logger.info(`📝 备注已更新 | UID:${uid} -> ${newMemo}`);
+    }
 
     // 3. 【核心】同步到 Alpine Store (面板 UI)
     // 这样当你打开管理面板时，列表里的备注也会瞬间改变
     try {
       const store = Alpine.store("userList") as any;
       if (store && store.users) {
-        const storeUser = store.users.find((u: BiliUser) => u.id === uid);
-        if (storeUser) {
-          storeUser.memo = newMemo;
-          // 如果你之前的 store 里有 searchUsers 逻辑，
-          // 这里修改属性后 Alpine 会自动触发 getter (filteredUsers) 重新计算
+        const storeUserIndex = store.users.findIndex(
+          (u: BiliUser) => u.id === uid,
+        );
+        if (newMemo.trim() === "") {
+          if (storeUserIndex !== -1) {
+            store.users.splice(storeUserIndex, 1);
+            logger.debug(`🗑️ 已从 Alpine Store 移除 UID:${uid}`);
+          }
+        } else if (storeUserIndex !== -1) {
+          store.users[storeUserIndex].memo = newMemo;
           logger.debug(`🔄 已同步数据到 Alpine Store`);
+        } else {
+          const localUser = this.users.find((u) => u.id === uid);
+          if (localUser) {
+            store.users.push({ ...localUser });
+            logger.debug(`➕ 已将新用户推入 Alpine Store | UID:${uid}`);
+          }
         }
       }
     } catch (e) {
@@ -482,14 +638,60 @@ class PageInjector {
     }, 100);
   }
   private syncAllTagsOnPage(uid: string, newMemo: string) {
-    const allTags = document.querySelectorAll(`.bili-memo-tag`);
+    const user = this.users.find((u) => u.id === uid);
+    const allTags = querySelectorAllDeep(
+      `.bili-memo-tag[data-bili-uid="${uid}"]`,
+    );
+
     allTags.forEach((tag) => {
-      // 这里的逻辑需要确保能找到父元素关联的 UID
-      const parent = tag.parentElement;
-      if (parent && this.extractUid(parent) === uid) {
-        // 更新文字
-        tag.textContent = ` (${newMemo || "未命名"})`;
-        // 如果原本是隐藏状态（正在编辑），不需要管，编辑完会自动恢复
+      const originalName = tag.dataset.biliOriginal || "";
+      if (!user || newMemo.trim() === "") {
+        // 备注被清空，恢复原始显示
+        tag.textContent = originalName;
+      } else {
+        tag.textContent = this.formatDisplayName(user, originalName);
+      }
+    });
+  }
+
+  private refreshInjectedContent(filterUids?: Set<string>) {
+    const allTags = querySelectorAllDeep(`.bili-memo-tag`);
+    allTags.forEach((tag) => {
+      const uid = tag.dataset.biliUid;
+      if (!uid) return;
+      if (filterUids && !filterUids.has(uid)) return;
+
+      const user = this.users.find((u) => u.id === uid);
+      const originalName = tag.dataset.biliOriginal || "";
+
+      if (!user || user.memo.trim() === "") {
+        tag.textContent = originalName;
+        return;
+      }
+
+      tag.textContent = this.formatDisplayName(user, originalName);
+    });
+  }
+
+  private ensureStyles(target: HTMLElement) {
+    const root = target.getRootNode();
+    if (root instanceof ShadowRoot || root instanceof Document) {
+      if (!root.adoptedStyleSheets.includes(GLOBAL_STYLE_SHEET)) {
+        root.adoptedStyleSheets = [
+          ...root.adoptedStyleSheets,
+          GLOBAL_STYLE_SHEET,
+        ];
+      }
+    }
+  }
+
+  private clearProcessedFlags(changedUids: Set<string>) {
+    if (changedUids.size === 0) return;
+    const processed = querySelectorAllDeep("[data-bili-processed]");
+    processed.forEach((el) => {
+      const uid = this.extractUid(el);
+      if (uid && changedUids.has(uid)) {
+        el.removeAttribute("data-bili-processed");
       }
     });
   }

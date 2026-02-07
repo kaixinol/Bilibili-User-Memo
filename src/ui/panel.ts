@@ -13,7 +13,7 @@ import { parse } from "css-tree";
 /* =========================
  * 类型定义
  * ========================= */
-export interface BiliUser {
+interface BiliUser {
   id: string;
   nickname: string;
   avatar: string;
@@ -33,17 +33,17 @@ interface UserListStore {
   addUser(user: BiliUser): void;
   updateUser(id: string, updates: Partial<BiliUser>): void;
   removeUser(id: string): void;
+  setDisplayMode(mode: number): void;
   saveUsers(): void;
   exportData(): void;
   importData(): void;
   refreshData(): void;
-  formatDisplayName(user: BiliUser): string;
 }
 
 /* =========================
  * Alpine Store
  * ========================= */
-export function registerUserStore() {
+function registerUserStore() {
   if (Alpine.store("userList")) return;
 
   const loadAndDeduplicate = (): BiliUser[] => {
@@ -93,14 +93,51 @@ export function registerUserStore() {
       logger.debug(`添加用户 [${user.id}]:`, user);
       this.users.push(user);
       this.saveUsers();
+      refreshPageInjection();
       // 不需要手动调用 searchUsers，getter 会自动响应
     },
 
     updateUser(id: string, updates: Partial<BiliUser>) {
       const index = this.users.findIndex((user) => user.id === id);
       if (index !== -1) {
-        this.users[index] = { ...this.users[index], ...updates };
+        const before = this.users[index];
+        const nextMemo =
+          updates.memo !== undefined ? updates.memo.trim() : before.memo;
+        const nextNickname =
+          updates.nickname !== undefined ? updates.nickname : before.nickname;
+
+        // 如果无实际变更，直接返回，避免多余刷新
+        if (
+          nextMemo === before.memo &&
+          nextNickname === before.nickname &&
+          (updates.id === undefined || updates.id === before.id)
+        ) {
+          return;
+        }
+
+        if (updates.memo !== undefined && nextMemo === "") {
+          // 直接删除用户记录，不弹确认
+          this.users.splice(index, 1);
+          this.saveUsers();
+          refreshPageInjection();
+          return;
+        }
+
+        this.users[index] = {
+          ...before,
+          ...updates,
+          memo: nextMemo,
+          nickname: nextNickname,
+        };
         this.saveUsers();
+        // 如果昵称或备注发生变化，立即刷新页面注入
+        if (
+          updates.memo !== undefined ||
+          updates.nickname !== undefined ||
+          updates.id !== undefined
+        ) {
+          refreshPageInjection();
+        }
       }
     },
 
@@ -113,25 +150,14 @@ export function registerUserStore() {
       }
     },
 
-    saveUsers() {
-      GM_setValue("biliUsers", this.users);
+    setDisplayMode(mode: number) {
+      this.displayMode = mode;
+      GM_setValue("displayMode", mode);
+      refreshPageInjection();
     },
 
-    formatDisplayName(user: BiliUser): string {
-      switch (this.displayMode) {
-        case 0:
-          return user.nickname;
-        case 1:
-          return (
-            user.memo + (user.memo ? "(" + user.nickname + ")" : user.nickname)
-          );
-        case 2:
-          return user.nickname + (user.memo ? "(" + user.memo + ")" : "");
-        case 3:
-          return user.memo || user.nickname;
-        default:
-          return user.nickname;
-      }
+    saveUsers() {
+      GM_setValue("biliUsers", this.users);
     },
 
     async refreshData() {

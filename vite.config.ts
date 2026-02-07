@@ -35,42 +35,30 @@ export default defineConfig(({ mode }) => {
       __IS_DEBUG__: JSON.stringify(isDebug),
     },
     build: {
-      // 1. 重要：在非 debug 模式下關閉 minify，防止變數名被壓扁
-      // Vite 7 預設使用 esbuild，所以這裡必須顯式指定
-      minify: isDebug ? "terser" : false,
+      minify: isDebug ? false : "terser",
 
-      // 2. 強化 Tree Shaking (減枝)
-      modulePreload: { polyfill: false },
       rollupOptions: {
-        treeshake: {
-          preset: "recommended",
-          propertyReadSideEffects: false, // 允許刪除只讀取但未使用的屬性
-          moduleSideEffects: false, // 標記模組無副作用，讓 Rollup 大膽刪減
-        },
+        treeshake: "recommended",
         output: {
-          manualChunks: undefined, // 不拆分包，確保輸出一條 script
+          inlineDynamicImports: true,
+          manualChunks: undefined,
         },
       },
 
-      // 3. Terser 配置：即便不混淆，也能用來刪除死代碼
       terserOptions: {
         compress: {
-          unused: true, // 移除未使用的函數和變量
-          dead_code: true, // 移除 unreachable 代碼
-          drop_console: !isDebug, // 正式版移除 console.log
-          passes: 2, // 執行兩次壓縮掃描，增加減枝成功率
+          unused: true,
+          dead_code: true,
+          drop_console: !isDebug,
+          passes: 2,
         },
-        // 政策關鍵：非 debug 模式絕對不混淆變數名 (mangle)
-        mangle: isDebug,
+        mangle: false,
         format: {
-          beautify: !isDebug, // 正式版代碼排版整齊，方便審核
-          comments: /^\s*@/, // 保留油猴元數據注釋
+          beautify: !isDebug,
+          comments: /^\s*(@|==UserScript==|==\/UserScript==)/,
         },
       },
-
-      // 4. 針對 Vite 7 的額外處理
-      cssMinify: isDebug,
-      reportCompressedSize: true,
+      cssMinify: true,
     },
   };
 });

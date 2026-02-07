@@ -7,14 +7,18 @@
     "dev": "vite --mode debug",
     "build": "vite build --mode production"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "bilibili",
+    "user memo",
+    "userscript",
+    "tampermonkey"
+  ],
+  "author": "Kaesinol",
   "license": "AGPL-3.0-or-later",
   "packageManager": "pnpm@10.28.0",
   "devDependencies": {
     "@types/alpinejs": "^3.13.11",
     "@types/css-tree": "^2.3.11",
-    "@types/md5": "^2.3.6",
     "@types/node": "^25.1.0",
     "@types/tampermonkey": "^5.0.5",
     "rollup-plugin-visualizer": "^6.0.5",
@@ -28,8 +32,6 @@
     "alpinejs": "^3.15.5",
     "css-tree": "^3.1.0",
     "gm-fetch": "^2.0.1",
-    "lucide": "^0.563.0",
-    "md5": "^2.3.0",
     "p-limit": "^7.2.0",
     "query-selector-shadow-dom": "^1.0.1",
     "valibot": "^1.2.0"

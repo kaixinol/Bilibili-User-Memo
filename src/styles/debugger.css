@@ -261,3 +261,107 @@
 .debugger-color-picker:hover {
   border-color: #0366d6;
 }
+/* 适配夜间主题 */
+.memo-container-dark-theme .debugger-window {
+  background: var(--bg-sub);
+  color: var(--text-main);
+  border: 1px solid var(--border-main);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  color-scheme: dark; /* 自动调整内部原生组件(如滚动条) */
+}
+
+/* 头部样式 */
+.memo-container-dark-theme .debugger-header {
+  background: var(--bg-main);
+  border-bottom: 1px solid var(--border-main);
+  color: var(--text-main);
+}
+
+.memo-container-dark-theme .debugger-header:hover {
+  background: var(--bg-hover);
+}
+
+.memo-container-dark-theme .drag-handle {
+  color: var(--text-muted);
+}
+
+/* 性能指标区域 */
+.memo-container-dark-theme .debugger-perf {
+  background: var(--bg-main);
+  border-color: var(--border-main);
+}
+
+.memo-container-dark-theme .perf-label {
+  color: var(--text-sub);
+}
+
+.memo-container-dark-theme .perf-value {
+  color: var(--text-main);
+}
+
+/* 输入框适配 */
+.memo-container-dark-theme .debugger-input {
+  background: var(--bg-main);
+  border-color: var(--border-main);
+  color: var(--text-main);
+}
+
+.memo-container-dark-theme .debugger-input:focus {
+  border-color: var(--border-accent);
+  box-shadow: 0 0 0 3px rgba(251, 114, 153, 0.2);
+}
+
+.memo-container-dark-theme .debugger-input-selector {
+  color: var(--text-muted);
+}
+
+/* 按钮适配 */
+.memo-container-dark-theme .debugger-btn {
+  background: var(--bg-hover);
+  border-color: var(--border-main);
+  color: var(--text-main);
+}
+
+.memo-container-dark-theme .debugger-btn:hover {
+  background: var(--border-main);
+  border-color: var(--border-accent);
+}
+
+.memo-container-dark-theme .debugger-btn:active {
+  background: var(--bg-main);
+}
+
+/* 列表项适配 */
+.memo-container-dark-theme .rule-item {
+  border-bottom-color: var(--border-main);
+}
+
+.memo-container-dark-theme .rule-item:hover {
+  background: var(--bg-hover);
+}
+
+/* 滚动条适配 */
+.memo-container-dark-theme .debugger-rules-container::-webkit-scrollbar-thumb {
+  background: var(--border-main);
+}
+
+.memo-container-dark-theme
+  .debugger-rules-container::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* 危险操作按钮 */
+.memo-container-dark-theme .debugger-btn-danger {
+  color: #f87171; /* 稍亮一点的红色 */
+}
+
+.memo-container-dark-theme .debugger-btn-danger:hover {
+  background: rgba(248, 113, 113, 0.15);
+  color: #f87171;
+}
+
+/* 颜色选择器微调 */
+.memo-container-dark-theme .debugger-color-picker {
+  border-color: var(--border-main);
+  background: var(--bg-main);
+}

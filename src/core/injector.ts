@@ -260,7 +260,7 @@ class PageInjector {
     ric(cb, { timeout: 1000 });
   }
 
-  private async scanAndInjectRule(rule: PageRule): Promise<number> {
+  private async scanAndInjectRule(rule: PageRule) {
     logger.debug(`🔍 正在处理规则 [${rule.name}] ${rule.aSelector}`);
     if (
       rule.injectMode === InjectionMode.Static &&
@@ -310,7 +310,6 @@ class PageInjector {
     elements.forEach((el) => {
       this.applyRuleToElement(el, rule);
     });
-    return elements.length;
   }
 
   private applyRuleToElement(el: HTMLElement, rule: PageRule) {
@@ -363,12 +362,14 @@ class PageInjector {
       const match = href.match(/space\.bilibili\.com\/(\d+)/);
       if (match) return match[1];
     }
-
-    // 尝试从 B 站常见的自定义属性提取
+    const initialState = (window as any).__INITIAL_STATE__;
     const dataUid =
-      el.getAttribute("data-user-id") || el.getAttribute("data-mid");
+      (el.getAttribute("data-user-profile-id") ||
+        initialState?.detail?.basic?.uid) ??
+      initialState?.detail?.modules?.find((m: any) => m.module_author)
+        ?.module_author?.mid;
     if (dataUid) return dataUid;
-
+    logger.warn(`⚠️ 无法从元素中提取 UID:`, el);
     return null;
   }
 
@@ -397,7 +398,17 @@ class PageInjector {
         return nickname;
     }
   }
-
+  private getUserAvatar(userID: string): string {
+    return (
+      querySelectorDeep(
+        `#user-avatar[data-user-profile-id="${userID}"] bili-avatar source[type="image/avif"]`,
+      )?.getAttribute("srcset") ||
+      querySelectorDeep(
+        `up-avatar-wrap a[href*="${userID}"] img.bili-avatar-img`,
+      )?.getAttribute("data-src") ||
+      `https://i0.hdslb.com/bfs/face/member/noface.jpg`
+    );
+  }
   /**
    * 核心修改：实现就地编辑功能
    */
@@ -506,7 +517,7 @@ class PageInjector {
     const newUser: BiliUser = {
       id: uid,
       nickname,
-      avatar: "",
+      avatar: this.getUserAvatar(uid),
       memo: "",
     };
     this.users.push(newUser);

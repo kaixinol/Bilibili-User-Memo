@@ -1,6 +1,6 @@
 {
   "name": "bili-user-memo",
-  "version": "1.0.0",
+  "version": "1.0.0rc",
   "description": "B站一键备注 Rev的重写版本",
   "main": "main.js",
   "scripts": {
@@ -18,7 +18,6 @@
   "packageManager": "pnpm@10.28.0",
   "devDependencies": {
     "@types/alpinejs": "^3.13.11",
-    "@types/css-tree": "^2.3.11",
     "@types/node": "^25.1.0",
     "@types/tampermonkey": "^5.0.5",
     "rollup-plugin-visualizer": "^6.0.5",
@@ -30,7 +29,6 @@
   "dependencies": {
     "@trim21/gm-fetch": "^0.3.0",
     "alpinejs": "^3.15.5",
-    "css-tree": "^3.1.0",
     "gm-fetch": "^2.0.1",
     "p-limit": "^7.2.0",
     "query-selector-shadow-dom": "^1.0.1",

@@ -11,7 +11,9 @@ export default defineConfig(({ mode }) => {
         userscript: {
           name: isDebug ? "【開發版】B站工具箱" : "B站用戶備註工具",
           namespace: "https://github.com/kaixinol/",
+          icon: "https://www.bilibili.com/favicon.ico",
           match: ["https://*.bilibili.com/*"],
+          exclude: ["https://*.hdslb.com/*"],
           noframes: true,
           grant: ["GM_setValue", "GM_getValue", "GM_xmlhttpRequest"],
           connect: ["api.bilibili.com"],

@@ -9,7 +9,6 @@ import { getUserInfo } from "../utils/sign";
 import { logger } from "../utils/logger";
 import { refreshPageInjection } from "../core/injector";
 import { validateEitherJSON } from "../configs/schema";
-import { parse } from "css-tree";
 /* =========================
  * 类型定义
  * ========================= */

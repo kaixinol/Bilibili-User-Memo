@@ -67,10 +67,78 @@
   font-size: 16px;
   position: relative; /* 为定位做准备 */
 }
+.panel-right-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.panel-custom-color-setting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border-radius: 10px;
+  background: var(--bg-sub);
+  border: 1px solid var(--primary-color);
+  color: var(--text-main);
+  font-size: 13px;
+  cursor: pointer; /* 让鼠标变成手型 */
+  position: relative;
+}
 
+/* 视觉上的颜色预览块 */
+.color-preview {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  border: 1px solid var(--border-main);
+  pointer-events: none; /* 让点击穿透到 label */
+}
+
+/* --- 核心魔法开始 --- */
+.ghost-color-picker {
+  /* 1. 把它从文档流里拿出来，定死在窗口中间 */
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  /* 2. 让它不可见，但不能用 display:none (否则无法触发) */
+  opacity: 0;
+  width: 0; /* 宽高设为0，防止挡住中间的内容 */
+  height: 0;
+  overflow: hidden;
+
+  /* 3. 极其重要：把它的层级放低，避免它挡住屏幕中间的点击 */
+  z-index: -1;
+
+  /* 4. 某些浏览器可能需要这个来确保它不占位置 */
+  padding: 0;
+  margin: 0;
+  border: none;
+}
+.panel-custom-color-setting label {
+  cursor: pointer;
+}
+.panel-custom-color-setting input[type="color"] {
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--border-main);
+  border-radius: 6px;
+  padding: 0;
+  background: var(--bg-main);
+  cursor: pointer;
+}
+.panel-custom-color-setting input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+.panel-custom-color-setting input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 4px;
+}
 /* 关键：将主题按钮推向最右侧 */
 .panel-theme-toggle {
-  margin-left: auto; /* 自动撑开左侧空间 */
   cursor: pointer;
   display: flex;
   align-items: center;

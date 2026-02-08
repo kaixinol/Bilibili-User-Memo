@@ -6,8 +6,8 @@
   right: 0;
   bottom: 0;
   z-index: 9999;
-  background: #ffffff;
-  border-top: 2px solid #fb7299;
+  background: var(--bg-main);
+  border-top: 2px solid var(--primary-color);
   box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -40,8 +40,8 @@
   border-radius: 8px 8px 0 0;
   cursor: context-menu;
   font-size: 18px;
-  color: white;
-  background: rgb(251, 114, 153);
+  color: var(--text-inverse);
+  background: var(--primary-color);
   border: none;
   display: flex;
   align-items: center;
@@ -56,7 +56,7 @@
 
 .panel-toggle-btn:hover {
   opacity: 1 !important; /* 鼠标悬停时强制不透明 */
-  background: rgb(255, 133, 167);
+  background: var(--primary-color);
 }
 /* Mode Selection Section - 增强层级感 */
 .panel-mode-section {
@@ -78,18 +78,18 @@
   padding: 6px;
   border-radius: 8px;
   transition: all 0.2s ease;
-  color: #666; /* 默认图标颜色 */
+  color: var(--text-sub); /* 默认图标颜色 */
 }
 /* 统一处理悬停效果 */
 .panel-theme-toggle:hover {
-  color: #fb7299; /* 强制悬停变粉 */
+  color: var(--primary-color); /* 强制悬停变粉 */
   transform: rotate(20deg);
-  background: rgba(0, 0, 0, 0.05);
+  background: var(--overlay);
 }
 
 /* 夜间模式悬停背景 */
 .memo-container-dark-theme .panel-theme-toggle:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--glass);
 }
 /* 如果是黑夜模式，可以给个不一样的悬停色 */
 [x-cloak] {
@@ -106,7 +106,7 @@
 .panel-mode-label {
   font-size: 15px;
   font-weight: 600;
-  color: #333;
+  color: var(--text-main);
 }
 
 .panel-mode-option {
@@ -114,7 +114,7 @@
   align-items: center;
   gap: 6px;
   font-size: 14px;
-  color: #666;
+  color: var(--text-sub);
   color-scheme: light;
   cursor: pointer;
 }
@@ -130,10 +130,10 @@
 /* 按钮优化：不再是大块粉色，更有精致感 */
 .panel-btn {
   padding: 6px 16px;
-  border: 1px solid #fb7299;
-  background: white;
+  border: 1px solid var(--primary-color);
+  background: var(--bg-main);
   border-radius: 20px; /* 圆角按钮更现代 */
-  color: #fb7299;
+  color: var(--primary-color);
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
@@ -141,33 +141,33 @@
 }
 
 .panel-btn:hover {
-  background: #fb7299;
-  color: white;
+  background: var(--primary-color);
+  color: var(--text-inverse);
 }
 
 .panel-title {
   font-size: 16px;
   font-weight: bold;
-  color: #222;
+  color: var(--text-main);
   flex-grow: 1;
 }
 
 /* Search Box - 增加 Focus 状态 */
 .panel-search-box {
-  border: 1px var(--border-accent);
+  border: 1px solid var(--primary-color);
   padding: 6px 10px;
   border-radius: 18px;
   width: 180px;
   display: flex;
   align-items: center;
-  background: #f6f7f8;
+  background: var(--bg-sub);
   transition: all 0.2s;
 }
 
 .panel-search-box:focus-within {
-  border-color: var(--border-accent);
-  background: white;
-  box-shadow: 0 0 0 2px rgba(251, 114, 153, 0.1);
+  border-color: var(--primary-color);
+  background: var(--bg-main);
+  box-shadow: 0 0 0 2px var(--primary-alpha);
 }
 
 .panel-search-input {
@@ -176,11 +176,11 @@
   width: 100%;
   font-size: 14px;
   background: transparent;
-  color: #000;
+  color: var(--text-main);
 }
 
 .panel-search-clear {
-  color: #ccc;
+  color: var(--border-main);
   font-size: 14px;
   cursor: pointer;
   border: none;
@@ -189,7 +189,7 @@
 }
 
 .panel-search-clear:hover {
-  color: #fb7299;
+  color: var(--primary-color);
 }
 
 /* Users List Container */
@@ -200,36 +200,29 @@
   padding-right: 8px;
 }
 
-/* 列表改为更整齐的网格布局（可选） */
-.panel-users-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 12px;
-}
-
 /* Scrollbar - 更加轻量化 */
 .panel-users-container::-webkit-scrollbar {
   width: 6px;
 }
 
 .panel-users-container::-webkit-scrollbar-thumb {
-  background: #e0e0e0;
+  background: var(--border-main);
   border-radius: 10px;
 }
 
 .panel-users-container::-webkit-scrollbar-thumb:hover {
-  background: #ccc;
+  background: var(--border-main);
 }
 
 .memo-container-dark-theme .panel-container {
   background: var(--bg-main);
-  border-top-color: var(--border-accent);
+  border-top-color: var(--primary-color);
   box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.5);
 }
 
 .memo-container-dark-theme .panel-toggle-btn {
-  background: #fb7299;
-  color: #fff;
+  background: var(--primary-color);
+  color: var(--text-inverse);
 }
 
 .memo-container-dark-theme .panel-mode-label {
@@ -243,18 +236,18 @@
 
 .memo-container-dark-theme .panel-btn {
   background: transparent;
-  color: #fb7299;
-  border-color: #fb7299;
+  color: var(--primary-color);
+  border-color: var(--primary-color);
 }
 
 .memo-container-dark-theme .panel-btn:hover {
-  background: #fb7299;
-  color: #000;
+  background: var(--primary-color);
+  color: var(--text-main);
 }
 
 .memo-container-dark-theme .panel-search-box {
   background: var(--bg-sub);
-  border-color: 2px solid var(--border-accent);
+  border: 2px solid var(--primary-color);
 }
 
 .memo-container-dark-theme .panel-search-input {
@@ -262,23 +255,23 @@
 }
 
 .memo-container-dark-theme .panel-search-clear {
-  color: var(--text-muted);
+  color: var(--text-sub);
 }
 
 .memo-container-dark-theme .panel-users-container::-webkit-scrollbar-thumb {
-  background: #3f3f46;
+  background: var(--border-main);
 }
 .memo-container-dark-theme .panel-title {
-  color: white;
+  color: var(--text-inverse);
 }
 /* 禁用状态的按钮样式 */
 .panel-btn:disabled,
 .panel-btn.btn-disabled {
-  background-color: #cccccc !important;
-  color: #666666 !important;
-  cursor: not-allowed !important;
+  background-color: var(--border-main);
+  color: var(--text-sub);
+  cursor: not-allowed;
   opacity: 0.8;
-  transform: none !important; /* 移除点击缩放效果 */
+  transform: none; /* 移除点击缩放效果 */
 }
 
 .loading-spinner {

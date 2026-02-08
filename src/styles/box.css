@@ -17,17 +17,17 @@
   height: 72px; /* 高度稍微收缩，更显精致 */
 
   padding: 0 12px;
-  background: #ffffff;
-  border: 1px solid #f0f0f0;
+  background: var(--bg-main);
+  border: 1px solid var(--border-main);
   border-radius: 8px; /* 略微减小圆角，适合紧凑布局 */
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  box-shadow: var(--shadow-elevated);
   box-sizing: border-box;
   transition: all 0.2s ease;
 }
 
 .user-box:hover {
-  border-color: #fb7299;
-  background: #fffafc; /* 悬浮时给个淡淡的底色 */
+  border-color: var(--primary-color);
+  background: var(--primary-alpha); /* 悬浮时给个淡淡的底色 */
 }
 
 /* 头像：稍微缩小一点 */
@@ -64,7 +64,7 @@
 }
 
 .user-nickname-link {
-  color: #00aeec;
+  color: var(--link-color);
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
@@ -84,7 +84,7 @@
 
 .user-info-label {
   font-size: 12px;
-  color: black;
+  color: var(--text-main);
   margin-bottom: 2px;
 }
 .user-id {
@@ -105,7 +105,7 @@
   position: absolute;
   width: fit-content;
   z-index: 100;
-  background-color: white;
+  background-color: var(--bg-main);
   /* 关键点 1：使用透明边框作为“鼠标粘滞区” */
   /* 这样即使鼠标稍微偏离文字，只要在边框范围内，就不会缩回去 */
   border: 10px solid transparent;
@@ -113,7 +113,7 @@
 
   padding: 2px 8px;
   border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-elevated);
 }
 /* 默认样式 */
 .user-note-input {
@@ -121,7 +121,7 @@
   outline: none;
   font-size: 13px;
   width: 100%;
-  color: #fb7299;
+  color: var(--primary-color);
   background: transparent;
   padding: 0;
   cursor: pointer; /* 提示用户可以点击 */
@@ -131,14 +131,14 @@
 
 /* 悬停时稍微显现底线 */
 .user-note-input:hover {
-  border-bottom-color: rgba(251, 114, 153, 0.3);
+  border-bottom-color: var(--primary-alpha);
 }
 
 /* 编辑状态下的样式 (对应 :class="{ 'editing': isEditing }") */
 .user-note-input.editing {
   cursor: text;
-  background: rgba(251, 114, 153, 0.05); /* 淡淡的底色提示正在输入 */
-  border-bottom: 2px solid #fb7299;
+  background: var(--primary-alpha); /* 淡淡的底色提示正在输入 */
+  border-bottom: 2px solid var(--primary-color);
 }
 /* --- 响应式断点优化 --- */
 
@@ -165,34 +165,34 @@
 }
 
 .memo-container-dark-theme .user-box:hover {
-  background: var(--bg-hover);
-  border-color: var(--border-accent);
+  background: var(--bg-sub);
+  border-color: var(--primary-color);
 }
 
 .memo-container-dark-theme .user-nickname-link {
-  color: #7dd3fc;
+  color: var(--link-color);
 }
 
 .memo-container-dark-theme .user-info-label {
-  color: var(--text-muted);
+  color: var(--text-sub);
 }
 
 /* 暗色模式适配 */
 .memo-container-dark-theme .user-id {
-  color: #aaa;
+  color: var(--text-sub);
 }
 
 .memo-container-dark-theme .user-id.can-expand:hover {
-  background-color: #333;
-  color: #fff;
-  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.4);
+  background-color: var(--bg-sub);
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-dark);
 }
 .memo-container-dark-theme .user-note-input {
-  color: #fb7299;
+  color: var(--primary-color);
 }
 
 .memo-container-dark-theme .user-note-input.editing {
-  background: rgba(251, 114, 153, 0.12);
+  background: var(--primary-alpha);
 }
 
 .delete-btn {
@@ -204,5 +204,5 @@
   color: var(--primary-color);
 }
 .delete-btn:hover {
-  stroke: red;
+  stroke: var(--danger-color);
 }

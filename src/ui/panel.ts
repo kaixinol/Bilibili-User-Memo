@@ -30,7 +30,6 @@ interface UserListStore {
   refreshTotal: number;
   displayMode: number;
   searchQuery: string;
-  addUser(user: BiliUser): void;
   updateUser(id: string, updates: Partial<BiliUser>): void;
   removeUser(id: string): void;
   setDisplayMode(mode: number): void;
@@ -84,19 +83,6 @@ function registerUserStore() {
         );
       });
     },
-
-    addUser(user: BiliUser) {
-      if (this.users.some((u) => u.id === user.id)) {
-        logger.warn(`用户 [${user.id}] 已存在，跳过添加`);
-        return;
-      }
-      logger.debug(`添加用户 [${user.id}]:`, user);
-      this.users.push(user);
-      this.saveUsers();
-      refreshPageInjection();
-      // 不需要手动调用 searchUsers，getter 会自动响应
-    },
-
     updateUser(id: string, updates: Partial<BiliUser>) {
       const index = this.users.findIndex((user) => user.id === id);
       if (index !== -1) {
@@ -371,16 +357,4 @@ export function initMainPanel() {
       store.saveUsers();
     }
   });
-}
-
-/* =========================
- * 对外安全 API
- * ========================= */
-export function appendUserCard(userData: BiliUser) {
-  const store = Alpine.store("userList") as UserListStore | undefined;
-  if (store) {
-    store.addUser(userData);
-  } else {
-    console.warn("Alpine store 尚未就绪");
-  }
 }

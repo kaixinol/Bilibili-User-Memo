@@ -12,14 +12,14 @@
   padding: 4px 6px;
   display: inline-block;
   white-space: nowrap;
-  background: rgba(255, 255, 255, 0.35);
+  background: var(--glass);
   border: none;
-  border-bottom: 2px solid rgba(0, 0, 0, 0.25);
+  border-bottom: 2px solid var(--overlay);
   outline: none;
 
   border-radius: 6px 6px 0 0;
 
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  text-shadow: 0 1px 2px var(--overlay);
 
   transition:
     border-color 0.2s ease,
@@ -31,16 +31,16 @@
 
 /* hover 状态 */
 .editable-textarea:hover {
-  background: rgba(255, 255, 255, 0.55);
-  color: var(--primary-hover);
+  background: var(--glass);
+  color: var(--primary-color);
 }
 
 /* 聚焦高亮 */
 .editable-textarea:focus {
-  border-bottom-color: #2196f3;
-  background: rgba(255, 255, 255, 0.75);
+  border-bottom-color: var(--focus-color);
+  background: var(--bg-main);
   opacity: 1;
-  color: var(--primary-active);
+  color: var(--primary-color);
 }
 .edit-button {
   font-size: 14px;
@@ -51,7 +51,7 @@
   outline: none;
 
   background: transparent;
-  color: #333;
+  color: var(--text-main);
 
   border-radius: 8px;
   cursor: pointer;
@@ -64,7 +64,7 @@
 
 /* hover */
 .edit-button:hover {
-  background: rgba(0, 0, 0, 0.12);
+  background: var(--overlay);
 }
 
 /* 点击反馈 */
@@ -74,7 +74,7 @@
 
 /* 键盘聚焦 */
 .edit-button:focus-visible {
-  box-shadow: 0 0 0 2px rgba(33, 150, 243, 0.35);
+  box-shadow: 0 0 0 2px var(--focus-ring);
 }
 
 .bili-memo-tag {
@@ -87,8 +87,8 @@
 }
 
 .bili-memo-input {
-  background: #fff;
-  border: 1px solid #ff6699;
+  background: var(--bg-main);
+  border: 1px solid var(--primary-color);
   font-size: 14px;
   padding: 0 4px;
   margin-left: 4px;
@@ -102,14 +102,14 @@
 }
 
 :host-context(.memo-container-dark-theme) .editable-textarea {
-  background: rgba(0, 0, 0, 0.25);
-  border-bottom-color: rgba(255, 255, 255, 0.15);
+  background: var(--overlay);
+  border-bottom-color: var(--glass);
   color: var(--primary-color);
 }
 
 :host-context(.memo-container-dark-theme) .editable-textarea:focus {
-  background: var(--bg-hover);
-  border-bottom-color: var(--border-accent);
+  background: var(--bg-sub);
+  border-bottom-color: var(--primary-color);
 }
 
 :host-context(.memo-container-dark-theme) .edit-button,
@@ -118,12 +118,12 @@
 }
 
 :host-context(.memo-container-dark-theme) .edit-button:hover {
-  background: var(--bg-hover);
+  background: var(--bg-sub);
 }
 
 :host-context(.memo-container-dark-theme) .bili-memo-input,
 .memo-container-dark-theme .bili-memo-input {
   background: var(--bg-main);
-  border-color: var(--border-accent);
+  border-color: var(--primary-color);
   color: var(--text-main);
 }

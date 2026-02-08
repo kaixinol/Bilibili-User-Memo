@@ -406,7 +406,7 @@ class PageInjector {
       querySelectorDeep(
         `up-avatar-wrap a[href*="${userID}"] img.bili-avatar-img`,
       )?.getAttribute("data-src") ||
-      `https://i0.hdslb.com/bfs/face/member/noface.jpg`
+      `https://i0.hdslb.com/bfs/face/member/noface.jpg@96w_96h_1c_1s.avif`
     );
   }
   /**
@@ -594,7 +594,7 @@ class PageInjector {
       const newUser: BiliUser = {
         id: uid,
         nickname: fallbackName || uid,
-        avatar: "",
+        avatar: this.getUserAvatar(uid),
         memo: newMemo,
       };
       this.users.push(newUser);

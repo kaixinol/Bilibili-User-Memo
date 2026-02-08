@@ -15,37 +15,47 @@ input {
 
 /* Color Variables */
 :root {
-  --primary-color: rgb(251, 114, 153);
-  --primary-hover: rgb(240, 100, 140);
-  --primary-active: rgb(230, 90, 130);
-  --text-primary: rgb(51, 51, 51);
-  --text-secondary: rgb(161, 160, 160);
-  --border-color: rgb(204, 204, 204);
-  --border-light: rgb(233, 233, 233);
-  --link-color: rgb(0, 174, 236);
-  --link-hover: rgb(0, 150, 200);
-  --shadow-light: rgba(0, 0, 0, 0.09);
-  --shadow-medium: rgba(0, 0, 0, 0.13);
+  /* Brand */
+  --primary-color: #fb7299;
+  --primary-alpha: rgba(251, 114, 153, 0.15);
+  --link-color: #00aeec;
+
+  /* Surfaces */
+  --bg-main: #ffffff;
+  --bg-sub: #f6f8fa;
+
+  /* Text */
+  --text-main: #333333;
+  --text-sub: #666666;
+  --text-inverse: #ffffff;
+
+  /* Borders */
+  --border-main: #d1d1d1;
+
+  /* Shadows */
+  --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.15);
+  --shadow-dark: 0 8px 24px rgba(0, 0, 0, 0.4);
+
+  /* Overlays */
+  --overlay: rgba(0, 0, 0, 0.15);
+  --glass: rgba(255, 255, 255, 0.35);
+
+  /* Focus */
+  --focus-color: #0366d6;
+  --focus-ring: rgba(3, 102, 214, 0.2);
+
+  /* Danger */
+  --danger-color: #d73a49;
+  --danger-alpha: rgba(215, 58, 73, 0.1);
 }
 
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text-primary: rgb(220, 220, 220);
-    --text-secondary: rgb(150, 150, 150);
-    --border-color: rgb(80, 80, 80);
-    --border-light: rgb(60, 60, 60);
-  }
-}
 .memo-container-dark-theme {
   --bg-main: #18181b;
   --bg-sub: #202024;
-  --bg-hover: #2a2a2e;
 
   --border-main: #2f2f33;
-  --border-accent: #fb7299;
 
   --text-main: #e5e7eb;
   --text-sub: #a1a1aa;
-  --text-muted: #71717a;
+  --link-color: #7dd3fc;
 }

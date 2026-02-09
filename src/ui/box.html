@@ -1,4 +1,15 @@
-<div class="user-box">
+<div
+  class="user-box"
+  :class="{ 'is-selected': $store.userList.isSelected(user.id) }"
+>
+  <label class="user-select" x-show="$store.userList.isMultiSelect">
+    <input
+      type="checkbox"
+      :checked="$store.userList.isSelected(user.id)"
+      @click.stop="$store.userList.toggleSelected(user.id)"
+    />
+    <span class="user-select-mark"></span>
+  </label>
   <div class="user-avatar-wrapper">
     <img :src="user.avatar" class="user-avatar" :alt="user.nickname" />
   </div>
@@ -45,6 +56,7 @@
     class="delete-btn"
     style="cursor: pointer; z-index: 10"
     @click="if(confirm('确定要删除吗？')) { $store.userList.removeUser(user.id) }"
+    x-show="!$store.userList.isMultiSelect"
     title="删除用户"
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"

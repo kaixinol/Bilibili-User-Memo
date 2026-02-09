@@ -1,6 +1,18 @@
-import { string, optional, object, record, array } from "valibot";
-import { safeParse } from "valibot";
+import {
+  string,
+  optional,
+  object,
+  record,
+  array,
+  union,
+  safeParse,
+  type InferOutput,
+} from "valibot";
+
+// --- 1. Schema 定义 ---
 const UID = string();
+
+// 新版模型
 const UserSchema = object({
   id: UID,
   nickname: string(),
@@ -8,35 +20,47 @@ const UserSchema = object({
   memo: string(),
 });
 
-const UsersSchema = array(UserSchema);
-
+// 旧版模型
 const UserSchemaOld = object({
   bid: UID,
   nickname: string(),
   memo: string(),
-  avatar: optional(string()), // 可选字段
-  info: string(), // 空字符串也合法
+  avatar: optional(string()),
+  info: string(),
 });
 
-// 定义用户字典 schema（key 为字符串，value 为 UserSchema）
-const UsersSchemaOld = record(UID, UserSchemaOld);
-function validateEitherJSON(dataStr: string): boolean {
-  let data: unknown;
-  try {
-    data = JSON.parse(dataStr); // 解包 JSON 字符串
-  } catch {
-    return false; // JSON 本身无效
-  }
+// 组合 Schema：自动识别是 数组(新) 还是 字典(旧)
+const CombinedSchema = union([array(UserSchema), record(UID, UserSchemaOld)]);
 
-  // 遍历 schema，任意一个通过就算成功
-  for (const schema of [UsersSchema, UsersSchemaOld]) {
-    try {
-      safeParse(schema, data);
-      return true; // 成功匹配
-    } catch {}
-  }
+// --- 2. 类型定义 ---
+type ValidateResult = { ok: true } | { ok: false; error: string };
 
-  return false; // 全部失败
+// --- 3. 辅助函数：优化错误信息格式化 ---
+function formatIssues(
+  issues: NonNullable<ReturnType<typeof safeParse>["issues"]>,
+): string {
+  return issues
+    .slice(0, 2)
+    .map(({ path, message }) => {
+      // 优雅地处理路径提取
+      const pathStr =
+        path
+          ?.map((p) => p.key)
+          .filter(Boolean)
+          .join(".") || "";
+      return pathStr ? `[${pathStr}] ${message}` : message;
+    })
+    .join("; ");
 }
 
-export { validateEitherJSON };
+// 校验函数
+export function validateEitherJSON(data: unknown): ValidateResult {
+  const result = safeParse(CombinedSchema, data);
+
+  if (result.success) return { ok: true };
+
+  return {
+    ok: false,
+    error: `格式不匹配: ${formatIssues(result.issues)}`,
+  };
+}

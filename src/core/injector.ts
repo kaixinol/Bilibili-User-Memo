@@ -10,6 +10,35 @@ import { sleep } from "../utils/sleep";
 import allStyle from "../styles/memo.css?inline";
 const GLOBAL_STYLE_SHEET = new CSSStyleSheet();
 GLOBAL_STYLE_SHEET.replaceSync(allStyle);
+const CUSTOM_MEMO_STYLE_SHEET = new CSSStyleSheet();
+CUSTOM_MEMO_STYLE_SHEET.replaceSync("");
+const MEMO_STYLE_TARGET_SELECTOR =
+  ".bili-memo-tag, .editable-textarea, .edit-button, .bili-memo-input";
+
+function ensureMemoStyleSheets(root: Document | ShadowRoot) {
+  const sheets = root.adoptedStyleSheets;
+  const hasGlobal = sheets.includes(GLOBAL_STYLE_SHEET);
+  const hasCustom = sheets.includes(CUSTOM_MEMO_STYLE_SHEET);
+  if (hasGlobal && hasCustom) return;
+
+  const next = sheets.slice();
+  if (!hasGlobal) next.push(GLOBAL_STYLE_SHEET);
+  if (!hasCustom) next.push(CUSTOM_MEMO_STYLE_SHEET);
+  root.adoptedStyleSheets = next;
+}
+
+function applyCustomMemoStyleToExistingRoots() {
+  const targets = querySelectorAllDeep(MEMO_STYLE_TARGET_SELECTOR);
+  if (!targets || targets.length === 0) return;
+  const roots = new Set<Document | ShadowRoot>();
+  targets.forEach((el) => {
+    const root = el.getRootNode();
+    if (root instanceof ShadowRoot || root instanceof Document) {
+      roots.add(root);
+    }
+  });
+  roots.forEach((root) => ensureMemoStyleSheets(root));
+}
 interface BiliUser {
   id: string;
   nickname: string;
@@ -687,12 +716,7 @@ class PageInjector {
   private ensureStyles(target: HTMLElement) {
     const root = target.getRootNode();
     if (root instanceof ShadowRoot || root instanceof Document) {
-      if (!root.adoptedStyleSheets.includes(GLOBAL_STYLE_SHEET)) {
-        root.adoptedStyleSheets = [
-          ...root.adoptedStyleSheets,
-          GLOBAL_STYLE_SHEET,
-        ];
-      }
+      ensureMemoStyleSheets(root);
     }
   }
 
@@ -714,4 +738,26 @@ export function initPageInjection() {
 }
 export function refreshPageInjection() {
   pageInjector?.refreshData();
+}
+export function setCustomMemoCss(css: string): {
+  ok: boolean;
+  error?: string;
+  ruleCount: number;
+} {
+  const nextCss = css ?? "";
+  try {
+    CUSTOM_MEMO_STYLE_SHEET.replaceSync(nextCss);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : `未知错误: ${String(error)}`;
+    logger.warn("⚠️ 自定义备注 CSS 解析失败:", error);
+    return {
+      ok: false,
+      error: message,
+      ruleCount: CUSTOM_MEMO_STYLE_SHEET.cssRules.length,
+    };
+  }
+
+  applyCustomMemoStyleToExistingRoots();
+  return { ok: true, ruleCount: CUSTOM_MEMO_STYLE_SHEET.cssRules.length };
 }

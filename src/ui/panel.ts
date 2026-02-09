@@ -7,8 +7,99 @@ import "../styles/box.css";
 import { GM_getValue, GM_setValue } from "vite-plugin-monkey/dist/client";
 import { getUserInfo } from "../utils/sign";
 import { logger } from "../utils/logger";
-import { refreshPageInjection } from "../core/injector";
+import { refreshPageInjection, setCustomMemoCss } from "../core/injector";
 import { validateEitherJSON } from "../configs/schema";
+
+const CUSTOM_FONT_COLOR_KEY = "customFontColor";
+const CUSTOM_MEMO_CSS_KEY = "customMemoCss";
+
+function applyCustomFontColor(color: string) {
+  if (!color) return;
+  document.documentElement.style.setProperty("--custom-font-color-base", color);
+}
+
+function getDefaultFontColor() {
+  const computed = getComputedStyle(document.documentElement);
+  return (
+    computed.getPropertyValue("--custom-font-color-base").trim() ||
+    computed.getPropertyValue("--primary-color").trim() ||
+    "#fb7299"
+  );
+}
+
+function lintCss(css: string): string | null {
+  const s = css.trim();
+  if (!s) return null;
+  let q: "'" | '"' | null = null;
+  let esc = false;
+  let c = 0;
+  let br = 0;
+  let pr = 0;
+  let bk = 0;
+  for (let i = 0; i < s.length; i++) {
+    const ch = s[i];
+    const nx = s[i + 1];
+    if (c > 0) {
+      if (ch === "*" && nx === "/") {
+        c--;
+        i++;
+      }
+      continue;
+    }
+    if (q) {
+      if (esc) {
+        esc = false;
+        continue;
+      }
+      if (ch === "\\") {
+        esc = true;
+        continue;
+      }
+      if (ch === q) q = null;
+      continue;
+    }
+    if (ch === "/" && nx === "*") {
+      c++;
+      i++;
+      continue;
+    }
+    if (ch === "'" || ch === '"') {
+      q = ch;
+      continue;
+    }
+    if (ch === "{") br++;
+    else if (ch === "}") br--;
+    else if (ch === "(") pr++;
+    else if (ch === ")") pr--;
+    else if (ch === "[") bk++;
+    else if (ch === "]") bk--;
+    if (br < 0) return "多余的 '}'";
+    if (pr < 0) return "多余的 ')'";
+    if (bk < 0) return "多余的 ']'";
+  }
+  if (c > 0) return "注释未闭合";
+  if (q) return `字符串未闭合：${q}`;
+  if (br > 0) return "缺少 '}'";
+  if (pr > 0) return "缺少 ')'";
+  if (bk > 0) return "缺少 ']'";
+  return null;
+}
+
+function detectCssParsingIssue(
+  css: string,
+  ruleCount: number | undefined,
+): string | null {
+  if (!css.trim()) return null;
+  if ((ruleCount || 0) !== 0) return null;
+  const stripped = css
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, "");
+  if (/{/.test(stripped)) {
+    return "浏览器未解析出任何规则，可能语法错误被忽略";
+  }
+  return null;
+}
+
 /* =========================
  * 类型定义
  * ========================= */
@@ -29,8 +120,16 @@ interface UserListStore {
   refreshTotal: number;
   displayMode: number;
   searchQuery: string;
+  isMultiSelect: boolean;
+  selectedIds: string[];
   updateUser(id: string, updates: Partial<BiliUser>): void;
   removeUser(id: string): void;
+  toggleMultiSelect(): void;
+  toggleSelected(id: string): void;
+  isSelected(id: string): boolean;
+  clearSelection(): void;
+  invertSelection(ids: string[]): void;
+  removeSelected(): void;
   setDisplayMode(mode: number): void;
   saveUsers(): void;
   exportData(): void;
@@ -62,6 +161,8 @@ function registerUserStore() {
     refreshTotal: 0,
     displayMode: GM_getValue<number>("displayMode", 2),
     searchQuery: "",
+    isMultiSelect: false,
+    selectedIds: [],
 
     // 【核心修改】使用 Getter 自动计算过滤后的列表
     get filteredUsers() {
@@ -131,8 +232,43 @@ function registerUserStore() {
       if (index !== -1) {
         this.users.splice(index, 1);
         this.saveUsers();
-        refreshPageInjection();
       }
+    },
+    toggleMultiSelect() {
+      this.isMultiSelect = !this.isMultiSelect;
+      if (!this.isMultiSelect) {
+        this.clearSelection();
+      }
+    },
+    toggleSelected(id: string) {
+      if (this.selectedIds.includes(id)) {
+        this.selectedIds = this.selectedIds.filter((item) => item !== id);
+        return;
+      }
+      this.selectedIds = [...this.selectedIds, id];
+    },
+    isSelected(id: string) {
+      return this.selectedIds.includes(id);
+    },
+    clearSelection() {
+      this.selectedIds = [];
+    },
+    invertSelection(ids: string[]) {
+      if (ids.length === 0) return;
+      const current = new Set(this.selectedIds);
+      const next = new Set(current);
+      ids.forEach((id) => {
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+      });
+      this.selectedIds = Array.from(next);
+    },
+    removeSelected() {
+      if (this.selectedIds.length === 0) return;
+      const targets = new Set(this.selectedIds);
+      this.users = this.users.filter((user) => !targets.has(user.id));
+      this.clearSelection();
+      this.saveUsers();
     },
 
     setDisplayMode(mode: number) {
@@ -208,8 +344,9 @@ function registerUserStore() {
           const fileContent = await file.text();
           const parsedData = JSON.parse(fileContent);
 
-          if (!validateEitherJSON(fileContent)) {
-            alert("导入失败：不支持的JSON格式");
+          const validation = validateEitherJSON(parsedData);
+          if (!validation.ok) {
+            alert(`导入失败：${validation.error}`);
             return;
           }
 
@@ -348,6 +485,99 @@ export function initMainPanel() {
   container.id = "bili-memo-container";
   container.innerHTML = finalHtml;
   document.body.appendChild(container);
+
+  const storedColor = GM_getValue<string>(CUSTOM_FONT_COLOR_KEY, "");
+  const initialColor = storedColor || getDefaultFontColor();
+  applyCustomFontColor(initialColor);
+
+  const colorInput = container.querySelector(
+    ".ghost-color-picker",
+  ) as HTMLInputElement | null;
+  if (colorInput) {
+    colorInput.value = initialColor;
+    colorInput.addEventListener("input", () => {
+      const nextColor = colorInput.value;
+      applyCustomFontColor(nextColor);
+      GM_setValue(CUSTOM_FONT_COLOR_KEY, nextColor);
+    });
+  }
+
+  const storedMemoCss = GM_getValue<string>(CUSTOM_MEMO_CSS_KEY, "");
+  const memoCssStatus = container.querySelector(
+    ".panel-custom-css-status",
+  ) as HTMLDivElement | null;
+
+  const setCssStatus = (message: string) => {
+    if (!memoCssStatus) return;
+    if (!message) {
+      memoCssStatus.textContent = "";
+      memoCssStatus.classList.remove("is-visible");
+      return;
+    }
+    memoCssStatus.textContent = message;
+    memoCssStatus.classList.add("is-visible");
+  };
+
+  const initialApply = setCustomMemoCss(storedMemoCss);
+  const initialLint = lintCss(storedMemoCss);
+  const initialParseWarn = detectCssParsingIssue(
+    storedMemoCss,
+    initialApply.ruleCount,
+  );
+  if (initialLint) {
+    setCssStatus(`CSS 语法警告：${initialLint}`);
+  } else if (!initialApply.ok) {
+    setCssStatus(`CSS 语法错误：${initialApply.error || "无法解析"}`);
+  } else if (initialParseWarn) {
+    setCssStatus(`CSS 解析警告：${initialParseWarn}`);
+  } else {
+    setCssStatus("");
+  }
+
+  const memoCssInput = container.querySelector(
+    ".panel-custom-css-input",
+  ) as HTMLTextAreaElement | null;
+  const colorSetting = container.querySelector(
+    ".panel-custom-color-setting",
+  ) as HTMLLabelElement | null;
+
+  if (colorSetting) {
+    colorSetting.addEventListener("click", () => {
+      container.classList.remove("advanced-css-open");
+    });
+    colorSetting.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      container.classList.toggle("advanced-css-open");
+      if (container.classList.contains("advanced-css-open")) {
+        memoCssInput?.focus();
+      }
+    });
+  }
+  if (memoCssInput) {
+    memoCssInput.value = storedMemoCss;
+    let cssTimer: number | undefined;
+    const applyNow = () => {
+      const nextCss = memoCssInput.value || "";
+      const result = setCustomMemoCss(nextCss);
+      const lintResult = lintCss(nextCss);
+      const parseWarn = detectCssParsingIssue(nextCss, result.ruleCount);
+      if (lintResult) {
+        setCssStatus(`CSS 语法警告：${lintResult}`);
+      } else if (!result.ok) {
+        setCssStatus(`CSS 语法错误：${result.error || "无法解析"}`);
+      } else if (parseWarn) {
+        setCssStatus(`CSS 解析警告：${parseWarn}`);
+      } else {
+        setCssStatus("");
+      }
+      GM_setValue(CUSTOM_MEMO_CSS_KEY, nextCss);
+    };
+    memoCssInput.addEventListener("input", () => {
+      if (cssTimer) window.clearTimeout(cssTimer);
+      cssTimer = window.setTimeout(applyNow, 1000);
+    });
+    memoCssInput.addEventListener("blur", applyNow);
+  }
 
   // 添加页面卸载时的自动保存
   window.addEventListener("beforeunload", () => {

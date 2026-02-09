@@ -1,5 +1,6 @@
 /* Panel Container - 增加柔和阴影和更平滑的过渡 */
 .panel-container {
+  color-scheme: light;
   position: fixed;
   height: 46vh;
   left: 0;
@@ -73,6 +74,63 @@
   align-items: center;
   gap: 10px;
 }
+.panel-custom-css-section {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: var(--bg-sub);
+  border: 1px solid var(--border-main);
+  display: none;
+  flex-direction: column;
+  gap: 6px;
+}
+.advanced-css-open .panel-custom-css-section {
+  display: flex;
+}
+.panel-custom-css-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+}
+.panel-custom-css-input {
+  width: 100%;
+  min-height: 90px;
+  resize: vertical;
+  border-radius: 8px;
+  border: 1px solid var(--border-main);
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-size: 12px;
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  padding: 8px 10px;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+.panel-custom-css-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-alpha);
+}
+.panel-custom-css-status {
+  display: none;
+  font-size: 12px;
+  color: var(--text-inverse);
+  background: var(--danger-color);
+  border-radius: 6px;
+  padding: 4px 8px;
+  line-height: 1.4;
+}
+.panel-custom-css-status.is-visible {
+  display: block;
+}
+.panel-custom-css-hint {
+  font-size: 12px;
+  color: var(--text-sub);
+  line-height: 1.4;
+}
 .panel-custom-color-setting {
   display: flex;
   align-items: center;
@@ -94,6 +152,7 @@
   border-radius: 4px;
   border: 1px solid var(--border-main);
   pointer-events: none; /* 让点击穿透到 label */
+  background: var(--custom-font-color, var(--primary-color));
 }
 
 /* --- 核心魔法开始 --- */
@@ -183,7 +242,6 @@
   gap: 6px;
   font-size: 14px;
   color: var(--text-sub);
-  color-scheme: light;
   cursor: pointer;
 }
 
@@ -211,6 +269,35 @@
 .panel-btn:hover {
   background: var(--primary-color);
   color: var(--text-inverse);
+}
+.panel-btn.btn-active {
+  background: var(--primary-color);
+  color: var(--text-inverse);
+}
+
+.panel-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid var(--primary-color);
+  background: var(--bg-main);
+  border-radius: 18px;
+  color: var(--primary-color);
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.2s;
+}
+.panel-icon-btn svg {
+  width: 16px;
+  height: 16px;
+}
+.panel-icon-btn:hover {
+  background: var(--primary-color);
+  color: var(--text-inverse);
+}
+.panel-icon-text {
+  font-size: 12px;
 }
 
 .panel-title {
@@ -286,6 +373,7 @@
   background: var(--bg-main);
   border-top-color: var(--primary-color);
   box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
 }
 
 .memo-container-dark-theme .panel-toggle-btn {
@@ -299,7 +387,6 @@
 
 .memo-container-dark-theme .panel-mode-option {
   color: var(--text-sub);
-  color-scheme: dark;
 }
 
 .memo-container-dark-theme .panel-btn {
@@ -309,6 +396,15 @@
 }
 
 .memo-container-dark-theme .panel-btn:hover {
+  background: var(--primary-color);
+  color: var(--text-main);
+}
+.memo-container-dark-theme .panel-icon-btn {
+  background: transparent;
+  color: var(--primary-color);
+  border-color: var(--primary-color);
+}
+.memo-container-dark-theme .panel-icon-btn:hover {
   background: var(--primary-color);
   color: var(--text-main);
 }
@@ -340,6 +436,13 @@
   cursor: not-allowed;
   opacity: 0.8;
   transform: none; /* 移除点击缩放效果 */
+}
+.panel-icon-btn:disabled {
+  background-color: var(--border-main);
+  color: var(--text-sub);
+  cursor: not-allowed;
+  opacity: 0.8;
+  transform: none;
 }
 
 .loading-spinner {

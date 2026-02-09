@@ -3,6 +3,12 @@
   x-show="true"
   class="panel-container"
   :class="isOpen ? 'open' : 'closed'"
+  @keydown.window="
+    if ($store.userList.isMultiSelect && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
+      event.preventDefault();
+      $store.userList.invertSelection($store.userList.filteredUsers.map(u => u.id));
+    }
+  "
   x-cloak
 >
   <div class="panel-inner">
@@ -59,13 +65,12 @@
       </div>
       <div class="panel-right-actions">
         <label class="panel-custom-color-setting">
-          <span class="setting-text">自定义备注颜色</span>
-          <div
-            class="color-preview"
-            style="background: var(--primary-color)"
-          ></div>
+          <span class="setting-text" title="左键自定义颜色&#10;右键自定义样式"
+            >自定义备注颜色</span
+          >
+          <div class="color-preview"></div>
 
-          <input type="color" class="ghost-color-picker" value="#ff69b4" />
+          <input type="color" class="ghost-color-picker" value="#fb7299" />
         </label>
         <div class="panel-theme-toggle" x-data="themeHandler" @click="toggle()">
           <svg
@@ -111,6 +116,30 @@
         </div>
       </div>
     </div>
+    <div class="panel-custom-css-section">
+      <div class="panel-custom-css-title">自定义备注样式（CSS）</div>
+      <textarea
+        class="panel-custom-css-input"
+        placeholder="示例：
+.bili-memo-tag {
+  font-style: italic;
+  letter-spacing: 0.5px;
+}
+.editable-textarea {
+  background: rgba(0,0,0,0.08);
+  border-bottom: 2px solid currentColor;
+}"
+      ></textarea>
+      <div
+        class="panel-custom-css-status"
+        role="status"
+        aria-live="polite"
+      ></div>
+      <div class="panel-custom-css-hint">
+        这里支持完整 CSS 选择器。只影响备注相关元素时，建议用 .bili-memo-tag /
+        .editable-textarea / .bili-memo-input
+      </div>
+    </div>
     <div class="panel-control-bar">
       <button
         class="panel-btn"
@@ -118,6 +147,41 @@
         title="导入JSON文件，支持老格式"
       >
         导入
+      </button>
+      <button
+        class="panel-btn"
+        @click="$store.userList.toggleMultiSelect()"
+        :class="{ 'btn-active': $store.userList.isMultiSelect }"
+        title="按Ctrl + A 全选 / 反选"
+      >
+        <span x-show="!$store.userList.isMultiSelect">多选用户</span>
+        <span x-show="$store.userList.isMultiSelect">退出多选</span>
+      </button>
+      <button
+        class="panel-icon-btn"
+        x-show="$store.userList.isMultiSelect"
+        :disabled="$store.userList.selectedIds.length === 0"
+        @click="if(confirm(`确定要删除所选 ${$store.userList.selectedIds.length} 个用户吗？`)) { $store.userList.removeSelected() }"
+        title="删除所选用户"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path d="M10 11v6" />
+          <path d="M14 11v6" />
+          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+          <path d="M3 6h18" />
+          <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+        </svg>
+        <span class="panel-icon-text" x-show="$store.userList.isMultiSelect"
+          >已选 <span x-text="$store.userList.selectedIds.length"></span
+        ></span>
       </button>
       <div class="panel-title">备注列表</div>
       <button

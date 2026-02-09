@@ -42,6 +42,7 @@ interface BasePageRule {
    * 適用場景：當 aSelector 是一個容器，而真正的名字在內層某個 span 時使用
    */
   textSelector?: string;
+  fontSize?: string;
 }
 
 /**
@@ -83,12 +84,24 @@ export const config: SiteConfig = new Map([
     },
   ],
   [
+    /^https:\/\/www\.bilibili\.com\/(video|list)\/.*/,
+    {
+      name: "视频页面 - 推荐",
+      injectMode: InjectionMode.Dynamic,
+      styleScope: StyleScope.Minimal,
+      aSelector: ".upname a",
+      textSelector: "span.name",
+      trigger: { watch: ".rcmd-tab", interval: 1000 },
+    },
+  ],
+  [
     /^https:\/\/space\.bilibili\.com\/.*/,
     {
       name: "空间",
       injectMode: InjectionMode.Static,
       styleScope: StyleScope.Editable,
       aSelector: ".nickname",
+      fontSize: "24px",
     },
   ],
   [
@@ -109,6 +122,20 @@ export const config: SiteConfig = new Map([
       styleScope: StyleScope.Extended,
       aSelector: "#user-name a",
       trigger: { watch: "#contents", interval: 1000 },
+    },
+  ],
+  [
+    /^https:\/\/message\.bilibili\.com\/.*/,
+    {
+      name: "评论区",
+      injectMode: InjectionMode.Dynamic,
+      styleScope: StyleScope.Minimal,
+      aSelector: 'div[data-id^="contact"]',
+      textSelector: "div[class^='_SessionItem__Name']",
+      trigger: {
+        watch: 'div.im-container div[class^="_Sidebar_"]',
+        interval: 1000,
+      },
     },
   ],
 ]);

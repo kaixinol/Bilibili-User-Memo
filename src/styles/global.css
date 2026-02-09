@@ -15,6 +15,9 @@ input {
 
 /* Color Variables */
 :root {
+  --custom-font-size: 14px;
+  --custom-font-color-base: var(--primary-color);
+  --custom-font-color: var(--custom-font-color-base);
   /* Brand */
   --primary-color: #fb7299;
   --primary-alpha: rgba(251, 114, 153, 0.15);
@@ -58,4 +61,11 @@ input {
   --text-main: #e5e7eb;
   --text-sub: #a1a1aa;
   --link-color: #7dd3fc;
+
+  /* 在暗色背景下，自动提高备注颜色亮度以保证可读性 */
+  --custom-font-color: color-mix(
+    in oklab,
+    var(--custom-font-color-base) 70%,
+    white 30%
+  );
 }

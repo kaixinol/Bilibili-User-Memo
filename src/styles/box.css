@@ -38,6 +38,48 @@
   border-color: var(--primary-color);
   background: var(--primary-alpha); /* 悬浮时给个淡淡的底色 */
 }
+.user-box.is-selected {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-alpha);
+}
+
+.user-select {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  margin-right: 8px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.user-select input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.user-select-mark {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--border-main);
+  background: var(--bg-main);
+  box-shadow: var(--shadow-elevated);
+}
+.user-select input:checked + .user-select-mark {
+  border-color: var(--primary-color);
+  background: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-alpha);
+}
+.user-select input:checked + .user-select-mark::after {
+  content: "";
+  display: block;
+  width: 8px;
+  height: 4px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: translate(3px, 4px) rotate(-45deg);
+}
 
 /* 头像：稍微缩小一点 */
 .user-avatar-wrapper {
@@ -130,7 +172,7 @@
   outline: none;
   font-size: 13px;
   width: 100%;
-  color: var(--primary-color);
+  color: var(--custom-font-color, var(--primary-color));
   background: transparent;
   padding: 0;
   cursor: pointer; /* 提示用户可以点击 */
@@ -202,6 +244,16 @@
 
 .memo-container-dark-theme .user-note-input.editing {
   background: var(--primary-alpha);
+}
+.memo-container-dark-theme .user-select-mark {
+  background: var(--bg-sub);
+  border-color: var(--text-sub);
+  box-shadow: var(--shadow-dark);
+}
+.memo-container-dark-theme .user-select input:checked + .user-select-mark {
+  border-color: var(--primary-color);
+  background: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-alpha);
 }
 
 .delete-btn {

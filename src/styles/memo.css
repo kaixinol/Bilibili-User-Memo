@@ -4,10 +4,10 @@
 以上方式用 setProperty 设置变量即可
 */
 .editable-textarea {
-  font-size: 20px;
+  font-size: var(--custom-font-size, 14px);
   font-weight: 600;
   min-width: 2ch;
-  color: var(--primary-color);
+  color: inherit;
   margin-right: 8px;
   padding: 4px 6px;
   display: inline-block;
@@ -29,10 +29,15 @@
   opacity: 0.85;
 }
 
+:where(.editable-textarea).bili-memo-has-memo,
+:where(.editable-textarea).bili-memo-has-memo:hover,
+:where(.editable-textarea).bili-memo-has-memo:focus {
+  color: var(--custom-font-color, var(--primary-color)) !important;
+}
+
 /* hover 状态 */
 .editable-textarea:hover {
   background: var(--glass);
-  color: var(--primary-color);
 }
 
 /* 聚焦高亮 */
@@ -40,7 +45,6 @@
   border-bottom-color: var(--focus-color);
   background: var(--bg-main);
   opacity: 1;
-  color: var(--primary-color);
 }
 .edit-button {
   font-size: 14px;
@@ -78,33 +82,35 @@
 }
 
 .bili-memo-tag {
-  font-size: 14px;
-  margin-left: 4px;
-  font-weight: bold;
   cursor: pointer;
   display: inline;
   vertical-align: middle;
+}
+.bili-memo-has-memo {
+  font-size: var(--custom-font-size, 14px);
+  margin-left: 4px;
+  font-weight: bold;
+  color: var(--custom-font-color, var(--primary-color)) !important;
 }
 
 .bili-memo-input {
   background: var(--bg-main);
   border: 1px solid var(--primary-color);
-  font-size: 14px;
+  font-size: var(--custom-font-size, 14px);
   padding: 0 4px;
   margin-left: 4px;
   border-radius: 4px;
   outline: none;
   width: var(--memo-input-width, 60px);
   display: inline-block;
-  height: 18px;
-  line-height: 18px;
+  height: calc(var(--custom-font-size, 14px) + 6px);
+  line-height: calc(var(--custom-font-size, 14px) + 6px);
   vertical-align: middle;
 }
 
 :host-context(.memo-container-dark-theme) .editable-textarea {
   background: var(--overlay);
   border-bottom-color: var(--glass);
-  color: var(--primary-color);
 }
 
 :host-context(.memo-container-dark-theme) .editable-textarea:focus {
@@ -126,4 +132,17 @@
   background: var(--bg-main);
   border-color: var(--primary-color);
   color: var(--text-main);
+}
+
+.bili-memo-empty:not(.editable-textarea) {
+  font-size: inherit;
+  font-weight: inherit;
+  color: inherit;
+  margin-left: 0;
+}
+
+.editable-textarea.bili-memo-empty,
+.editable-textarea.bili-memo-empty:hover,
+.editable-textarea.bili-memo-empty:focus {
+  color: inherit;
 }

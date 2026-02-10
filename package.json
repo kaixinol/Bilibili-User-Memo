@@ -1,7 +1,7 @@
 {
   "name": "bili-user-memo",
-  "version": "1.0.0",
-  "description": "B站一键备注 Rev的重写版本",
+  "version": "1.0.1",
+  "description": "B站UP主一键备注 | B站一键备注 Rev 的重写版本",
   "main": "main.js",
   "scripts": {
     "dev": "vite --mode debug",
@@ -19,7 +19,7 @@
   "packageManager": "pnpm@10.28.0",
   "devDependencies": {
     "@types/alpinejs": "^3.13.11",
-    "@types/node": "^25.1.0",
+    "@types/node": "^25.2.3",
     "@types/tampermonkey": "^5.0.5",
     "@typescript-eslint/eslint-plugin": "^8.55.0",
     "@typescript-eslint/parser": "^8.55.0",
@@ -32,9 +32,9 @@
   },
   "dependencies": {
     "@trim21/gm-fetch": "^0.3.0",
-    "alpinejs": "^3.15.5",
+    "alpinejs": "^3.15.8",
     "gm-fetch": "^2.0.1",
-    "p-limit": "^7.2.0",
+    "p-limit": "^7.3.0",
     "query-selector-shadow-dom": "^1.0.1",
     "valibot": "^1.2.0"
   },

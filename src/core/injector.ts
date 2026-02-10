@@ -203,9 +203,9 @@ export class PageInjector {
    * B站是 SPA，pushState/replaceState 难以完全覆盖所有跳转场景，轮询最稳健
    */
   private startUrlMonitor() {
-    this.lastUrl = window.location.href;
+    this.lastUrl = unsafeWindow.location.href;
     window.setInterval(() => {
-      const currentUrl = window.location.href;
+      const currentUrl = unsafeWindow.location.href;
       if (currentUrl !== this.lastUrl) {
         this.lastUrl = currentUrl;
         logger.debug(`🌏 URL 变更检测: ${currentUrl}`);
@@ -411,7 +411,7 @@ export class PageInjector {
    * 获取当前 URL 匹配的规则
    */
   private getMatchedRules(): PageRule[] {
-    const currentUrl = window.location.href;
+    const currentUrl = unsafeWindow.location.href;
     return Array.from(config.entries())
       .filter(([pattern]) => pattern.test(currentUrl))
       .map(([_, rule]) => rule);
@@ -462,7 +462,7 @@ export class PageInjector {
   private async waitForBiliEnvironment(): Promise<void> {
     return new Promise((resolve) => {
       const check = () => {
-        const win = window as any;
+        const win = unsafeWindow as any;
         // 适当放宽检测条件，部分页面可能只依赖 Vue
         if (win.__VUE__) resolve();
         else setTimeout(check, 50);

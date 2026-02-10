@@ -21,9 +21,10 @@ export default defineConfig(({ mode }) => {
             "GM_getValue",
             "GM_xmlhttpRequest",
             "GM_addValueChangeListener",
+            "unsafeWindow",
           ],
           connect: ["api.bilibili.com"],
-          "run-at": "document-start",
+          "run-at": "document-body",
         },
         build: {
           externalGlobals: {

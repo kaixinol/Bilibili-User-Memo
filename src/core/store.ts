@@ -1,8 +1,3 @@
-import {
-  GM_getValue,
-  GM_setValue,
-  GM_addValueChangeListener,
-} from "vite-plugin-monkey/dist/client";
 import Alpine from "alpinejs";
 import { logger } from "../utils/logger";
 import { BiliUser } from "./types";
@@ -42,7 +37,7 @@ class UserStore {
    */
   private listenToRemoteChanges() {
     // 1. 监听用户列表变更
-    GM_addValueChangeListener<BiliUser[]>(
+    GM_addValueChangeListener(
       "biliUsers",
       (name, oldValue, newValue, remote) => {
         // 如果正在进行本地系统写入，忽略可能的即时回传，避免冲突
@@ -70,7 +65,7 @@ class UserStore {
     );
 
     // 2. 监听显示模式变更
-    GM_addValueChangeListener<number>(
+    GM_addValueChangeListener(
       "displayMode",
       (name, oldValue, newValue, remote) => {
         if (remote) {

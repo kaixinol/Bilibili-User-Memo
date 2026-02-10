@@ -14,7 +14,7 @@ export function extractUid(el: Element): string | null {
     el.getAttribute("data-user-profile-id");
 
   if (dataUid) return dataUid;
-  const win = window as any;
+  const win = unsafeWindow as any;
   const initialState = win.__INITIAL_STATE__;
 
   const href = el.getAttribute("href") || location.href;

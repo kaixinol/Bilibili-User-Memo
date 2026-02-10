@@ -7,7 +7,7 @@ import { initPageInjection } from "./core/injector";
   initPageInjection();
   initMainPanel();
 
-  window.Alpine = Alpine;
+  unsafeWindow.Alpine = Alpine;
   Alpine.start();
 
   if (__IS_DEBUG__) {

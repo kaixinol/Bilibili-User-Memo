@@ -30,7 +30,7 @@ export default defineConfig(({ mode }) => {
             alpinejs: cdn.jsdelivr("Alpine", "dist/cdn.min.js"),
             "query-selector-shadow-dom": cdn.jsdelivr(
               "querySelectorShadowDom",
-              "dist/querySelectorDeep.min.js",
+              "dist/querySelectorShadowDom.js",
             ),
           },
         },

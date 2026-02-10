@@ -1,6 +1,12 @@
 # Bilibili 用户备注 UI 使用说明
 
+这是原[B站一键备注](https://scriptcat.org/zh-CN/script-show-page/3059)的TypeSciprt + Alpinejs 完全重写的版本
+
+原作者：[pxoxq](https://scriptcat.org/zh-CN/users/143794)
+
 本文档根据当前 UI 代码生成，面向使用者说明面板与调试窗口的功能和操作方式。
+
+## 界面介绍
 
 **界面概览**
 
@@ -72,7 +78,7 @@
 }
 .editable-textarea {
   background: rgba(0, 0, 0, 0.08);
-  border-bottom: 2px solid currentColor;
+  border-bottom: 2px solid pink;
 }
 ```
 
@@ -89,3 +95,7 @@
 - 表情按钮右键可修改开/关按钮文字。
 - ID 文本可点击复制，昵称点击打开主页。
 - 多选模式下支持快捷键批量选择。
+
+## 关于调试模式
+
+建议在调试时，将 `Editable` 改成 `Minimal`，以防止样式污染。

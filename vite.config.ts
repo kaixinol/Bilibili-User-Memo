@@ -9,13 +9,19 @@ export default defineConfig(({ mode }) => {
       monkey({
         entry: "src/main.ts",
         userscript: {
-          name: isDebug ? "【開發版】B站工具箱" : "B站用戶備註工具",
+          name: isDebug ? "【调试】B站一键备注 Rev" : "B站一键备注 Rev",
           namespace: "https://github.com/kaixinol/",
+          website: "https://github.com/kaixinol/Bilibili-User-Memo",
           icon: "https://www.bilibili.com/favicon.ico",
           match: ["https://*.bilibili.com/*"],
           exclude: ["https://*.hdslb.com/*"],
           noframes: true,
-          grant: ["GM_setValue", "GM_getValue", "GM_xmlhttpRequest"],
+          grant: [
+            "GM_setValue",
+            "GM_getValue",
+            "GM_xmlhttpRequest",
+            "GM_addValueChangeListener",
+          ],
           connect: ["api.bilibili.com"],
           "run-at": "document-start",
         },

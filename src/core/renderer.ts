@@ -14,29 +14,42 @@ const wrapperCache = new WeakMap<HTMLElement, HTMLElement>();
 /**
  * 主渲染入口
  */
-export function injectMemoRenderer(
+export async function injectMemoRenderer(
   el: HTMLElement,
   user: BiliUser,
   rule: PageRule,
   meta: ElementMeta,
-): boolean {
+): Promise<boolean> {
   const displayText = formatDisplayName(
     user,
     meta.originalName,
     userStore.displayMode,
   );
-
   // 根据样式作用域分发处理逻辑
   switch (rule.styleScope) {
     case StyleScope.Minimal:
-      if (!rule.textSelector) return renderMinimal(el, displayText, user, meta);
-      else
-        return renderMinimal(
-          el.querySelector(rule.textSelector)!,
-          displayText,
-          user,
-          meta,
-        );
+      if (!rule.textSelector) {
+        return renderMinimal(el, displayText, user, meta);
+      } else {
+        if (!rule.useFallback) {
+          return renderMinimal(
+            el.querySelector(rule.textSelector),
+            displayText,
+            user,
+            meta,
+          );
+        } else if (rule.trigger) {
+          // 针对 私信 - 当前
+          return renderMinimal(
+            document
+              .querySelector(rule.trigger.watch)!
+              .querySelector(rule.textSelector),
+            displayText,
+            user,
+            meta,
+          );
+        }
+      }
     case StyleScope.Editable:
       return renderEditable(el, displayText, user, rule, meta);
     default:
@@ -48,20 +61,26 @@ export function injectMemoRenderer(
 /**
  * 策略 1: Minimal (直接修改原文本)
  */
+
 function renderMinimal(
-  el: HTMLElement,
+  element: HTMLElement | null,
   text: string,
   user: BiliUser,
   meta: ElementMeta,
 ): boolean {
-  // 只有文本变了才操作 DOM，减少重绘
-  if (el.textContent !== text) {
-    el.textContent = text;
+  if (!element) return false;
+
+  // 只需检查一次样式
+  ensureStylesForElement(element);
+
+  // 只有文本变了才更新
+  if (element.textContent !== text) {
+    element.textContent = text;
   }
 
-  // 更新状态类和数据属性
-  updateElementState(el, user, meta);
-  ensureStylesForElement(el);
+  // 更新状态
+  updateElementState(element, user, meta);
+
   return true;
 }
 

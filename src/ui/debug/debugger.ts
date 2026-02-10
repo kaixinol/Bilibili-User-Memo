@@ -100,7 +100,7 @@ export function initDebugger() {
         let id = 1;
         for (const [key, rule] of defaultRules.entries()) {
           if (typeof key === "string" && key === "GLOBAL_INIT") continue;
-          const selectorString = rule.aSelector;
+          const selectorString = rule.textSelector || rule.aSelector;
           this.rules.push({
             id: id++,
             name: rule.name,
@@ -213,7 +213,7 @@ export function initDebugger() {
             if (rect.width <= 0 || rect.height <= 0) continue;
             if (!document.getElementById("debug-style")) {
               const style = document.createElement("style");
-              style.textContent = `.debug-style { display: block !important; }`;
+              style.textContent = `.debug-style { display: flex !important; }`;
               style.id = "debug-style";
               document.body.appendChild(style);
             }

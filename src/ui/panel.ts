@@ -430,7 +430,6 @@ const themeManager = {
  * ========================= */
 export function initMainPanel() {
   if (document.getElementById("bili-memo-container")) return;
-  logger.debug("initMainPanel");
   // 注册 store（必须在 Alpine.start 之前）
   registerUserStore();
   Alpine.data("themeHandler", () => ({
@@ -547,7 +546,6 @@ export function initMainPanel() {
     });
     colorSetting.addEventListener("auxclick", (event) => {
       if (event.button === 1) {
-        logger.debug(event.button);
         document.documentElement.style.removeProperty("--custom-font-color");
         GM_setValue(CUSTOM_FONT_COLOR_KEY, "");
         alert("已取消自定义字体颜色");
@@ -579,12 +577,4 @@ export function initMainPanel() {
     });
     memoCssInput.addEventListener("blur", applyNow);
   }
-
-  // 添加页面卸载时的自动保存
-  window.addEventListener("beforeunload", () => {
-    const store = Alpine.store("userList") as UserListStore;
-    if (store && store.users && store.users.length > 0) {
-      store.saveUsers();
-    }
-  });
 }

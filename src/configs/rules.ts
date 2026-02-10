@@ -1,6 +1,7 @@
 export enum InjectionMode {
   Static = 1, // 適合：一次性全局樣式
   Dynamic = 2, // 適合：需要監聽元素變化並實時修改
+  Polling = 3, // 適合：需要固定間隔輪詢掃描，不推薦用，除非確實沒辦法了。
 }
 
 /**
@@ -41,6 +42,8 @@ interface BasePageRule {
    */
   textSelector?: string;
   fontSize?: string;
+  ignoreProcessed?: boolean;
+  useFallback?: boolean;
 }
 
 /**
@@ -51,21 +54,31 @@ export interface StaticPageRule extends BasePageRule {
   trigger?: never; // 強制不允許 trigger
 }
 
+interface TriggerConfig {
+  watch: string;
+  interval: number;
+}
+
 /**
  * 動態模式：trigger 為必填（觀察 watch、用 interval 防抖）
  */
 export interface DynamicPageRule extends BasePageRule {
   injectMode: InjectionMode.Dynamic;
-  trigger: {
-    watch: string;
-    interval: number;
-  };
+  trigger: TriggerConfig;
+}
+
+/**
+ * 輪詢模式：trigger 為必填（定時輪詢 watch 區域）
+ */
+export interface PollingPageRule extends BasePageRule {
+  injectMode: InjectionMode.Polling;
+  trigger: TriggerConfig;
 }
 
 /**
  * 聯合類型：根據 injectMode 自動切換 trigger 的約束
  */
-export type PageRule = StaticPageRule | DynamicPageRule;
+export type PageRule = StaticPageRule | DynamicPageRule | PollingPageRule;
 
 /**
  * SiteConfig 定義為 Map
@@ -79,6 +92,15 @@ export const config: SiteConfig = new Map([
       injectMode: InjectionMode.Static,
       styleScope: StyleScope.Editable,
       aSelector: ".up-name",
+    },
+  ],
+  [
+    /^https:\/\/www\.bilibili\.com\/(video|list)\/.*/,
+    {
+      name: "视频页面",
+      injectMode: InjectionMode.Static,
+      styleScope: StyleScope.Minimal,
+      aSelector: "a.staff-name",
     },
   ],
   [
@@ -126,14 +148,30 @@ export const config: SiteConfig = new Map([
     /^https:\/\/message\.bilibili\.com\/.*/,
     {
       name: "私信",
-      injectMode: InjectionMode.Dynamic,
+      injectMode: InjectionMode.Polling,
       styleScope: StyleScope.Minimal,
       aSelector: 'div[data-id^="contact"]',
       textSelector: "div[class^='_SessionItem__Name']",
       trigger: {
-        watch: 'div.im-container div[class^="_Sidebar_"]',
-        interval: 1000,
+        watch: "div[class^='_Sidebar_']",
+        interval: 3000,
       },
+    },
+  ],
+  [
+    /^https:\/\/message\.bilibili\.com\/.*/,
+    {
+      name: "私信 - 当前",
+      injectMode: InjectionMode.Polling,
+      styleScope: StyleScope.Minimal,
+      aSelector: 'div[class*="_SessionItemIsActive_"]',
+      textSelector: "div[class^='_ContactName_']",
+      trigger: {
+        watch: "div.message-content",
+        interval: 3000,
+      },
+      ignoreProcessed: true,
+      useFallback: true,
     },
   ],
 ]);

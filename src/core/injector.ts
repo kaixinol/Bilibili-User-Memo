@@ -8,6 +8,7 @@ import {
   InjectionMode,
   PageRule,
   DynamicPageRule,
+  PollingPageRule,
 } from "../configs/rules";
 import { logger } from "../utils/logger";
 import { sleep } from "../utils/sleep";
@@ -93,12 +94,67 @@ class DynamicRuleWatcher {
   }
 }
 
+/**
+ * 輪詢規則執行器
+ * 職責：定時掃描指定容器 (不依賴 MutationObserver)
+ */
+class PollingRuleWatcher {
+  private pollTimer: number | null = null;
+
+  constructor(
+    public readonly rule: PollingPageRule,
+    private onTrigger: (
+      rule: PollingPageRule,
+      root: HTMLElement | ShadowRoot | Document,
+    ) => void,
+  ) {}
+
+  public start() {
+    logger.debug(
+      `⏱️ 轮询规则启动: [${this.rule.name}] interval=${this.rule.trigger.interval}ms watch=${this.rule.trigger.watch}`,
+    );
+    this.tick();
+    this.pollTimer = window.setInterval(
+      () => this.tick(),
+      this.rule.trigger.interval,
+    );
+  }
+
+  public stop() {
+    if (this.pollTimer) {
+      clearInterval(this.pollTimer);
+      this.pollTimer = null;
+    }
+    logger.debug(`🛑 轮询规则停止: [${this.rule.name}]`);
+  }
+
+  private tick() {
+    const watchTarget = querySelectorDeep(this.rule.trigger.watch);
+    if (!watchTarget) {
+      logger.debug(
+        `❓ 轮询未找到 watch 目标: [${this.rule.name}] selector=${this.rule.trigger.watch}`,
+      );
+      return;
+    }
+    const scope = watchTarget.shadowRoot || watchTarget;
+    logger.debug(
+      `🔁 轮询触发: [${this.rule.name}] at=${Date.now()} selector=${this.rule.trigger.watch}`,
+    );
+    this.onTrigger(this.rule, scope);
+  }
+}
+
 export class PageInjector {
   private domReady = false;
   private lastUrl = "";
 
   // 活跃的动态规则监听器
   private activeWatchers = new Map<DynamicPageRule, DynamicRuleWatcher>();
+  // 活跃的輪詢規則執行器
+  private activePollingWatchers = new Map<
+    PollingPageRule,
+    PollingRuleWatcher
+  >();
 
   // 防抖计时器
   private ruleDebounceTimers = new Map<DynamicPageRule, number>();
@@ -132,7 +188,10 @@ export class PageInjector {
 
       // 2. 重新触发所有活跃规则的扫描 (从 document 开始，确保全覆盖)
       // 注意：这里我们让活跃的 watcher 对应的规则再跑一遍
-      const activeRules = Array.from(this.activeWatchers.keys());
+      const activeRules = [
+        ...this.activeWatchers.keys(),
+        ...this.activePollingWatchers.keys(),
+      ];
       if (activeRules.length > 0) {
         this.scanSpecificRules(activeRules, document);
       }
@@ -171,6 +230,9 @@ export class PageInjector {
     const dynamicRules = matchedRules.filter(
       (r) => r.injectMode === InjectionMode.Dynamic,
     ) as DynamicPageRule[];
+    const pollingRules = matchedRules.filter(
+      (r) => r.injectMode === InjectionMode.Polling,
+    ) as PollingPageRule[];
 
     // 3. 执行静态规则 (每次 URL 变动都尝试执行一次，因为页面结构可能重绘)
     if (staticRules.length > 0) {
@@ -179,6 +241,8 @@ export class PageInjector {
 
     // 4. 管理动态规则监听器 (Diff 算法: 停止旧的，启动新的)
     this.reconcileWatchers(dynamicRules);
+    // 5. 管理輪詢規則執行器
+    this.reconcilePollingWatchers(pollingRules);
   }
 
   /**
@@ -200,6 +264,25 @@ export class PageInjector {
           this.scheduleRuleScan(r, r.trigger.interval, scope);
         });
         this.activeWatchers.set(rule, watcher);
+        watcher.start();
+      }
+    });
+  }
+
+  private reconcilePollingWatchers(newRules: PollingPageRule[]) {
+    for (const [rule, watcher] of this.activePollingWatchers) {
+      if (!newRules.includes(rule)) {
+        watcher.stop();
+        this.activePollingWatchers.delete(rule);
+      }
+    }
+
+    newRules.forEach((rule) => {
+      if (!this.activePollingWatchers.has(rule)) {
+        const watcher = new PollingRuleWatcher(rule, (r, scope) => {
+          this.scanSpecificRules([r], scope);
+        });
+        this.activePollingWatchers.set(rule, watcher);
         watcher.start();
       }
     });
@@ -262,42 +345,59 @@ export class PageInjector {
     rule: PageRule,
     scope: HTMLElement | ShadowRoot | Document,
   ) {
-    const selector = `${rule.aSelector}:not([data-bili-processed])`;
-
+    let selector = `${rule.aSelector}`;
+    if (!rule.ignoreProcessed) selector += ":not([data-bili-processed])";
     // Static 模式：通常 scope 是 document，尝试几次防止加载延迟
     if (rule.injectMode === InjectionMode.Static) {
-      let element = querySelectorDeep(selector, scope);
+      // 1. 初始获取所有匹配的元素
+      let elements = querySelectorAllDeep(selector, scope);
 
-      // 简单的重试机制 (仅针对未找到的情况)
-      if (!element) {
+      // 2. 增强的重试机制 (针对列表加载延迟)
+      if (elements.length === 0) {
         for (let i = 0; i < 3; i++) {
           await sleep(300);
-          element = querySelectorDeep(selector, scope);
-          if (element) break;
+          elements = querySelectorAllDeep(selector, scope);
+          // 只要找到了至少一个元素，就跳出重试
+          if (elements.length > 0) break;
         }
       }
 
-      if (element) {
-        this.applyRuleToElement(element, rule);
+      // 3. 批量应用规则
+      if (elements.length > 0) {
+        logger.debug(
+          `💉 静态注入: 找到 ${elements.length} 个目标元素 [${selector}]`,
+        );
+        elements.forEach((element) => {
+          this.applyRuleToElement(element, rule);
+        });
       }
       return;
     }
 
-    // Dynamic 模式：利用 scope 局部查找
+    // Polling 模式：利用 scope 局部查找
     const elements = querySelectorAllDeep(selector, scope);
+    if (rule.injectMode === InjectionMode.Polling) {
+      if (elements.length > 0) {
+        logger.debug(
+          `🔁 轮询注入 [${rule.name}]: 找到 ${elements.length} 个目标元素`,
+        );
+      }
+    }
     elements.forEach((el) => this.applyRuleToElement(el, rule));
   }
 
-  private applyRuleToElement(el: HTMLElement, rule: PageRule) {
+  private async applyRuleToElement(el: HTMLElement, rule: PageRule) {
     const uid = extractUid(el);
     const originalName = getElementDisplayName(el, rule);
-
     if (!uid) return;
 
     const user = userStore.ensureUser(uid, originalName);
 
     // 执行渲染
-    const applied = injectMemoRenderer(el, user, rule, { uid, originalName });
+    const applied = await injectMemoRenderer(el, user, rule, {
+      uid,
+      originalName,
+    });
 
     if (applied) {
       el.setAttribute("data-bili-processed", "true");

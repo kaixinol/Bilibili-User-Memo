@@ -1,5 +1,8 @@
-// src/core/store.ts
-import { GM_getValue, GM_setValue } from "vite-plugin-monkey/dist/client";
+import {
+  GM_getValue,
+  GM_setValue,
+  GM_addValueChangeListener,
+} from "vite-plugin-monkey/dist/client";
 import Alpine from "alpinejs";
 import { logger } from "../utils/logger";
 import { BiliUser } from "./types";
@@ -10,21 +13,71 @@ class UserStore {
   public users: BiliUser[] = [];
   public displayMode: number = 2;
 
-  // 标记是否正在进行系统级的数据变更，防止观察者循环触发
-  public isSystemChanging = false;
+  // 标记是否正在进行系统级的数据变更
+  // private 访问权限，强制通过方法修改
+  private isSystemChanging = false;
 
   constructor() {
     this.refreshData();
+    // 初始化跨标签页/跨域监听
+    this.listenToRemoteChanges();
+
+    // 【重要】绝对不要在这里或 main.ts 添加 window.addEventListener('beforeunload', ...)
+    // 依赖实时保存 (updateUserMemo) 和 GM_addValueChangeListener 即可。
   }
 
   /**
-   * 从油猴存储刷新数据
+   * 从油猴存储刷新数据 (初始化用)
    */
   public refreshData() {
     this.users = GM_getValue<BiliUser[]>("biliUsers", []);
     this.displayMode = GM_getValue<number>("displayMode", 2);
     logger.debug(
       `📊 Store 数据已刷新: 记录数=${this.users.length}, 模式=${this.displayMode}`,
+    );
+  }
+
+  /**
+   * 监听来自其他标签页或域名的 GM_setValue 变更
+   */
+  private listenToRemoteChanges() {
+    // 1. 监听用户列表变更
+    GM_addValueChangeListener<BiliUser[]>(
+      "biliUsers",
+      (name, oldValue, newValue, remote) => {
+        // 如果正在进行本地系统写入，忽略可能的即时回传，避免冲突
+        if (this.isSystemChanging) return;
+
+        // remote = true 表示变更来自其他标签页/脚本实例
+        if (remote) {
+          logger.debug("🔄 [Sync] 检测到外部数据变更，正在同步...");
+
+          // 标记为正在变更，防止触发连锁反应
+          this.isSystemChanging = true;
+
+          try {
+            this.users = newValue || [];
+            this.syncFullStateToAlpine();
+            this.refreshAllDomNodes();
+          } catch (e) {
+            logger.error("同步外部数据失败", e);
+          } finally {
+            // 确保释放锁
+            this.isSystemChanging = false;
+          }
+        }
+      },
+    );
+
+    // 2. 监听显示模式变更
+    GM_addValueChangeListener<number>(
+      "displayMode",
+      (name, oldValue, newValue, remote) => {
+        if (remote) {
+          this.displayMode = newValue ?? 2;
+          this.refreshAllDomNodes();
+        }
+      },
     );
   }
 
@@ -42,7 +95,6 @@ class UserStore {
       avatar: getUserAvatar(uid),
       memo: "",
     };
-    // 注意：这里 push 到内存是为了缓存，但只有设置了 memo 才会持久化
     this.users.push(newUser);
     return newUser;
   }
@@ -52,45 +104,54 @@ class UserStore {
    * 包含：更新内存 -> 更新存储 -> 同步 Alpine -> 同步 DOM
    */
   public updateUserMemo(uid: string, newMemo: string, fallbackName = "") {
+    // 如果已经处于锁定状态，可能是短时间内重复调用，可以做防抖处理或直接返回
+    // 这里选择直接执行，但加上锁保护
     this.isSystemChanging = true;
 
-    // 1. 更新内存
-    let userIndex = this.users.findIndex((u) => u.id === uid);
-    let user: BiliUser;
+    try {
+      // 1. 更新内存
+      let userIndex = this.users.findIndex((u) => u.id === uid);
+      let user: BiliUser;
 
-    if (userIndex === -1) {
-      user = {
-        id: uid,
-        nickname: fallbackName || uid,
-        avatar: getUserAvatar(uid),
-        memo: newMemo,
-      };
-      this.users.push(user);
-      userIndex = this.users.length - 1;
-    } else {
-      user = this.users[userIndex];
-      user.memo = newMemo;
+      if (userIndex === -1) {
+        user = {
+          id: uid,
+          nickname: fallbackName || uid,
+          avatar: getUserAvatar(uid),
+          memo: newMemo,
+        };
+        this.users.push(user);
+        userIndex = this.users.length - 1;
+      } else {
+        user = this.users[userIndex];
+        user.memo = newMemo;
+      }
+
+      // 2. 持久化 (如果备注为空则删除)
+      if (newMemo.trim() === "") {
+        this.users.splice(userIndex, 1);
+        logger.info(`🗑️ 备注清空，已删除用户记录 | UID:${uid}`);
+      } else {
+        logger.info(`📝 备注已更新 | UID:${uid} -> ${newMemo}`);
+      }
+
+      // 核心保存动作
+      GM_setValue("biliUsers", this.users);
+
+      // 3. 同步到 Alpine Store (UI 面板)
+      this.syncToAlpine(uid, newMemo, user);
+
+      // 4. 同步到页面 DOM
+      this.syncDomNodes(uid, newMemo, user, fallbackName);
+    } catch (error) {
+      logger.error("保存备注时发生错误", error);
+    } finally {
+      // 【关键】使用 finally 确保锁一定会被解开
+      // 给予一点缓冲时间 (debounce buffer)，防止高频操作导致的闪烁
+      setTimeout(() => {
+        this.isSystemChanging = false;
+      }, 200);
     }
-
-    // 2. 持久化 (如果备注为空则删除)
-    if (newMemo.trim() === "") {
-      this.users.splice(userIndex, 1);
-      logger.info(`🗑️ 备注清空，已删除用户记录 | UID:${uid}`);
-    } else {
-      logger.info(`📝 备注已更新 | UID:${uid} -> ${newMemo}`);
-    }
-    GM_setValue("biliUsers", this.users);
-
-    // 3. 同步到 Alpine Store (UI 面板)
-    this.syncToAlpine(uid, newMemo, user);
-
-    // 4. 同步到页面 DOM
-    this.syncDomNodes(uid, newMemo, user, fallbackName);
-
-    // 给予一点缓冲时间让 DOM 更新完成
-    setTimeout(() => {
-      this.isSystemChanging = false;
-    }, 100);
   }
 
   private syncToAlpine(uid: string, newMemo: string, user: BiliUser) {
@@ -108,13 +169,47 @@ class UserStore {
         if (storeIndex !== -1) {
           store.users[storeIndex].memo = newMemo;
         } else {
-          // 深度克隆以避免引用问题
           store.users.push({ ...user });
         }
       }
     } catch {
-      // 面板可能未打开/初始化，忽略错误
+      // ignore
     }
+  }
+
+  private syncFullStateToAlpine() {
+    try {
+      const store = Alpine.store("userList") as any;
+      if (store && store.users) {
+        store.users = [...this.users];
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  private refreshAllDomNodes() {
+    const allTags = querySelectorAllDeep(
+      `.bili-memo-tag[data-bili-uid], .editable-textarea[data-bili-uid]`,
+    );
+
+    allTags.forEach((tag) => {
+      const uid = tag.getAttribute("data-bili-uid");
+      const originalName = tag.getAttribute("data-bili-original") || "";
+
+      if (!uid) return;
+
+      const user = this.users.find((u) => u.id === uid);
+      const memo = user ? user.memo : "";
+      const userObj = user || {
+        id: uid,
+        nickname: originalName,
+        avatar: "",
+        memo: "",
+      };
+
+      this.syncDomNodes(uid, memo, userObj, originalName);
+    });
   }
 
   private syncDomNodes(
@@ -128,20 +223,20 @@ class UserStore {
     );
 
     allTags.forEach((tag) => {
-      // 优先使用 tag 上保存的原始名，其次是传入的 fallback
       const originalName =
         tag.getAttribute("data-bili-original") || fallbackName;
 
       if (newMemo.trim() === "") {
         tag.textContent = originalName;
-        tag.classList.remove("bili-memo-tag");
+        if (!tag.classList.contains("editable-textarea")) {
+          tag.classList.remove("bili-memo-tag");
+        }
       } else {
         tag.textContent = formatDisplayName(
           user,
           originalName,
           this.displayMode,
         );
-        // 确保有 tag class
         if (
           !tag.classList.contains("bili-memo-tag") &&
           tag.classList.contains("editable-textarea") === false

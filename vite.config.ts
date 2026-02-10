@@ -1,6 +1,6 @@
 import { defineConfig } from "vite";
 import { visualizer } from "rollup-plugin-visualizer";
-import monkey, { cdn, util } from "vite-plugin-monkey";
+import monkey, { cdn } from "vite-plugin-monkey";
 export default defineConfig(({ mode }) => {
   const isDebug = mode === "debug";
 

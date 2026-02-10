@@ -239,7 +239,7 @@
   box-shadow: var(--shadow-dark);
 }
 .memo-container-dark-theme .user-note-input {
-  color: var(--primary-color);
+  color: var(--custom-font-color, var(--primary-color));
 }
 
 .memo-container-dark-theme .user-note-input.editing {
@@ -263,6 +263,8 @@
   top: 5px;
   right: 5px;
   color: var(--primary-color);
+  cursor: pointer;
+  z-index: 10;
 }
 .delete-btn:hover {
   stroke: var(--danger-color);

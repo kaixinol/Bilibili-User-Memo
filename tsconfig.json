@@ -9,7 +9,7 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "skipLibCheck": true,
+    "skipLibCheck": true
   },
-  "include": ["src"]
+  "include": ["src", "vite.config.ts"]
 }

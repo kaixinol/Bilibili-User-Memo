@@ -6,7 +6,6 @@ import {
   array,
   union,
   safeParse,
-  type InferOutput,
 } from "valibot";
 
 // --- 1. Schema 定义 ---

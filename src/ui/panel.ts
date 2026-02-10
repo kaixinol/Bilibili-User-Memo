@@ -15,16 +15,7 @@ const CUSTOM_MEMO_CSS_KEY = "customMemoCss";
 
 function applyCustomFontColor(color: string) {
   if (!color) return;
-  document.documentElement.style.setProperty("--custom-font-color-base", color);
-}
-
-function getDefaultFontColor() {
-  const computed = getComputedStyle(document.documentElement);
-  return (
-    computed.getPropertyValue("--custom-font-color-base").trim() ||
-    computed.getPropertyValue("--primary-color").trim() ||
-    "#fb7299"
-  );
+  document.documentElement.style.setProperty("--custom-font-color", color);
 }
 
 function lintCss(css: string): string | null {
@@ -487,7 +478,9 @@ export function initMainPanel() {
   document.body.appendChild(container);
 
   const storedColor = GM_getValue<string>(CUSTOM_FONT_COLOR_KEY, "");
-  const initialColor = storedColor || getDefaultFontColor();
+  const initialColor =
+    storedColor ||
+    document.documentElement.style.getPropertyValue("--custom-font-color");
   applyCustomFontColor(initialColor);
 
   const colorInput = container.querySelector(
@@ -550,6 +543,14 @@ export function initMainPanel() {
       container.classList.toggle("advanced-css-open");
       if (container.classList.contains("advanced-css-open")) {
         memoCssInput?.focus();
+      }
+    });
+    colorSetting.addEventListener("auxclick", (event) => {
+      if (event.button === 1) {
+        logger.debug(event.button);
+        document.documentElement.style.removeProperty("--custom-font-color");
+        GM_setValue(CUSTOM_FONT_COLOR_KEY, "");
+        alert("已取消自定义字体颜色");
       }
     });
   }

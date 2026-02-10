@@ -1,13 +1,8 @@
-/* TODO
-1. rules添加自定义字体大小功能 var(--custom-font-size, 14px)
-2. 添加自定义颜色功能 var(--custom-font-color, #000)
-以上方式用 setProperty 设置变量即可
-*/
 .editable-textarea {
-  font-size: var(--custom-font-size, 14px);
+  font-size: var(--custom-font-size, 13px);
   font-weight: 600;
   min-width: 2ch;
-  color: inherit;
+  color: var(--custom-font-color, black);
   margin-right: 8px;
   padding: 4px 6px;
   display: inline-block;
@@ -29,12 +24,6 @@
   opacity: 0.85;
 }
 
-:where(.editable-textarea).bili-memo-has-memo,
-:where(.editable-textarea).bili-memo-has-memo:hover,
-:where(.editable-textarea).bili-memo-has-memo:focus {
-  color: var(--custom-font-color, var(--primary-color)) !important;
-}
-
 /* hover 状态 */
 .editable-textarea:hover {
   background: var(--glass);
@@ -46,57 +35,18 @@
   background: var(--bg-main);
   opacity: 1;
 }
-.edit-button {
-  font-size: 14px;
-  font-weight: 600;
-
-  padding: 6px 10px;
-  border: none;
-  outline: none;
-
-  background: transparent;
-  color: var(--text-main);
-
-  border-radius: 8px;
-  cursor: pointer;
-
-  transition:
-    background 0.15s ease,
-    transform 0.05s ease,
-    box-shadow 0.15s ease;
-}
-
-/* hover */
-.edit-button:hover {
-  background: var(--overlay);
-}
-
-/* 点击反馈 */
-.edit-button:active {
-  transform: scale(0.96);
-}
-
-/* 键盘聚焦 */
-.edit-button:focus-visible {
-  box-shadow: 0 0 0 2px var(--focus-ring);
-}
-
 .bili-memo-tag {
   cursor: pointer;
   display: inline;
   vertical-align: middle;
-}
-.bili-memo-has-memo {
-  font-size: var(--custom-font-size, 14px);
-  margin-left: 4px;
-  font-weight: bold;
-  color: var(--custom-font-color, var(--primary-color)) !important;
+  color: var(--custom-font-color, black);
+  font-size: var(--custom-font-size, 13px);
 }
 
 .bili-memo-input {
   background: var(--bg-main);
   border: 1px solid var(--primary-color);
-  font-size: var(--custom-font-size, 14px);
+  font-size: var(--custom-font-size, 13px);
   padding: 0 4px;
   margin-left: 4px;
   border-radius: 4px;
@@ -108,9 +58,11 @@
   vertical-align: middle;
 }
 
-:host-context(.memo-container-dark-theme) .editable-textarea {
+:host-context(.memo-container-dark-theme) .editable-textarea,
+.memo-container-dark-theme .editable-textarea {
   background: var(--overlay);
   border-bottom-color: var(--glass);
+  color: var(--custom-font-color, white);
 }
 
 :host-context(.memo-container-dark-theme) .editable-textarea:focus {
@@ -118,31 +70,9 @@
   border-bottom-color: var(--primary-color);
 }
 
-:host-context(.memo-container-dark-theme) .edit-button,
-.memo-container-dark-theme .edit-button {
-  color: var(--text-main);
-}
-
-:host-context(.memo-container-dark-theme) .edit-button:hover {
-  background: var(--bg-sub);
-}
-
 :host-context(.memo-container-dark-theme) .bili-memo-input,
 .memo-container-dark-theme .bili-memo-input {
   background: var(--bg-main);
   border-color: var(--primary-color);
   color: var(--text-main);
-}
-
-.bili-memo-empty:not(.editable-textarea) {
-  font-size: inherit;
-  font-weight: inherit;
-  color: inherit;
-  margin-left: 0;
-}
-
-.editable-textarea.bili-memo-empty,
-.editable-textarea.bili-memo-empty:hover,
-.editable-textarea.bili-memo-empty:focus {
-  color: inherit;
 }

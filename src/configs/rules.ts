@@ -11,8 +11,6 @@ export enum StyleScope {
   Minimal = 1,
   /** 显示修改的名稱 + 點擊文字修改名字 */
   Editable = 2,
-  /** 显示修改的名稱 + 相關交互按鈕 */
-  Extended = 3,
 }
 
 /**
@@ -48,7 +46,7 @@ interface BasePageRule {
 /**
  * 靜態模式：不允許有 trigger
  */
-interface StaticPageRule extends BasePageRule {
+export interface StaticPageRule extends BasePageRule {
   injectMode: InjectionMode.Static;
   trigger?: never; // 強制不允許 trigger
 }
@@ -56,7 +54,7 @@ interface StaticPageRule extends BasePageRule {
 /**
  * 動態模式：trigger 為必填（觀察 watch、用 interval 防抖）
  */
-interface DynamicPageRule extends BasePageRule {
+export interface DynamicPageRule extends BasePageRule {
   injectMode: InjectionMode.Dynamic;
   trigger: {
     watch: string;
@@ -67,7 +65,7 @@ interface DynamicPageRule extends BasePageRule {
 /**
  * 聯合類型：根據 injectMode 自動切換 trigger 的約束
  */
-type PageRule = StaticPageRule | DynamicPageRule;
+export type PageRule = StaticPageRule | DynamicPageRule;
 
 /**
  * SiteConfig 定義為 Map
@@ -79,7 +77,7 @@ export const config: SiteConfig = new Map([
     {
       name: "视频页面",
       injectMode: InjectionMode.Static,
-      styleScope: StyleScope.Extended,
+      styleScope: StyleScope.Editable,
       aSelector: ".up-name",
     },
   ],
@@ -119,7 +117,7 @@ export const config: SiteConfig = new Map([
     {
       name: "评论区",
       injectMode: InjectionMode.Dynamic,
-      styleScope: StyleScope.Extended,
+      styleScope: StyleScope.Editable,
       aSelector: "#user-name a",
       trigger: { watch: "#contents", interval: 1000 },
     },
@@ -127,7 +125,7 @@ export const config: SiteConfig = new Map([
   [
     /^https:\/\/message\.bilibili\.com\/.*/,
     {
-      name: "评论区",
+      name: "私信",
       injectMode: InjectionMode.Dynamic,
       styleScope: StyleScope.Minimal,
       aSelector: 'div[data-id^="contact"]',

@@ -202,7 +202,7 @@ export function initDebugger() {
           let elements: Element[];
           try {
             elements = querySelectorAllDeep(selector);
-          } catch (e) {
+          } catch {
             logger.warn(`[Debugger] Invalid selector: ${selector}`);
             continue;
           }

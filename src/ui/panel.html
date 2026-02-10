@@ -33,6 +33,7 @@
           @change="$store.userList.setDisplayMode(0)"
         /><label for="panel-memo-mode-0">昵称</label>
       </div>
+
       <div class="panel-mode-option">
         <input
           type="radio"
@@ -65,79 +66,57 @@
       </div>
       <div class="panel-right-actions">
         <label class="panel-custom-color-setting">
-          <span class="setting-text" title="左键自定义颜色&#10;右键自定义样式"
+          <span
+            class="setting-text"
+            title="左键自定义颜色&#10;右键自定义样式&#10;中键清除自定义样式"
             >自定义备注颜色</span
           >
           <div class="color-preview"></div>
 
-          <input type="color" class="ghost-color-picker" value="#fb7299" />
+          <input type="color" class="ghost-color-picker" />
         </label>
-        <div class="panel-theme-toggle" x-data="themeHandler" @click="toggle()">
-          <svg
-            x-show="!isDark"
-            alt="sun"
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <circle cx="12" cy="12" r="4" />
-            <path d="M12 2v2" />
-            <path d="M12 20v2" />
-            <path d="m4.93 4.93 1.41 1.41" />
-            <path d="m17.66 17.66 1.41 1.41" />
-            <path d="M2 12h2" />
-            <path d="M20 12h2" />
-            <path d="m6.34 17.66-1.41 1.41" />
-            <path d="m19.07 4.93-1.41 1.41" />
-          </svg>
-          <svg
-            x-show="isDark"
-            alt="moon"
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            stroke-linecap="round"
-            stroke-linejoin="round"
-          >
-            <path
-              d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"
-            />
-          </svg>
-        </div>
       </div>
-    </div>
-    <div class="panel-custom-css-section">
-      <div class="panel-custom-css-title">自定义备注样式（CSS）</div>
-      <textarea
-        class="panel-custom-css-input"
-        placeholder="示例：
-.bili-memo-tag {
-  font-style: italic;
-  letter-spacing: 0.5px;
-}
-.editable-textarea {
-  background: rgba(0,0,0,0.08);
-  border-bottom: 2px solid currentColor;
-}"
-      ></textarea>
-      <div
-        class="panel-custom-css-status"
-        role="status"
-        aria-live="polite"
-      ></div>
-      <div class="panel-custom-css-hint">
-        这里支持完整 CSS 选择器。只影响备注相关元素时，建议用 .bili-memo-tag /
-        .editable-textarea / .bili-memo-input
+      <div class="panel-theme-toggle" x-data="themeHandler" @click="toggle()">
+        <svg
+          x-show="!isDark"
+          alt="sun"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <circle cx="12" cy="12" r="4" />
+          <path d="M12 2v2" />
+          <path d="M12 20v2" />
+          <path d="m4.93 4.93 1.41 1.41" />
+          <path d="m17.66 17.66 1.41 1.41" />
+          <path d="M2 12h2" />
+          <path d="M20 12h2" />
+          <path d="m6.34 17.66-1.41 1.41" />
+          <path d="m19.07 4.93-1.41 1.41" />
+        </svg>
+        <svg
+          x-show="isDark"
+          alt="moon"
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"
+          />
+        </svg>
       </div>
     </div>
     <div class="panel-control-bar">
@@ -211,6 +190,30 @@
         <button class="panel-search-clear" @click="searchQuery = ''">×</button>
       </div>
       <button class="panel-btn" @click="exportData()">导出</button>
+    </div>
+    <div class="panel-custom-css-section">
+      <div class="panel-custom-css-title">自定义备注样式（CSS）</div>
+      <textarea
+        class="panel-custom-css-input"
+        placeholder="示例：
+.bili-memo-tag {
+  font-style: italic;
+  letter-spacing: 0.5px;
+}
+.editable-textarea {
+  background: rgba(0,0,0,0.08);
+  border-bottom: 2px solid currentColor;
+}"
+      ></textarea>
+      <div
+        class="panel-custom-css-status"
+        role="status"
+        aria-live="polite"
+      ></div>
+      <div class="panel-custom-css-hint">
+        这里支持完整 CSS 选择器。只影响备注相关元素时，建议用 .bili-memo-tag /
+        .editable-textarea / .bili-memo-input
+      </div>
     </div>
     <div class="panel-users-container">
       <div class="panel-users-list">

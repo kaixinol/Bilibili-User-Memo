@@ -54,7 +54,6 @@
   </div>
   <svg
     class="delete-btn"
-    style="cursor: pointer; z-index: 10"
     @click="if(confirm('确定要删除吗？')) { $store.userList.removeUser(user.id) }"
     x-show="!$store.userList.isMultiSelect"
     title="删除用户"

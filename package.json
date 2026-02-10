@@ -5,7 +5,8 @@
   "main": "main.js",
   "scripts": {
     "dev": "vite --mode debug",
-    "build": "vite build --mode production"
+    "build": "vite build --mode production",
+      "lint": "eslint ."
   },
   "keywords": [
     "bilibili",
@@ -20,6 +21,9 @@
     "@types/alpinejs": "^3.13.11",
     "@types/node": "^25.1.0",
     "@types/tampermonkey": "^5.0.5",
+    "@typescript-eslint/eslint-plugin": "^8.55.0",
+    "@typescript-eslint/parser": "^8.55.0",
+    "eslint": "^10.0.0",
     "rollup-plugin-visualizer": "^6.0.5",
     "terser": "^5.46.0",
     "typescript": "^5.9.3",

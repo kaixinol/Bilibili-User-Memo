@@ -65,6 +65,7 @@ interface TriggerConfig {
 export interface DynamicPageRule extends BasePageRule {
   injectMode: InjectionMode.Dynamic;
   trigger: TriggerConfig;
+  dynamicWatch?: boolean;
 }
 
 /**
@@ -84,6 +85,7 @@ export type PageRule = StaticPageRule | DynamicPageRule | PollingPageRule;
  * SiteConfig 定義為 Map
  */
 type SiteConfig = Map<RegExp, PageRule>;
+// TODO: 改成YAML
 export const config: SiteConfig = new Map([
   [
     /^https:\/\/www\.bilibili\.com\/(video|list)\/.*/,
@@ -141,37 +143,94 @@ export const config: SiteConfig = new Map([
       injectMode: InjectionMode.Dynamic,
       styleScope: StyleScope.Editable,
       aSelector: "#user-name a",
-      trigger: { watch: "#contents", interval: 1000 },
+      trigger: { watch: "div#contents", interval: 500 },
+      dynamicWatch: true,
     },
   ],
   [
-    /^https:\/\/message\.bilibili\.com\/.*/,
+    /^https:\/\/message\.bilibili\.com\/.*\/whisper\//,
     {
-      name: "私信",
+      name: "个人消息 - 私信 - 当前",
       injectMode: InjectionMode.Polling,
       styleScope: StyleScope.Minimal,
       aSelector: 'div[data-id^="contact"]',
       textSelector: "div[class^='_SessionItem__Name']",
       trigger: {
         watch: "div[class^='_Sidebar_']",
-        interval: 3000,
+        interval: 2000,
       },
     },
   ],
   [
-    /^https:\/\/message\.bilibili\.com\/.*/,
+    /^https:\/\/message\.bilibili\.com\/.*\/whisper\//,
     {
-      name: "私信 - 当前",
+      name: "个人消息 - 私信",
       injectMode: InjectionMode.Polling,
       styleScope: StyleScope.Minimal,
       aSelector: 'div[class*="_SessionItemIsActive_"]',
       textSelector: "div[class^='_ContactName_']",
       trigger: {
         watch: "div.message-content",
-        interval: 3000,
+        interval: 2000,
       },
       ignoreProcessed: true,
       useFallback: true,
+    },
+  ],
+  [
+    /^https:\/\/space\.bilibili\.com\/\d+\/dynamic\/*/,
+    {
+      name: "个人空间动态",
+      injectMode: InjectionMode.Dynamic,
+      styleScope: StyleScope.Minimal,
+      aSelector: ".nav-tab__item",
+      textSelector: "bili-dyn-title__text",
+      trigger: { watch: ".bili-dyn-list", interval: 1000 },
+    },
+  ],
+  [
+    /^https:\/\/message\.bilibili\.com\/.*\/(reply|love|at)\//,
+    {
+      name: "个人消息 - 回复/赞/AT",
+      injectMode: InjectionMode.Dynamic,
+      styleScope: StyleScope.Minimal,
+      aSelector: "a.interaction-item__uname",
+      trigger: { watch: "div.message-content", interval: 1000 },
+    },
+  ],
+  [
+    /^https:\/\/t\.bilibili\.com\/.*/,
+    {
+      name: "动态页",
+      injectMode: InjectionMode.Dynamic,
+      styleScope: StyleScope.Editable,
+      aSelector: "div.bili-dyn-title",
+      trigger: { watch: "div.bili-dyn-list", interval: 1000 },
+    },
+  ],
+  [
+    /^https:\/\/[a-z0-9.]+\.bilibili\.com\/.*/,
+    {
+      name: "最近 - UP动态",
+      injectMode: InjectionMode.Dynamic,
+      styleScope: StyleScope.Minimal,
+      aSelector: "div.user-name",
+      trigger: { watch: "div.header-content-panel", interval: 1000 },
+    },
+  ],
+
+  [
+    /^https:\/\/[a-z0-9.]+\.bilibili\.com\/.*/,
+    {
+      name: "最近 - 收藏夹",
+      injectMode: InjectionMode.Dynamic,
+      styleScope: StyleScope.Editable,
+      aSelector: "span.header-fav-card__info--name",
+      textSelector: "span.header-fav-card__info--name span",
+      trigger: {
+        watch: "div.header-content-paneldiv.favorite-panel-popover",
+        interval: 1000,
+      },
     },
   ],
 ]);

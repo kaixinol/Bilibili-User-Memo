@@ -1,6 +1,5 @@
 .editable-textarea {
   font-size: var(--custom-font-size, 13px);
-  font-weight: 600;
   min-width: 2ch;
   color: var(--custom-font-color, black);
   margin-right: 8px;

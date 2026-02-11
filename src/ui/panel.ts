@@ -544,11 +544,19 @@ export function initMainPanel() {
         memoCssInput?.focus();
       }
     });
-    colorSetting.addEventListener("auxclick", (event) => {
-      if (event.button === 1) {
-        document.documentElement.style.removeProperty("--custom-font-color");
-        GM_setValue(CUSTOM_FONT_COLOR_KEY, "");
-        alert("已取消自定义字体颜色");
+    const removeCustomColor = () => {
+      document.documentElement.style.removeProperty("--custom-font-color");
+      GM_setValue(CUSTOM_FONT_COLOR_KEY, "");
+      alert("已取消自定义字体颜色");
+    };
+    // colorSetting.addEventListener("auxclick", (event) => {
+    //   if (event.button === 1) removeCustomColor();
+    // });
+    // auxclick 在某些浏览器或环境中可能不兼容，改用 mousedown 监听中键点击
+    colorSetting.addEventListener("mousedown", (e) => {
+      if (e.button === 1) {
+        removeCustomColor();
+        e.preventDefault();
       }
     });
   }

@@ -39,28 +39,27 @@ export function enterEditMode(targetElement: HTMLElement, user: BiliUser) {
   parent.insertBefore(input, targetElement.nextSibling);
   input.focus();
 
-  // 3. 状态保存闭包
+  // 3. 状态保存闭包let exited = false;
+
+  let exited = false;
   const saveAndExit = (shouldSave: boolean) => {
-    // 防止多次触发
-    if (!input.isConnected) return;
+    if (exited) return;
+    exited = true;
 
     const newValue = input.value.trim();
 
-    // 清理 DOM
     input.remove();
-    targetElement.style.display = ""; // 恢复显示 (让 renderer 接管后续样式)
+    targetElement.style.display = "";
 
     if (shouldSave && newValue !== currentMemo) {
-      // 1. 更新 Store (这会触发全局的数据同步)
       userStore.updateUserMemo(user.id, newValue, originalName);
 
-      // 2. 立即给予视觉反馈 (不必等待 Store 的响应式回调)
-      // 这样用户体验更流畅
       const newDisplayText = formatDisplayName(
         { ...user, memo: newValue },
         originalName,
         userStore.displayMode,
       );
+
       targetElement.textContent = newDisplayText;
 
       if (newValue) {

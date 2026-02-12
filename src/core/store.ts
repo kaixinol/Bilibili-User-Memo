@@ -3,7 +3,7 @@ import { logger } from "../utils/logger";
 import { BiliUser } from "./types";
 import { getUserAvatar, formatDisplayName } from "./dom-utils";
 import { querySelectorAllDeep } from "query-selector-shadow-dom";
-
+import { GM_getValue, GM_setValue, GM_addValueChangeListener } from "$";
 class UserStore {
   public users: BiliUser[] = [];
   public displayMode: number = 2;
@@ -25,8 +25,25 @@ class UserStore {
    * 从油猴存储刷新数据 (初始化用)
    */
   public refreshData() {
-    this.users = GM_getValue<BiliUser[]>("biliUsers", []);
+    const raw = GM_getValue<BiliUser[]>("biliUsers", []);
+    const rawUsers = Array.isArray(raw) ? raw : [];
+    const cleaned = new Map<string, BiliUser>();
+
+    // 清理历史污染数据：去重 + 过滤空 memo 记录
+    rawUsers.forEach((u) => {
+      if (!u?.id) return;
+      if (!u.memo?.trim()) return;
+      cleaned.set(u.id, u);
+    });
+
+    this.users = Array.from(cleaned.values());
     this.displayMode = GM_getValue<number>("displayMode", 2);
+
+    // 仅在有清理动作时回写，避免无意义写入
+    if (this.users.length !== rawUsers.length) {
+      GM_setValue("biliUsers", this.users);
+    }
+
     logger.debug(
       `📊 Store 数据已刷新: 记录数=${this.users.length}, 模式=${this.displayMode}`,
     );
@@ -77,21 +94,34 @@ class UserStore {
   }
 
   /**
-   * 获取或创建一个用户记录 (仅内存，不保存)
+   * 获取用户记录；不存在时返回临时对象（不入库）
    */
   public ensureUser(uid: string, originalName: string): BiliUser {
     const existing = this.users.find((u) => u.id === uid);
-    if (existing) return existing;
+    if (existing) {
+      // 历史数据可能因选择器异常被写成 UID，这里在拿到真实名字时回填
+      if (originalName && (!existing.nickname || existing.nickname === uid)) {
+        existing.nickname = originalName;
+      }
+      return existing;
+    }
 
+    // 仅用于当前页面显示，不写入 this.users，避免产生大量空 memo 记录
     const nickname = originalName || uid;
-    const newUser: BiliUser = {
+    return {
       id: uid,
       nickname,
       avatar: getUserAvatar(uid),
       memo: "",
     };
-    this.users.push(newUser);
-    return newUser;
+  }
+
+  /**
+   * 通过名称查找已存在的用户 (用于无 UID 场景的回退查找)
+   */
+  public findUserByName(name: string): BiliUser | undefined {
+    if (!name) return undefined;
+    return this.users.find((u) => u.nickname === name.trim());
   }
 
   /**

@@ -35,7 +35,7 @@ export default defineConfig(({ mode }) => {
             ),
           },
         },
-        server: { mountGmApi: isDebug ? true : false },
+        server: { mountGmApi: true }, // 修复production莫名其妙没有gm api的问题
       }),
       visualizer({ filename: "stats.html" }),
     ],
@@ -58,7 +58,7 @@ export default defineConfig(({ mode }) => {
         compress: {
           unused: true,
           dead_code: true,
-          drop_console: !isDebug,
+          drop_console: false,
           passes: 2,
         },
         mangle: false,

@@ -34,25 +34,20 @@ interface BasePageRule {
   /** * 目標元素的 CSS 選擇器
    * 這是樣式注入的主要對象（例如：".user-name"）
    */
-  aSelector: string;
-
   /** * 提取文本內容的特定選擇器
    * 可選屬性。若不提供，邏輯將默認使用 `aSelector`。
    * 適用場景：當 aSelector 是一個容器，而真正的名字在內層某個 span 時使用
    */
-  textSelector?: string;
+  injectMode: InjectionMode;
   fontSize?: string;
   ignoreProcessed?: boolean;
   useFallback?: boolean;
+  matchByName?: boolean;
 }
 
 /**
  * 靜態模式：不允許有 trigger
  */
-export interface StaticPageRule extends BasePageRule {
-  injectMode: InjectionMode.Static;
-  trigger?: never; // 強制不允許 trigger
-}
 
 interface TriggerConfig {
   watch: string;
@@ -60,27 +55,26 @@ interface TriggerConfig {
 }
 
 /**
- * 動態模式：trigger 為必填（觀察 watch、用 interval 防抖）
+ * 聯合類型：根據 injectMode 自動切換 trigger 的約束
  */
-export interface DynamicPageRule extends BasePageRule {
+type PageRuleBase = BasePageRule &
+  (
+    | { aSelector: string; textSelector?: string }
+    | { aSelector?: string; textSelector: string }
+  );
+export type StaticPageRule = PageRuleBase & {
+  injectMode: InjectionMode.Static;
+};
+export type DynamicPageRule = PageRuleBase & {
   injectMode: InjectionMode.Dynamic;
   trigger: TriggerConfig;
   dynamicWatch?: boolean;
-}
-
-/**
- * 輪詢模式：trigger 為必填（定時輪詢 watch 區域）
- */
-export interface PollingPageRule extends BasePageRule {
+};
+export type PollingPageRule = PageRuleBase & {
   injectMode: InjectionMode.Polling;
   trigger: TriggerConfig;
-}
-
-/**
- * 聯合類型：根據 injectMode 自動切換 trigger 的約束
- */
+};
 export type PageRule = StaticPageRule | DynamicPageRule | PollingPageRule;
-
 /**
  * SiteConfig 定義為 Map
  */
@@ -204,8 +198,10 @@ export const config: SiteConfig = new Map([
       name: "动态页",
       injectMode: InjectionMode.Dynamic,
       styleScope: StyleScope.Editable,
-      aSelector: "div.bili-dyn-title",
-      trigger: { watch: "div.bili-dyn-list", interval: 1000 },
+      aSelector: "div.bili-dyn-title span.bili-dyn-title__text",
+      trigger: { watch: "div.bili-dyn-item__main", interval: 1000 },
+      dynamicWatch: true,
+      useFallback: true,
     },
   ],
   [
@@ -213,8 +209,8 @@ export const config: SiteConfig = new Map([
     {
       name: "最近 - UP动态",
       injectMode: InjectionMode.Dynamic,
-      styleScope: StyleScope.Minimal,
-      aSelector: "div.user-name",
+      styleScope: StyleScope.Editable,
+      aSelector: "div.user-name a",
       trigger: { watch: "div.header-content-panel", interval: 1000 },
     },
   ],
@@ -224,13 +220,43 @@ export const config: SiteConfig = new Map([
     {
       name: "最近 - 收藏夹",
       injectMode: InjectionMode.Dynamic,
-      styleScope: StyleScope.Editable,
+      styleScope: StyleScope.Minimal, // Editable 导致bug
       aSelector: "span.header-fav-card__info--name",
       textSelector: "span.header-fav-card__info--name span",
       trigger: {
-        watch: "div.header-content-paneldiv.favorite-panel-popover",
+        watch: "div.favorite-panel-popover",
         interval: 1000,
       },
+    },
+  ],
+  [
+    /^https:\/\/[a-z0-9.]+\.bilibili\.com\/.*/,
+    {
+      name: "最近 - 历史",
+      injectMode: InjectionMode.Dynamic,
+      styleScope: StyleScope.Editable,
+      textSelector: "div.header-history-card__info--name span",
+      trigger: {
+        watch: "div.history-panel-popover",
+        interval: 1000,
+      },
+      matchByName: true,
+    },
+  ],
+  [
+    /^https:\/\/[a-z0-9.]+\.bilibili\.com\/.*/,
+    {
+      name: "最近 - 正在直播",
+      injectMode: InjectionMode.Dynamic,
+      styleScope: StyleScope.Minimal,
+      aSelector: "a.up-item",
+      textSelector: "div.up-name",
+      trigger: {
+        watch: "div.living-up-list",
+        interval: 1000,
+      },
+      matchByName: true,
+      useFallback: true,
     },
   ],
 ]);

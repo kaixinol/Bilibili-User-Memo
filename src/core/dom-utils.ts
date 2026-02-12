@@ -3,17 +3,34 @@ import { querySelectorDeep } from "query-selector-shadow-dom";
 import { logger } from "../utils/logger";
 import { PageRule } from "../configs/rules";
 import { BiliUser } from "./types";
-
+import { unsafeWindow } from "$";
 /**
  * 尝试从 DOM 元素中提取 B站 UID
  * 策略：href -> data-id -> __INITIAL_STATE__ 全局变量
+ * @param el 目标元素
+ * @param silent 如果为 true，则在找不到 UID 时不输出警告（用于启用 matchByName 的规则）
  */
-export function extractUid(el: Element): string | null {
+export function extractUid(el: Element, silent = false): string | null {
   const dataUid =
     el.getAttribute("data-id")?.split("_")?.[1] ||
-    el.getAttribute("data-user-profile-id");
+    el.getAttribute("data-user-profile-id") ||
+    el.getAttribute("bilisponsor-userid");
 
   if (dataUid) return dataUid;
+
+  // 动态页标题节点通常不带 UID，回退到同卡片内的头像/容器节点读取
+  const dynItemRoot = el.closest("div.bili-dyn-item__main");
+  const dynItemUid =
+    dynItemRoot?.querySelector("[bilisponsor-userid]")?.getAttribute(
+      "bilisponsor-userid",
+    ) ||
+    dynItemRoot
+      ?.querySelector("[data-user-profile-id]")
+      ?.getAttribute("data-user-profile-id") ||
+    dynItemRoot?.querySelector("[data-id]")?.getAttribute("data-id")?.split("_")
+      ?.[1];
+  if (dynItemUid) return dynItemUid;
+
   const win = unsafeWindow as any;
   const initialState = win.__INITIAL_STATE__;
 
@@ -28,7 +45,9 @@ export function extractUid(el: Element): string | null {
       ?.module_author?.mid;
   if (fallbackUid) return fallbackUid;
 
-  logger.warn(`⚠️ 无法从元素中提取 UID:`, el);
+  if (!silent) {
+    logger.warn(`⚠️ 无法从元素中提取 UID:`, el);
+  }
   return null;
 }
 
@@ -38,10 +57,13 @@ export function extractUid(el: Element): string | null {
  * @param rule 当前匹配的规则
  */
 export function getElementDisplayName(el: HTMLElement, rule: PageRule): string {
-  if (rule.textSelector) {
+  // 如果提供了 textSelector 且 el 不是该节点本身（即 el 是容器），则去子节点找
+  if (rule.textSelector && rule.aSelector) {
     const target = el.querySelector(rule.textSelector) as HTMLElement | null;
     if (target?.textContent) return target.textContent.trim();
   }
+
+  // 否则直接取当前元素的文本
   return el.textContent?.trim() || "";
 }
 

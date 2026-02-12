@@ -110,6 +110,8 @@ function renderEditable(
   if (!wrapper) {
     wrapper = document.createElement("span");
     wrapper.classList.add("editable-textarea");
+    // 防止被后续选择器当成未处理节点再次注入
+    wrapper.setAttribute("data-bili-processed", "true");
 
     // 绑定点击事件 (只绑一次)
     wrapper.addEventListener("click", (e) => {

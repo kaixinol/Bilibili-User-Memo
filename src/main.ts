@@ -2,6 +2,7 @@ import Alpine from "alpinejs";
 import "./styles/global.css";
 import { initMainPanel } from "./ui/panel";
 import { initPageInjection } from "./core/injector";
+import { unsafeWindow } from "$";
 
 (async () => {
   initPageInjection();

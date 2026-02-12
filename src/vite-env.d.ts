@@ -1,6 +1,7 @@
 // src/vite-env.d.ts
 
 /// <reference types="vite/client" />
+/// <reference types="vite-plugin-monkey/client" />
 
 declare module "*.html?raw" {
   const content: string;
@@ -20,5 +21,3 @@ declare global {
     Alpine: typeof Alpine;
   }
 }
-
-export {};

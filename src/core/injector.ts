@@ -154,8 +154,9 @@ class DynamicRuleWatcher {
    */
   private cleanupDetachedTargets() {
     for (const [node, observer] of this.instanceObservers) {
-      if (!document.contains(node)) {
-        // double check if it is really detached (sometimes just moved)
+      // document.contains(node) 对 Shadow DOM 内节点会误判为 false
+      // isConnected 能正确反映“是否仍连接在文档树（含 shadow tree）”
+      if (!node.isConnected) {
         logger.debug(`🗑️ [${this.rule.name}] 容器已销毁，移除监听器`);
         observer.disconnect();
         this.instanceObservers.delete(node);
@@ -267,8 +268,11 @@ export class PageInjector {
     PollingRuleWatcher
   >();
 
-  // 防抖计时器
-  private ruleDebounceTimers = new Map<DynamicPageRule, number>();
+  // 防抖计时器（按 rule + scope 独立防抖）
+  private ruleDebounceTimers = new Map<
+    DynamicPageRule,
+    Map<HTMLElement | ShadowRoot | Document, number>
+  >();
 
   constructor() {
     logger.info("🚀 PageInjector 正在启动...");
@@ -364,6 +368,7 @@ export class PageInjector {
     for (const [rule, watcher] of this.activeWatchers) {
       if (!newRules.includes(rule)) {
         watcher.stop();
+        this.clearRuleDebounceTimers(rule);
         this.activeWatchers.delete(rule);
       }
     }
@@ -404,16 +409,34 @@ export class PageInjector {
     delay: number,
     scope: HTMLElement | ShadowRoot | Document,
   ) {
-    const existing = this.ruleDebounceTimers.get(rule);
+    let scopeTimers = this.ruleDebounceTimers.get(rule);
+    if (!scopeTimers) {
+      scopeTimers = new Map<HTMLElement | ShadowRoot | Document, number>();
+      this.ruleDebounceTimers.set(rule, scopeTimers);
+    }
+
+    const existing = scopeTimers.get(scope);
     if (existing) clearTimeout(existing);
 
     // 使用 window.setTimeout 确保 ID 类型正确
     const timerId = window.setTimeout(() => {
-      this.ruleDebounceTimers.delete(rule);
+      const activeScopeTimers = this.ruleDebounceTimers.get(rule);
+      activeScopeTimers?.delete(scope);
+      if (activeScopeTimers && activeScopeTimers.size === 0) {
+        this.ruleDebounceTimers.delete(rule);
+      }
       this.scanSpecificRules([rule], scope);
     }, delay);
 
-    this.ruleDebounceTimers.set(rule, timerId);
+    scopeTimers.set(scope, timerId);
+  }
+
+  private clearRuleDebounceTimers(rule: DynamicPageRule) {
+    const scopeTimers = this.ruleDebounceTimers.get(rule);
+    if (!scopeTimers) return;
+
+    scopeTimers.forEach((timerId) => clearTimeout(timerId));
+    this.ruleDebounceTimers.delete(rule);
   }
 
   private scanSpecificRules(
@@ -498,6 +521,12 @@ export class PageInjector {
   }
 
   private async applyRuleToElement(el: HTMLElement, rule: PageRule) {
+    // 防御性处理：跳过我们自己插入的可编辑节点，避免自我递归注入
+    if (el.classList.contains("editable-textarea")) {
+      el.setAttribute("data-bili-processed", "true");
+      return;
+    }
+
     const uid = extractUid(el);
     const originalName = getElementDisplayName(el, rule);
     if (!uid) return;

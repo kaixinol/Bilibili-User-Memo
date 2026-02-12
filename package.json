@@ -1,6 +1,6 @@
 {
   "name": "bili-user-memo",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "B站UP主一键备注 | B站一键备注 Rev 的重写版本",
   "main": "main.js",
   "scripts": {

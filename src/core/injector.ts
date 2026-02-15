@@ -479,7 +479,10 @@ export class PageInjector {
     rule: PageRule,
     scope: HTMLElement | ShadowRoot | Document,
   ) {
-    let selector = `${rule.aSelector}`;
+    const baseSelector = rule.aSelector || rule.textSelector;
+    if (!baseSelector) return;
+
+    let selector = `${baseSelector}`;
     if (!rule.ignoreProcessed) selector += ":not([data-bili-processed])";
     // Static 模式：通常 scope 是 document，尝试几次防止加载延迟
     if (rule.injectMode === InjectionMode.Static) {
@@ -527,8 +530,8 @@ export class PageInjector {
       return;
     }
 
-    const uid = extractUid(el);
     const originalName = getElementDisplayName(el, rule);
+    const uid = this.resolveElementUid(el, rule, originalName);
     if (!uid) return;
 
     const user = userStore.ensureUser(uid, originalName);
@@ -547,6 +550,39 @@ export class PageInjector {
     }
   }
 
+  private resolveElementUid(
+    el: HTMLElement,
+    rule: PageRule,
+    originalName: string,
+  ): string | null {
+    const uid = extractUid(el, Boolean(rule.matchByName));
+    if (uid) return uid;
+
+    // 私信右侧当前会话名节点本身不带 UID，回退到左侧激活会话读取
+    if (el.matches('div[class^="_ContactName_"]')) {
+      const whisperUid = this.getActiveWhisperUid();
+      if (whisperUid) return whisperUid;
+    }
+
+    // 启用 matchByName 时，允许按原始昵称回退查找 UID
+    if (rule.matchByName && originalName) {
+      return userStore.findUserByName(originalName)?.id || null;
+    }
+
+    return null;
+  }
+
+  private getActiveWhisperUid(): string | null {
+    return (
+      document
+        .querySelector(
+          'div[class*="_SessionItemIsActive_"][data-id^="contact_"]',
+        )
+        ?.getAttribute("data-id")
+        ?.split("_")?.[1] || null
+    );
+  }
+
   /**
    * 获取当前 URL 匹配的规则
    */
@@ -558,7 +594,7 @@ export class PageInjector {
   }
 
   private refreshExistingDomNodes() {
-    const allTags = querySelectorAllDeep(`.bili-memo-tag, .editable-textarea`);
+    const allTags = querySelectorAllDeep(`[data-bili-uid]`);
     allTags.forEach((tag) => {
       const uid = tag.getAttribute("data-bili-uid");
       const originalName = tag.getAttribute("data-bili-original") || "";

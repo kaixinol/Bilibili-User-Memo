@@ -144,31 +144,17 @@ export const config: SiteConfig = new Map([
   [
     /^https:\/\/message\.bilibili\.com\/.*\/whisper\//,
     {
-      name: "个人消息 - 私信 - 当前",
-      injectMode: InjectionMode.Polling,
-      styleScope: StyleScope.Minimal,
-      aSelector: 'div[data-id^="contact"]',
-      textSelector: "div[class^='_SessionItem__Name']",
-      trigger: {
-        watch: "div[class^='_Sidebar_']",
-        interval: 2000,
-      },
-    },
-  ],
-  [
-    /^https:\/\/message\.bilibili\.com\/.*\/whisper\//,
-    {
       name: "个人消息 - 私信",
       injectMode: InjectionMode.Polling,
       styleScope: StyleScope.Minimal,
-      aSelector: 'div[class*="_SessionItemIsActive_"]',
-      textSelector: "div[class^='_ContactName_']",
+      aSelector: 'div[data-id^="contact"], div[class^="_ContactName_"]',
+      textSelector:
+        'div[class*="_SessionItem__Name"], div[class^="_ContactName_"]',
       trigger: {
-        watch: "div.message-content",
+        watch: 'div[class^="_IM_"]',
         interval: 2000,
       },
       ignoreProcessed: true,
-      useFallback: true,
     },
   ],
   [
@@ -177,8 +163,7 @@ export const config: SiteConfig = new Map([
       name: "个人空间动态",
       injectMode: InjectionMode.Dynamic,
       styleScope: StyleScope.Minimal,
-      aSelector: ".nav-tab__item",
-      textSelector: "bili-dyn-title__text",
+      aSelector: "div.bili-dyn-title span.bili-dyn-title__text",
       trigger: { watch: ".bili-dyn-list", interval: 1000 },
     },
   ],
@@ -202,6 +187,7 @@ export const config: SiteConfig = new Map([
       trigger: { watch: "div.bili-dyn-item__main", interval: 1000 },
       dynamicWatch: true,
       useFallback: true,
+      matchByName: true,
     },
   ],
   [
@@ -257,6 +243,15 @@ export const config: SiteConfig = new Map([
       },
       matchByName: true,
       useFallback: true,
+    },
+  ],
+  [
+    /^https:\/\/www.bilibili\.com\/opus\/\d+/,
+    {
+      name: "新版动态",
+      injectMode: InjectionMode.Static,
+      styleScope: StyleScope.Editable,
+      aSelector: "div.opus-module-author__name",
     },
   ],
 ]);

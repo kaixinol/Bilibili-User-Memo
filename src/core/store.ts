@@ -214,9 +214,7 @@ class UserStore {
   }
 
   private refreshAllDomNodes() {
-    const allTags = querySelectorAllDeep(
-      `.bili-memo-tag[data-bili-uid], .editable-textarea[data-bili-uid]`,
-    );
+    const allTags = querySelectorAllDeep(`[data-bili-uid]`);
 
     allTags.forEach((tag) => {
       const uid = tag.getAttribute("data-bili-uid");
@@ -243,9 +241,7 @@ class UserStore {
     user: BiliUser,
     fallbackName: string,
   ) {
-    const allTags = querySelectorAllDeep(
-      `.bili-memo-tag[data-bili-uid="${uid}"], .editable-textarea[data-bili-uid="${uid}"]`,
-    );
+    const allTags = querySelectorAllDeep(`[data-bili-uid="${uid}"]`);
 
     allTags.forEach((tag) => {
       const originalName =

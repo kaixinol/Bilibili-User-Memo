@@ -12,6 +12,7 @@ import { unsafeWindow } from "$";
  */
 export function extractUid(el: Element, silent = false): string | null {
   const dataUid =
+    el.getAttribute("data-bili-uid") ||
     el.getAttribute("data-id")?.split("_")?.[1] ||
     el.getAttribute("data-user-profile-id") ||
     el.getAttribute("bilisponsor-userid");
@@ -21,14 +22,16 @@ export function extractUid(el: Element, silent = false): string | null {
   // 动态页标题节点通常不带 UID，回退到同卡片内的头像/容器节点读取
   const dynItemRoot = el.closest("div.bili-dyn-item__main");
   const dynItemUid =
-    dynItemRoot?.querySelector("[bilisponsor-userid]")?.getAttribute(
-      "bilisponsor-userid",
-    ) ||
+    dynItemRoot
+      ?.querySelector("[bilisponsor-userid]")
+      ?.getAttribute("bilisponsor-userid") ||
     dynItemRoot
       ?.querySelector("[data-user-profile-id]")
       ?.getAttribute("data-user-profile-id") ||
-    dynItemRoot?.querySelector("[data-id]")?.getAttribute("data-id")?.split("_")
-      ?.[1];
+    dynItemRoot
+      ?.querySelector("[data-id]")
+      ?.getAttribute("data-id")
+      ?.split("_")?.[1];
   if (dynItemUid) return dynItemUid;
 
   const win = unsafeWindow as any;
@@ -57,11 +60,34 @@ export function extractUid(el: Element, silent = false): string | null {
  * @param rule 当前匹配的规则
  */
 export function getElementDisplayName(el: HTMLElement, rule: PageRule): string {
-  // 如果提供了 textSelector 且 el 不是该节点本身（即 el 是容器），则去子节点找
+  // 如果提供了 textSelector 且 el 是容器，则优先在容器内提取原名
   if (rule.textSelector && rule.aSelector) {
-    const target = el.querySelector(rule.textSelector) as HTMLElement | null;
+    const target =
+      (el.querySelector(rule.textSelector) as HTMLElement | null) ||
+      (el.matches(rule.textSelector) ? el : null);
+    const originalText = target?.dataset.biliOriginal?.trim();
+    if (originalText) return originalText;
     if (target?.textContent) return target.textContent.trim();
   }
+
+  // useFallback 规则下，textSelector 可能用于“渲染目标”而非“容器内提取”
+  // 这里回退到 watch 范围查找目标，并优先读取 data-bili-original 防止原名漂移
+  if (
+    rule.useFallback &&
+    rule.textSelector &&
+    "trigger" in rule &&
+    rule.trigger
+  ) {
+    const fallbackTarget = document
+      .querySelector(rule.trigger.watch)
+      ?.querySelector(rule.textSelector) as HTMLElement | null;
+    const originalText = fallbackTarget?.dataset.biliOriginal?.trim();
+    if (originalText) return originalText;
+    if (fallbackTarget?.textContent) return fallbackTarget.textContent.trim();
+  }
+
+  const selfOriginal = el.dataset.biliOriginal?.trim();
+  if (selfOriginal) return selfOriginal;
 
   // 否则直接取当前元素的文本
   return el.textContent?.trim() || "";

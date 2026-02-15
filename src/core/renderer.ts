@@ -32,14 +32,18 @@ export async function injectMemoRenderer(
         return renderMinimal(el, displayText, user, meta);
       } else {
         if (!rule.useFallback) {
+          const target =
+            (el.querySelector(rule.textSelector) as HTMLElement | null) ||
+            (el.matches(rule.textSelector) ? el : null);
           return renderMinimal(
-            el.querySelector(rule.textSelector),
+            target,
             displayText,
             user,
             meta,
           );
-        } else if (rule.trigger) {
+        } else if ("trigger" in rule && rule.trigger) {
           // 针对 私信 - 当前
+
           return renderMinimal(
             document
               .querySelector(rule.trigger.watch)!

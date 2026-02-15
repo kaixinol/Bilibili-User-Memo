@@ -1,5 +1,4 @@
 import Alpine from "alpinejs";
-import "./styles/global.css";
 import { initMainPanel } from "./ui/panel";
 import { initPageInjection } from "./core/injector";
 import { unsafeWindow } from "$";
@@ -9,7 +8,9 @@ import { unsafeWindow } from "$";
   initMainPanel();
 
   unsafeWindow.Alpine = Alpine;
-  Alpine.start();
+  if (import.meta.env.DEV) {
+    Alpine.start();
+  }
 
   if (__IS_DEBUG__) {
     console.debug("调试模式已启用");

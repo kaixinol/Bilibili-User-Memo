@@ -1,5 +1,5 @@
 // src/core/renderer.ts
-import { BiliUser, ElementMeta } from "../types/types";
+import { BiliUser, ElementMeta } from "../types";
 import { PageRule, StyleScope } from "../../configs/rules";
 import { resolveRuleTextTarget } from "../dom/dom-utils";
 import { userStore } from "../store/store";

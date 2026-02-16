@@ -7,13 +7,26 @@ import "../styles/box.css";
 import { GM_getValue, GM_setValue } from "vite-plugin-monkey/dist/client";
 import { setCustomMemoCss } from "../core/injection/injector";
 import { registerUserStore, UserListStore } from "./user-list-store";
+import { BiliUser } from "../core/types";
 
 const CUSTOM_FONT_COLOR_KEY = "customFontColor";
 const CUSTOM_MEMO_CSS_KEY = "customMemoCss";
+const THEME_KEY = "isDark";
+const TOGGLE_OPEN_TEXT_KEY = "btn_open_text";
+const TOGGLE_CLOSE_TEXT_KEY = "btn_close_text";
+
+let panelComponentsRegistered = false;
 
 function applyCustomFontColor(color: string) {
-  if (!color) return;
+  if (!color) {
+    document.documentElement.style.removeProperty("--custom-font-color");
+    return;
+  }
   document.documentElement.style.setProperty("--custom-font-color", color);
+}
+
+function applyTheme(dark: boolean) {
+  document.documentElement.classList.toggle("memo-container-dark-theme", dark);
 }
 
 function lintCss(css: string): string | null {
@@ -89,66 +102,367 @@ function detectCssParsingIssue(
   return null;
 }
 
-const themeManager = {
-  isDark: GM_getValue<boolean>("isDark", false),
+function resolveCssStatus(
+  css: string,
+  result: ReturnType<typeof setCustomMemoCss>,
+): string {
+  const lintResult = lintCss(css);
+  if (lintResult) return `CSS 语法警告：${lintResult}`;
+  if (!result.ok) return `CSS 语法错误：${result.error || "无法解析"}`;
+  const parseWarn = detectCssParsingIssue(css, result.ruleCount);
+  return parseWarn ? `CSS 解析警告：${parseWarn}` : "";
+}
 
-  init() {
-    this.apply(this.isDark);
-  },
+interface DisplayModeOption {
+  value: number;
+  label: string;
+}
 
-  toggle() {
-    this.isDark = !this.isDark;
-    GM_setValue("isDark", this.isDark);
-    this.apply(this.isDark);
-  },
+const DISPLAY_MODE_OPTIONS: DisplayModeOption[] = [
+  { value: 0, label: "昵称" },
+  { value: 1, label: "备注(昵称)" },
+  { value: 2, label: "昵称(备注)" },
+  { value: 3, label: "备注" },
+];
 
-  apply(dark: boolean) {
-    document
-      .querySelector("html")
-      ?.classList.toggle("memo-container-dark-theme", dark);
-  },
-};
+interface PanelPrefsStore {
+  initialized: boolean;
+  openText: string;
+  closeText: string;
+  isDark: boolean;
+  customFontColor: string;
+  customMemoCss: string;
+  cssStatus: string;
+  showAdvancedCss: boolean;
+  init(): void;
+  toggleTheme(): void;
+  editToggleText(isOpen: boolean): void;
+  onCustomColorInput(): void;
+  clearCustomColor(): void;
+  closeAdvancedCss(): void;
+  applyMemoCss(): void;
+}
+
+function useUserListStore(): UserListStore {
+  return Alpine.store("userList") as UserListStore;
+}
+
+function usePanelPrefsStore(): PanelPrefsStore {
+  return Alpine.store("panelPrefs") as PanelPrefsStore;
+}
+
+function createPanelPrefsStore(): PanelPrefsStore {
+  return {
+    initialized: false,
+    openText: GM_getValue<string>(TOGGLE_OPEN_TEXT_KEY, "UvU"),
+    closeText: GM_getValue<string>(TOGGLE_CLOSE_TEXT_KEY, "UwU"),
+    isDark: GM_getValue<boolean>(THEME_KEY, false),
+    customFontColor: "",
+    customMemoCss: "",
+    cssStatus: "",
+    showAdvancedCss: false,
+
+    init() {
+      if (this.initialized) return;
+      this.initialized = true;
+
+      applyTheme(this.isDark);
+      useUserListStore().isDark = this.isDark;
+
+      const storedColor = GM_getValue<string>(CUSTOM_FONT_COLOR_KEY, "").trim();
+      const cssVarColor = document.documentElement.style
+        .getPropertyValue("--custom-font-color")
+        .trim();
+      this.customFontColor = storedColor || cssVarColor;
+      applyCustomFontColor(this.customFontColor);
+
+      this.customMemoCss = GM_getValue<string>(CUSTOM_MEMO_CSS_KEY, "");
+      this.applyMemoCss();
+    },
+
+    toggleTheme() {
+      this.isDark = !this.isDark;
+      useUserListStore().isDark = this.isDark;
+      GM_setValue(THEME_KEY, this.isDark);
+      applyTheme(this.isDark);
+    },
+
+    editToggleText(isOpen: boolean) {
+      const key = isOpen ? TOGGLE_OPEN_TEXT_KEY : TOGGLE_CLOSE_TEXT_KEY;
+      const currentText = isOpen ? this.openText : this.closeText;
+      const nextText = prompt("修改文字:", currentText)?.trim();
+      if (!nextText) return;
+
+      if (isOpen) this.openText = nextText;
+      else this.closeText = nextText;
+      GM_setValue(key, nextText);
+    },
+
+    onCustomColorInput() {
+      applyCustomFontColor(this.customFontColor);
+      GM_setValue(CUSTOM_FONT_COLOR_KEY, this.customFontColor);
+    },
+
+    clearCustomColor() {
+      this.customFontColor = "";
+      applyCustomFontColor("");
+      GM_setValue(CUSTOM_FONT_COLOR_KEY, "");
+      alert("已取消自定义字体颜色");
+    },
+
+    closeAdvancedCss() {
+      this.showAdvancedCss = false;
+    },
+
+    applyMemoCss() {
+      const nextCss = this.customMemoCss || "";
+      const result = setCustomMemoCss(nextCss);
+      this.cssStatus = resolveCssStatus(nextCss, result);
+      GM_setValue(CUSTOM_MEMO_CSS_KEY, nextCss);
+    },
+  };
+}
+
+function registerPanelComponents() {
+  if (panelComponentsRegistered) return;
+  panelComponentsRegistered = true;
+
+  Alpine.data("panelShell", () => ({
+    init() {
+      usePanelPrefsStore().init();
+    },
+    get isOpen(): boolean {
+      return useUserListStore().isOpen;
+    },
+    set isOpen(next: boolean) {
+      useUserListStore().isOpen = Boolean(next);
+    },
+    handleSelectAll(event: KeyboardEvent) {
+      const userList = useUserListStore();
+      if (!userList.isMultiSelect) return;
+      if (!(event.ctrlKey || event.metaKey)) return;
+      if (event.key.toLowerCase() !== "a") return;
+
+      event.preventDefault();
+      userList.invertSelection(userList.filteredUsers.map((user) => user.id));
+    },
+  }));
+
+  Alpine.data("panelToggleBtn", () => ({
+    get prefs(): PanelPrefsStore {
+      return usePanelPrefsStore();
+    },
+    get isOpen(): boolean {
+      return useUserListStore().isOpen;
+    },
+    set isOpen(next: boolean) {
+      useUserListStore().isOpen = Boolean(next);
+    },
+    get openText(): string {
+      return this.prefs.openText;
+    },
+    get closeText(): string {
+      return this.prefs.closeText;
+    },
+    togglePanel() {
+      this.isOpen = !this.isOpen;
+    },
+    editToggleText() {
+      this.prefs.editToggleText(this.isOpen);
+    },
+  }));
+
+  Alpine.data("panelSettings", () => ({
+    displayModes: DISPLAY_MODE_OPTIONS,
+    get userList(): UserListStore {
+      return useUserListStore();
+    },
+    get prefs(): PanelPrefsStore {
+      return usePanelPrefsStore();
+    },
+    get displayModeProxy(): number {
+      return this.userList.displayMode;
+    },
+    set displayModeProxy(mode: number) {
+      this.userList.setDisplayMode(Number(mode));
+    },
+    get isDark(): boolean {
+      return this.prefs.isDark;
+    },
+    get customFontColor(): string {
+      return this.prefs.customFontColor;
+    },
+    set customFontColor(next: string) {
+      this.prefs.customFontColor = next;
+    },
+    get customMemoCss(): string {
+      return this.prefs.customMemoCss;
+    },
+    set customMemoCss(next: string) {
+      this.prefs.customMemoCss = next;
+    },
+    get cssStatus(): string {
+      return this.prefs.cssStatus;
+    },
+    get showAdvancedCss(): boolean {
+      return this.prefs.showAdvancedCss;
+    },
+    toggleTheme() {
+      this.prefs.toggleTheme();
+    },
+    onCustomColorInput() {
+      this.prefs.onCustomColorInput();
+    },
+    closeAdvancedCss() {
+      this.prefs.closeAdvancedCss();
+    },
+    handleColorSettingContextMenu(event: MouseEvent) {
+      event.preventDefault();
+      this.prefs.showAdvancedCss = !this.prefs.showAdvancedCss;
+      if (!this.prefs.showAdvancedCss) return;
+
+      (this as any).$nextTick(() => {
+        const input = (this as any).$refs.memoCssInput as
+          | HTMLTextAreaElement
+          | undefined;
+        input?.focus();
+      });
+    },
+    handleColorSettingMouseDown(event: MouseEvent) {
+      if (event.button !== 1) return;
+      event.preventDefault();
+      this.prefs.clearCustomColor();
+    },
+    applyMemoCss() {
+      this.prefs.applyMemoCss();
+    },
+  }));
+
+  Alpine.data("panelActions", () => ({
+    get userList(): UserListStore {
+      return useUserListStore();
+    },
+    clearSearch() {
+      this.userList.searchQuery = "";
+    },
+    confirmRemoveSelected() {
+      const count = this.userList.selectedIds.length;
+      if (count === 0) return;
+      if (confirm(`确定要删除所选 ${count} 个用户吗？`)) {
+        this.userList.removeSelected();
+      }
+    },
+  }));
+
+  Alpine.data("userCard", (userId: string) => ({
+    userId,
+    get userList(): UserListStore {
+      return useUserListStore();
+    },
+    get currentUser(): BiliUser | undefined {
+      return this.userList.users.find((item) => item.id === this.userId);
+    },
+    get isSelected(): boolean {
+      return this.userList.selectedIds.includes(this.userId);
+    },
+    get isMultiSelect(): boolean {
+      return this.userList.isMultiSelect;
+    },
+    get selectedIds(): string[] {
+      return this.userList.selectedIds;
+    },
+    set selectedIds(next: string[]) {
+      this.userList.selectedIds = next;
+    },
+    confirmRemove() {
+      if (confirm("确定要删除吗？")) {
+        this.userList.removeUser(this.userId);
+      }
+    },
+  }));
+
+  Alpine.data("copyableUid", (uid: string) => ({
+    uid,
+    copied: false,
+    init() {
+      this.refreshOverflow();
+    },
+    refreshOverflow() {
+      (this as any).$nextTick(() => {
+        const el = (this as any).$el as HTMLElement;
+        el.classList.toggle("can-expand", el.scrollWidth > el.clientWidth);
+      });
+    },
+    copy() {
+      navigator.clipboard.writeText(`UID:${this.uid}`);
+      this.copied = true;
+      window.setTimeout(() => {
+        this.copied = false;
+      }, 500);
+    },
+    get displayText(): string {
+      return this.copied ? "✅ 已复制" : this.uid;
+    },
+  }));
+
+  Alpine.data("memoEditor", (userId: string, initialMemo = "") => ({
+    userId,
+    isEditing: false,
+    memoDraft: String(initialMemo ?? ""),
+    get userList(): UserListStore {
+      return useUserListStore();
+    },
+    get currentMemo(): string {
+      return (
+        this.userList.users.find((item) => item.id === this.userId)?.memo || ""
+      );
+    },
+    syncDraft() {
+      if (!this.isEditing) {
+        this.memoDraft = this.currentMemo;
+      }
+    },
+    startEdit() {
+      this.isEditing = true;
+      (this as any).$nextTick(() => {
+        const input = (this as any).$refs.memoInput as
+          | HTMLInputElement
+          | undefined;
+        input?.focus();
+      });
+    },
+    commit() {
+      this.isEditing = false;
+      const nextMemo =
+        typeof this.memoDraft === "string"
+          ? this.memoDraft
+          : String(this.memoDraft ?? "");
+      this.userList.updateUser(this.userId, { memo: nextMemo });
+    },
+    cancel() {
+      this.memoDraft = this.currentMemo;
+      this.isEditing = false;
+    },
+    blurInput() {
+      const input = (this as any).$refs.memoInput as
+        | HTMLInputElement
+        | undefined;
+      input?.blur();
+    },
+  }));
+}
+
 /* =========================
  * 注入主面板
  * ========================= */
 export function initMainPanel() {
   if (document.getElementById("bili-memo-container")) return;
-  // 注册 store（必须在 Alpine.start 之前）
+
   registerUserStore();
-  Alpine.data("themeHandler", () => ({
-    isDark: themeManager.isDark,
-    toggle() {
-      themeManager.toggle();
-      this.isDark = themeManager.isDark; // 同步组件内状态
-    },
-  }));
-
-  // 3. 注册面板开关组件 (供 UwU 按钮使用)
-  Alpine.data("toggleBtn", () => ({
-    get isOpen() {
-      return (Alpine.store("userList") as UserListStore).isOpen;
-    },
-    set isOpen(val) {
-      (Alpine.store("userList") as UserListStore).isOpen = val;
-    },
-
-    openText: GM_getValue<string>("btn_open_text", "UvU"),
-    closeText: GM_getValue<string>("btn_close_text", "UwU"),
-
-    edit() {
-      const isOp = this.isOpen;
-      const key = isOp ? "btn_open_text" : "btn_close_text";
-      const n = prompt("修改文字:", isOp ? this.openText : this.closeText);
-      if (n?.trim()) {
-        if (isOp) this.openText = n.trim();
-        else this.closeText = n.trim();
-        GM_setValue(key, n.trim());
-      }
-    },
-  }));
-  themeManager.init();
-  // Alpine 组件只负责 UI 绑定
-  Alpine.data("userList", () => Alpine.store("userList") as UserListStore);
+  if (!Alpine.store("panelPrefs")) {
+    Alpine.store("panelPrefs", createPanelPrefsStore());
+  }
+  registerPanelComponents();
 
   const finalHtml = panelHtml
     .replace("${appName}", "备注管理")
@@ -158,114 +472,4 @@ export function initMainPanel() {
   container.id = "bili-memo-container";
   container.innerHTML = finalHtml;
   document.body.appendChild(container);
-
-  const storedColor = GM_getValue<string>(CUSTOM_FONT_COLOR_KEY, "");
-  const initialColor =
-    storedColor ||
-    document.documentElement.style.getPropertyValue("--custom-font-color");
-  applyCustomFontColor(initialColor);
-
-  const colorInput = container.querySelector(
-    ".ghost-color-picker",
-  ) as HTMLInputElement | null;
-  if (colorInput) {
-    colorInput.value = initialColor;
-    colorInput.addEventListener("input", () => {
-      const nextColor = colorInput.value;
-      applyCustomFontColor(nextColor);
-      GM_setValue(CUSTOM_FONT_COLOR_KEY, nextColor);
-    });
-  }
-
-  const storedMemoCss = GM_getValue<string>(CUSTOM_MEMO_CSS_KEY, "");
-  const memoCssStatus = container.querySelector(
-    ".panel-custom-css-status",
-  ) as HTMLDivElement | null;
-
-  const setCssStatus = (message: string) => {
-    if (!memoCssStatus) return;
-    if (!message) {
-      memoCssStatus.textContent = "";
-      memoCssStatus.classList.remove("is-visible");
-      return;
-    }
-    memoCssStatus.textContent = message;
-    memoCssStatus.classList.add("is-visible");
-  };
-
-  const initialApply = setCustomMemoCss(storedMemoCss);
-  const initialLint = lintCss(storedMemoCss);
-  const initialParseWarn = detectCssParsingIssue(
-    storedMemoCss,
-    initialApply.ruleCount,
-  );
-  if (initialLint) {
-    setCssStatus(`CSS 语法警告：${initialLint}`);
-  } else if (!initialApply.ok) {
-    setCssStatus(`CSS 语法错误：${initialApply.error || "无法解析"}`);
-  } else if (initialParseWarn) {
-    setCssStatus(`CSS 解析警告：${initialParseWarn}`);
-  } else {
-    setCssStatus("");
-  }
-
-  const memoCssInput = container.querySelector(
-    ".panel-custom-css-input",
-  ) as HTMLTextAreaElement | null;
-  const colorSetting = container.querySelector(
-    ".panel-custom-color-setting",
-  ) as HTMLLabelElement | null;
-
-  if (colorSetting) {
-    colorSetting.addEventListener("click", () => {
-      container.classList.remove("advanced-css-open");
-    });
-    colorSetting.addEventListener("contextmenu", (event) => {
-      event.preventDefault();
-      container.classList.toggle("advanced-css-open");
-      if (container.classList.contains("advanced-css-open")) {
-        memoCssInput?.focus();
-      }
-    });
-    const removeCustomColor = () => {
-      document.documentElement.style.removeProperty("--custom-font-color");
-      GM_setValue(CUSTOM_FONT_COLOR_KEY, "");
-      alert("已取消自定义字体颜色");
-    };
-    // colorSetting.addEventListener("auxclick", (event) => {
-    //   if (event.button === 1) removeCustomColor();
-    // });
-    // auxclick 在某些浏览器或环境中可能不兼容，改用 mousedown 监听中键点击
-    colorSetting.addEventListener("mousedown", (e) => {
-      if (e.button === 1) {
-        removeCustomColor();
-        e.preventDefault();
-      }
-    });
-  }
-  if (memoCssInput) {
-    memoCssInput.value = storedMemoCss;
-    let cssTimer: number | undefined;
-    const applyNow = () => {
-      const nextCss = memoCssInput.value || "";
-      const result = setCustomMemoCss(nextCss);
-      const lintResult = lintCss(nextCss);
-      const parseWarn = detectCssParsingIssue(nextCss, result.ruleCount);
-      if (lintResult) {
-        setCssStatus(`CSS 语法警告：${lintResult}`);
-      } else if (!result.ok) {
-        setCssStatus(`CSS 语法错误：${result.error || "无法解析"}`);
-      } else if (parseWarn) {
-        setCssStatus(`CSS 解析警告：${parseWarn}`);
-      } else {
-        setCssStatus("");
-      }
-      GM_setValue(CUSTOM_MEMO_CSS_KEY, nextCss);
-    };
-    memoCssInput.addEventListener("input", () => {
-      if (cssTimer) window.clearTimeout(cssTimer);
-      cssTimer = window.setTimeout(applyNow, 1000);
-    });
-    memoCssInput.addEventListener("blur", applyNow);
-  }
 }

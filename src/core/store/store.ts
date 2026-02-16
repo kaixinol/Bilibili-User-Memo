@@ -1,5 +1,5 @@
 import { logger } from "../../utils/logger";
-import { BiliUser } from "../types/types";
+import { BiliUser } from "../types";
 import { getUserAvatar } from "../dom/dom-utils";
 import { GM_addValueChangeListener } from "$";
 import {
@@ -117,35 +117,32 @@ class UserStore {
    */
   private listenToRemoteChanges() {
     // 1. 监听用户列表变更
-    GM_addValueChangeListener(
-      USERS_KEY,
-      (name, oldValue, newValue, remote) => {
-        // 如果正在进行本地系统写入，忽略可能的即时回传，避免冲突
-        if (this.isSystemChanging) return;
+    GM_addValueChangeListener(USERS_KEY, (name, oldValue, newValue, remote) => {
+      // 如果正在进行本地系统写入，忽略可能的即时回传，避免冲突
+      if (this.isSystemChanging) return;
 
-        // remote = true 表示变更来自其他标签页/脚本实例
-        if (remote) {
-          logger.debug("🔄 [Sync] 检测到外部数据变更，正在同步...");
+      // remote = true 表示变更来自其他标签页/脚本实例
+      if (remote) {
+        logger.debug("🔄 [Sync] 检测到外部数据变更，正在同步...");
 
-          // 标记为正在变更，防止触发连锁反应
-          this.isSystemChanging = true;
+        // 标记为正在变更，防止触发连锁反应
+        this.isSystemChanging = true;
 
-          try {
-            this.users = normalizeUsers(newValue);
-            this.emit({
-              type: "users",
-              users: this.getUsers(),
-              reason: "remote",
-            });
-          } catch (e) {
-            logger.error("同步外部数据失败", e);
-          } finally {
-            // 确保释放锁
-            this.isSystemChanging = false;
-          }
+        try {
+          this.users = normalizeUsers(newValue);
+          this.emit({
+            type: "users",
+            users: this.getUsers(),
+            reason: "remote",
+          });
+        } catch (e) {
+          logger.error("同步外部数据失败", e);
+        } finally {
+          // 确保释放锁
+          this.isSystemChanging = false;
         }
-      },
-    );
+      }
+    });
 
     // 2. 监听显示模式变更
     GM_addValueChangeListener(
@@ -266,7 +263,9 @@ class UserStore {
     }
 
     const nextNickname =
-      updates.nickname !== undefined ? updates.nickname.trim() : existing.nickname;
+      updates.nickname !== undefined
+        ? updates.nickname.trim()
+        : existing.nickname;
     const nextAvatar =
       updates.avatar !== undefined ? updates.avatar : existing.avatar;
 
@@ -286,7 +285,11 @@ class UserStore {
     return true;
   }
 
-  public updateUserMemo(uid: string, newMemo: string, fallbackName = ""): boolean {
+  public updateUserMemo(
+    uid: string,
+    newMemo: string,
+    fallbackName = "",
+  ): boolean {
     return this.updateUser(uid, { memo: newMemo }, fallbackName);
   }
 

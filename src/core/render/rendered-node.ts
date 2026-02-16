@@ -1,4 +1,4 @@
-import { BiliUser, ElementMeta } from "../types/types";
+import { BiliUser, ElementMeta } from "../types";
 import { formatDisplayName } from "../dom/dom-utils";
 
 interface RenderedNodeOptions {
@@ -19,9 +19,9 @@ export function syncRenderedNodeState(
 
   const shouldHighlight = Boolean(
     !options.isEditableWrapper &&
-      user?.memo &&
-      user.memo !== originalName &&
-      text !== originalName,
+    user?.memo &&
+    user.memo !== originalName &&
+    text !== originalName,
   );
   el.classList.toggle("bili-memo-tag", shouldHighlight);
 }

@@ -1,5 +1,5 @@
 import { querySelectorAllDeep } from "query-selector-shadow-dom";
-import { BiliUser } from "../types/types";
+import { BiliUser } from "../types";
 import { syncRenderedNodeState } from "./rendered-node";
 
 function escapeAttrValue(value: string): string {

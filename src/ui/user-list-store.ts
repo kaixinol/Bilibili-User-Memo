@@ -4,7 +4,7 @@ import { getUserInfo } from "../utils/sign";
 import { logger } from "../utils/logger";
 import { validateEitherJSON } from "../configs/schema";
 import { userStore } from "../core/store/store";
-import { BiliUser } from "../core/types/types";
+import { BiliUser } from "../core/types";
 
 export interface UserListStore {
   isOpen: boolean;
@@ -21,8 +21,6 @@ export interface UserListStore {
   updateUser(id: string, updates: Partial<BiliUser>): void;
   removeUser(id: string): void;
   toggleMultiSelect(): void;
-  toggleSelected(id: string): void;
-  isSelected(id: string): boolean;
   clearSelection(): void;
   invertSelection(ids: string[]): void;
   removeSelected(): void;
@@ -77,18 +75,6 @@ export function registerUserStore() {
       if (!this.isMultiSelect) {
         this.clearSelection();
       }
-    },
-
-    toggleSelected(id: string) {
-      if (this.selectedIds.includes(id)) {
-        this.selectedIds = this.selectedIds.filter((item) => item !== id);
-        return;
-      }
-      this.selectedIds = [...this.selectedIds, id];
-    },
-
-    isSelected(id: string) {
-      return this.selectedIds.includes(id);
     },
 
     clearSelection() {
@@ -204,7 +190,9 @@ export function registerUserStore() {
             return;
           }
 
-          importedUsers = importedUsers.filter((user) => user.id && user.nickname);
+          importedUsers = importedUsers.filter(
+            (user) => user.id && user.nickname,
+          );
           if (importedUsers.length === 0) {
             alert("导入失败：没有有效的用户数据");
             return;
@@ -228,16 +216,23 @@ export function registerUserStore() {
     },
   };
 
+  // Alpine.store(...) 会返回响应式代理；后续必须写入代理对象，才能触发 UI 更新。
+  Alpine.store("userList", store);
+  const reactiveStore = Alpine.store("userList") as UserListStore;
+
   const syncUsers = (users: BiliUser[]) => {
-    store.users = users;
-    if (store.selectedIds.length === 0) return;
+    const prevCount = reactiveStore.users.length;
+    reactiveStore.users = users;
+    if (reactiveStore.selectedIds.length === 0) return;
     const userIds = new Set(users.map((u) => u.id));
-    store.selectedIds = store.selectedIds.filter((id) => userIds.has(id));
+    reactiveStore.selectedIds = reactiveStore.selectedIds.filter((id) =>
+      userIds.has(id),
+    );
   };
 
   userStore.subscribe((change) => {
     if (change.type === "displayMode") {
-      store.displayMode = change.displayMode;
+      reactiveStore.displayMode = change.displayMode;
       return;
     }
     if (change.type === "users") {
@@ -245,8 +240,6 @@ export function registerUserStore() {
       return;
     }
     syncUsers(change.users);
-    store.displayMode = change.displayMode;
+    reactiveStore.displayMode = change.displayMode;
   });
-
-  Alpine.store("userList", store);
 }

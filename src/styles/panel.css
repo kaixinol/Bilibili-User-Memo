@@ -80,12 +80,9 @@
   border-radius: 10px;
   background: var(--bg-sub);
   border: 1px solid var(--border-main);
-  display: none;
+  display: flex;
   flex-direction: column;
   gap: 6px;
-}
-.advanced-css-open .panel-custom-css-section {
-  display: flex;
 }
 .panel-custom-css-title {
   font-size: 13px;
@@ -115,16 +112,12 @@
   box-shadow: 0 0 0 2px var(--primary-alpha);
 }
 .panel-custom-css-status {
-  display: none;
   font-size: 12px;
   color: var(--text-inverse);
   background: var(--danger-color);
   border-radius: 6px;
   padding: 4px 8px;
   line-height: 1.4;
-}
-.panel-custom-css-status.is-visible {
-  display: block;
 }
 .panel-custom-css-hint {
   font-size: 12px;

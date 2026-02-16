@@ -1,71 +1,44 @@
 <div
-  x-data="userList"
+  x-data="panelShell"
+  x-init="init()"
   x-show="true"
   class="panel-container"
-  :class="isOpen ? 'open' : 'closed'"
-  @keydown.window="
-    if ($store.userList.isMultiSelect && (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'a') {
-      event.preventDefault();
-      $store.userList.invertSelection($store.userList.filteredUsers.map(u => u.id));
-    }
-  "
+  :class="{ open: isOpen, closed: !isOpen }"
+  @keydown.window="handleSelectAll($event)"
   x-cloak
 >
-  <div class="panel-inner">
+  <div class="panel-inner" x-data="panelSettings">
     <button
       class="panel-toggle-btn"
       title="右键点击修改文本~"
-      x-data="toggleBtn"
-      x-on:click="isOpen = !isOpen"
-      @contextmenu.prevent="edit()"
+      x-data="panelToggleBtn"
+      @click="togglePanel()"
+      @contextmenu.prevent="editToggleText()"
       x-text="isOpen ? openText : closeText"
       :style="isOpen ? 'opacity: 1;' : 'opacity: 0.3;'"
     ></button>
     <div class="panel-mode-section">
       <div class="panel-mode-label">昵称显示模式：</div>
-      <div class="panel-mode-option">
-        <input
-          type="radio"
-          name="memoMode"
-          value="0"
-          id="panel-memo-mode-0"
-          :checked="$store.userList.displayMode === 0"
-          @change="$store.userList.setDisplayMode(0)"
-        /><label for="panel-memo-mode-0">昵称</label>
-      </div>
+      <template x-for="mode in displayModes" :key="mode.value">
+        <div class="panel-mode-option">
+          <input
+            type="radio"
+            name="memoMode"
+            :value="mode.value"
+            :id="`panel-memo-mode-${mode.value}`"
+            x-model.number="displayModeProxy"
+          />
+          <label :for="`panel-memo-mode-${mode.value}`" x-text="mode.label"></label>
+        </div>
+      </template>
 
-      <div class="panel-mode-option">
-        <input
-          type="radio"
-          name="memoMode"
-          value="1"
-          id="panel-memo-mode-1"
-          :checked="$store.userList.displayMode === 1"
-          @change="$store.userList.setDisplayMode(1)"
-        /><label for="panel-memo-mode-1">备注(昵称)</label>
-      </div>
-      <div class="panel-mode-option">
-        <input
-          type="radio"
-          name="memoMode"
-          value="2"
-          id="panel-memo-mode-2"
-          :checked="$store.userList.displayMode === 2"
-          @change="$store.userList.setDisplayMode(2)"
-        /><label for="panel-memo-mode-2">昵称(备注)</label>
-      </div>
-      <div class="panel-mode-option">
-        <input
-          type="radio"
-          name="memoMode"
-          value="3"
-          id="panel-memo-mode-3"
-          :checked="$store.userList.displayMode === 3"
-          @change="$store.userList.setDisplayMode(3)"
-        /><label for="panel-memo-mode-3">备注</label>
-      </div>
       <div class="panel-right-actions">
-        <label class="panel-custom-color-setting">
+        <label
+          class="panel-custom-color-setting"
+          @click="closeAdvancedCss()"
+          @contextmenu="handleColorSettingContextMenu($event)"
+          @mousedown="handleColorSettingMouseDown($event)"
+        >
           <span
             class="setting-text"
             title="左键自定义颜色&#10;右键自定义样式&#10;中键清除自定义样式"
@@ -73,10 +46,15 @@
           >
           <div class="color-preview"></div>
 
-          <input type="color" class="ghost-color-picker" />
+          <input
+            type="color"
+            class="ghost-color-picker"
+            x-model="customFontColor"
+            @input="onCustomColorInput()"
+          />
         </label>
       </div>
-      <div class="panel-theme-toggle" x-data="themeHandler" @click="toggle()">
+      <div class="panel-theme-toggle" @click="toggleTheme()">
         <svg
           x-show="!isDark"
           alt="sun"
@@ -119,28 +97,26 @@
         </svg>
       </div>
     </div>
-    <div class="panel-control-bar">
-      <button
-        class="panel-btn"
-        @click="importData()"
-        title="导入JSON文件，支持老格式"
-      >
+
+    <div class="panel-control-bar" x-data="panelActions">
+      <button class="panel-btn" @click="userList.importData()" title="导入JSON文件，支持老格式">
         导入
       </button>
       <button
         class="panel-btn"
-        @click="$store.userList.toggleMultiSelect()"
-        :class="{ 'btn-active': $store.userList.isMultiSelect }"
+        @click="userList.toggleMultiSelect()"
+        :class="{ 'btn-active': userList.isMultiSelect }"
         title="按Ctrl + A 全选 / 反选"
       >
-        <span x-show="!$store.userList.isMultiSelect">多选用户</span>
-        <span x-show="$store.userList.isMultiSelect">退出多选</span>
+        <span x-show="!userList.isMultiSelect">多选用户</span>
+        <span x-show="userList.isMultiSelect">退出多选</span>
       </button>
       <button
         class="panel-icon-btn"
-        x-show="$store.userList.isMultiSelect"
-        :disabled="$store.userList.selectedIds.length === 0"
-        @click="if(confirm(`确定要删除所选 ${$store.userList.selectedIds.length} 个用户吗？`)) { $store.userList.removeSelected() }"
+        x-show="userList.isMultiSelect"
+        x-transition.opacity.scale
+        :disabled="userList.selectedIds.length === 0"
+        @click="confirmRemoveSelected()"
         title="删除所选用户"
       >
         <svg
@@ -158,24 +134,24 @@
           <path d="M3 6h18" />
           <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
         </svg>
-        <span class="panel-icon-text" x-show="$store.userList.isMultiSelect"
-          >已选 <span x-text="$store.userList.selectedIds.length"></span
+        <span class="panel-icon-text" x-show="userList.isMultiSelect"
+          >已选 <span x-text="userList.selectedIds.length"></span
         ></span>
       </button>
       <div class="panel-title">备注列表</div>
       <button
         class="panel-btn"
-        @click="$store.userList.refreshData()"
-        :disabled="$store.userList.isRefreshing"
-        :class="{ 'btn-disabled': $store.userList.isRefreshing }"
-        :title="$store.userList.isRefreshing ? '正在同步 Bilibili 最新数据...' : '刷新UP主名字和头像'"
+        @click="userList.refreshData()"
+        :disabled="userList.isRefreshing"
+        :class="{ 'btn-disabled': userList.isRefreshing }"
+        :title="userList.isRefreshing ? '正在同步 Bilibili 最新数据...' : '刷新UP主名字和头像'"
       >
-        <span x-show="!$store.userList.isRefreshing">⚡一键刷新数据</span>
+        <span x-show="!userList.isRefreshing">⚡一键刷新数据</span>
 
-        <span x-show="$store.userList.isRefreshing" class="refresh-content">
+        <span x-show="userList.isRefreshing" class="refresh-content">
           <span class="loading-spinner">⏳</span>
-          正在刷新 (<span x-text="$store.userList.refreshCurrent"></span>/<span
-            x-text="$store.userList.refreshTotal"
+          正在刷新 (<span x-text="userList.refreshCurrent"></span>/<span
+            x-text="userList.refreshTotal"
           ></span
           >)
         </span>
@@ -185,16 +161,32 @@
           id="searchInput"
           placeholder="搜索昵称、备注或ID..."
           class="panel-search-input"
-          x-model.debounce="searchQuery"
+          x-model.debounce.200ms="userList.searchQuery"
         />
-        <button class="panel-search-clear" @click="searchQuery = ''">×</button>
+        <button
+          class="panel-search-clear"
+          x-show="userList.searchQuery"
+          x-transition.opacity
+          @click="clearSearch()"
+        >
+          ×
+        </button>
       </div>
-      <button class="panel-btn" @click="exportData()">导出</button>
+      <button class="panel-btn" @click="userList.exportData()">导出</button>
     </div>
-    <div class="panel-custom-css-section">
+
+    <div
+      class="panel-custom-css-section"
+      x-show="showAdvancedCss"
+      x-transition.origin.top.duration.150ms
+    >
       <div class="panel-custom-css-title">自定义备注样式（CSS）</div>
       <textarea
+        x-ref="memoCssInput"
         class="panel-custom-css-input"
+        x-model="customMemoCss"
+        @input.debounce.700ms="applyMemoCss()"
+        @blur="applyMemoCss()"
         placeholder="示例：
 .bili-memo-tag {
   font-style: italic;
@@ -207,24 +199,25 @@
       ></textarea>
       <div
         class="panel-custom-css-status"
+        x-show="cssStatus"
+        x-transition.opacity
         role="status"
         aria-live="polite"
+        x-text="cssStatus"
       ></div>
       <div class="panel-custom-css-hint">
         这里支持完整 CSS 选择器。只影响备注相关元素时，建议用 .bili-memo-tag /
         .editable-textarea / .bili-memo-input
       </div>
     </div>
+
     <div class="panel-users-container">
       <div class="panel-users-list">
         <template x-for="user in $store.userList.filteredUsers" :key="user.id">
           ${boxTemplate}
         </template>
 
-        <div
-          x-show="$store.userList.filteredUsers.length === 0"
-          class="panel-empty-state"
-        >
+        <div x-show="$store.userList.filteredUsers.length === 0" class="panel-empty-state">
           没有找到用户
         </div>
       </div>

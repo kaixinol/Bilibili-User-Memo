@@ -1,61 +1,56 @@
 <div
   class="user-box"
-  :class="{ 'is-selected': $store.userList.isSelected(user.id) }"
+  x-data="userCard(user.id)"
+  x-show="currentUser"
+  :class="{ 'is-selected': isSelected }"
 >
-  <label class="user-select" x-show="$store.userList.isMultiSelect">
-    <input
-      type="checkbox"
-      :checked="$store.userList.isSelected(user.id)"
-      @click.stop="$store.userList.toggleSelected(user.id)"
-    />
+  <label class="user-select" x-show="isMultiSelect">
+    <input type="checkbox" :value="user.id" x-model="selectedIds" @click.stop />
     <span class="user-select-mark"></span>
   </label>
   <div class="user-avatar-wrapper">
-    <img :src="user.avatar" class="user-avatar" :alt="user.nickname" />
+    <img :src="currentUser?.avatar || ''" class="user-avatar" :alt="currentUser?.nickname || user.id" />
   </div>
   <div class="user-info-section">
     <div class="user-info-label">BilibiliID</div>
     <div
       class="user-id"
-      x-data="{ copied: false }"
-      x-init="$nextTick(() => { if($el.scrollWidth > $el.clientWidth) $el.classList.add('can-expand') })"
-      x-effect="user.id; $nextTick(() => { $el.classList.toggle('can-expand', $el.scrollWidth > $el.clientWidth) })"
-      x-text="copied ? '✅ 已复制' : user.id"
-      @click="
-    navigator.clipboard.writeText('UID:'+user.id);
-    copied = true;
-    setTimeout(() => { copied = false }, 500);
-  "
+      x-data="copyableUid(user.id)"
+      x-init="init()"
+      x-effect="refreshOverflow()"
+      x-text="displayText"
+      @click="copy()"
       :class="{ 'copied-status': copied }"
       :title="copied ? '' : '点击复制 ID'"
     ></div>
   </div>
-  <div class="user-nickname-section" :title="user.nickname">
+  <div class="user-nickname-section" :title="currentUser?.nickname || user.id">
     <div class="user-info-label">昵称</div>
     <a
       :href="'https://space.bilibili.com/' + user.id"
       target="_blank"
       class="user-nickname-link"
-      x-text="user.nickname"
+      x-text="currentUser?.nickname || user.id"
     ></a>
   </div>
-  <div class="user-note-section" x-data="{ isEditing: false }">
+  <div class="user-note-section" x-data="memoEditor(user.id, currentUser?.memo || '')" x-effect="syncDraft()">
     <div class="user-info-label">备注</div>
     <input
-      :value="user.memo"
+      x-ref="memoInput"
+      x-model="memoDraft"
       :readonly="!isEditing"
       :class="{ 'editing': isEditing }"
       class="user-note-input"
-      @click="isEditing = true"
-      @blur="isEditing = false; $store.userList.updateUser(user.id, { memo: $el.value })"
-      @keydown.enter="isEditing = false; $store.userList.updateUser(user.id, { memo: $el.value })"
-      x-init="$watch('isEditing', value => value && $nextTick(() => $el.focus()))"
+      @click="startEdit()"
+      @blur="commit()"
+      @keydown.enter.prevent="blurInput()"
+      @keydown.escape.prevent="cancel(); blurInput()"
     />
   </div>
   <svg
     class="delete-btn"
-    @click="if(confirm('确定要删除吗？')) { $store.userList.removeUser(user.id) }"
-    x-show="!$store.userList.isMultiSelect"
+    @click="confirmRemove()"
+    x-show="!isMultiSelect"
     title="删除用户"
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 24 24"

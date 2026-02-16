@@ -1,5 +1,9 @@
-import { BiliUser } from "../types/types";
-import { DynamicPageRule, PageRule, PollingPageRule } from "../../configs/rules";
+import { BiliUser } from "../types";
+import {
+  DynamicPageRule,
+  PageRule,
+  PollingPageRule,
+} from "../../configs/rules";
 import { querySelectorAllDeep } from "query-selector-shadow-dom";
 
 function readPreferredText(node: HTMLElement | null): string | null {

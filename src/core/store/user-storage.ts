@@ -1,5 +1,5 @@
 import { GM_getValue, GM_setValue } from "$";
-import { BiliUser } from "../types/types";
+import { BiliUser } from "../types";
 
 export const USERS_KEY = "biliUsers";
 export const DISPLAY_MODE_KEY = "displayMode";

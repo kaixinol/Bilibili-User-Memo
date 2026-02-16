@@ -1,5 +1,5 @@
 // src/core/editor.ts
-import { BiliUser } from "../types/types";
+import { BiliUser } from "../types";
 import { userStore } from "../store/store";
 import { syncRenderedNodeState } from "./rendered-node";
 
@@ -59,9 +59,8 @@ export function enterEditMode(targetElement: HTMLElement, user: BiliUser) {
         originalName,
         userStore.displayMode,
         {
-          isEditableWrapper: targetElement.classList.contains(
-            "editable-textarea",
-          ),
+          isEditableWrapper:
+            targetElement.classList.contains("editable-textarea"),
         },
       );
     }

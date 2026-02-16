@@ -1,3 +1,4 @@
+import Alpine from "alpinejs";
 import { GM_getValue, GM_setValue } from "vite-plugin-monkey/dist/client";
 import { setCustomMemoCss } from "../core/injection/injector";
 import { UserListStore } from "./user-list-store";
@@ -7,6 +8,41 @@ const CUSTOM_MEMO_CSS_KEY = "customMemoCss";
 const THEME_KEY = "isDark";
 const TOGGLE_OPEN_TEXT_KEY = "btn_open_text";
 const TOGGLE_CLOSE_TEXT_KEY = "btn_close_text";
+const PERSIST_KEY_PREFIX = "panelPrefs:";
+
+interface PersistStorage {
+  getItem(key: string): string | null;
+  setItem(key: string, value: string): void;
+  removeItem?(key: string): void;
+}
+
+interface PersistInterceptor<T> {
+  as(key: string): PersistInterceptor<T>;
+  using(storage: PersistStorage): T;
+}
+
+const gmPersistStorage: PersistStorage = {
+  getItem(storageKey) {
+    const value = GM_getValue<string>(`${PERSIST_KEY_PREFIX}${storageKey}`, "");
+    return value || null;
+  },
+  setItem(storageKey, value) {
+    GM_setValue(`${PERSIST_KEY_PREFIX}${storageKey}`, value);
+  },
+  removeItem(storageKey) {
+    GM_setValue(`${PERSIST_KEY_PREFIX}${storageKey}`, "");
+  },
+};
+
+function persistWithGmStorage<T>(key: string, initialValue: T): T {
+  const persistFactory = (Alpine as unknown as {
+    $persist?: (value: T) => PersistInterceptor<T>;
+  }).$persist;
+
+  if (!persistFactory) return initialValue;
+
+  return persistFactory(initialValue).as(key).using(gmPersistStorage);
+}
 
 function applyCustomFontColor(color: string) {
   if (!color) {
@@ -129,13 +165,19 @@ interface PanelPrefsDeps {
 export function createPanelPrefsStore({
   getUserListStore,
 }: PanelPrefsDeps): PanelPrefsStore {
+  const initialOpenText = GM_getValue<string>(TOGGLE_OPEN_TEXT_KEY, "UvU");
+  const initialCloseText = GM_getValue<string>(TOGGLE_CLOSE_TEXT_KEY, "UwU");
+  const initialDarkTheme = GM_getValue<boolean>(THEME_KEY, false);
+  const initialFontColor = GM_getValue<string>(CUSTOM_FONT_COLOR_KEY, "").trim();
+  const initialMemoCss = GM_getValue<string>(CUSTOM_MEMO_CSS_KEY, "");
+
   return {
     initialized: false,
-    openText: GM_getValue<string>(TOGGLE_OPEN_TEXT_KEY, "UvU"),
-    closeText: GM_getValue<string>(TOGGLE_CLOSE_TEXT_KEY, "UwU"),
-    isDark: GM_getValue<boolean>(THEME_KEY, false),
-    customFontColor: "",
-    customMemoCss: "",
+    openText: persistWithGmStorage("toggle.openText", initialOpenText),
+    closeText: persistWithGmStorage("toggle.closeText", initialCloseText),
+    isDark: persistWithGmStorage("theme.isDark", initialDarkTheme),
+    customFontColor: persistWithGmStorage("style.customFontColor", initialFontColor),
+    customMemoCss: persistWithGmStorage("style.customMemoCss", initialMemoCss),
     cssStatus: "",
     showAdvancedCss: false,
 
@@ -145,44 +187,35 @@ export function createPanelPrefsStore({
 
       applyTheme(this.isDark);
       getUserListStore().isDark = this.isDark;
-
-      const storedColor = GM_getValue<string>(CUSTOM_FONT_COLOR_KEY, "").trim();
       const cssVarColor = document.documentElement.style
         .getPropertyValue("--custom-font-color")
         .trim();
-      this.customFontColor = storedColor || cssVarColor;
+      this.customFontColor = this.customFontColor || cssVarColor;
       applyCustomFontColor(this.customFontColor);
-
-      this.customMemoCss = GM_getValue<string>(CUSTOM_MEMO_CSS_KEY, "");
       this.applyMemoCss();
     },
 
     toggleTheme() {
       this.isDark = !this.isDark;
       getUserListStore().isDark = this.isDark;
-      GM_setValue(THEME_KEY, this.isDark);
       applyTheme(this.isDark);
     },
 
     editToggleText(isOpen: boolean) {
-      const key = isOpen ? TOGGLE_OPEN_TEXT_KEY : TOGGLE_CLOSE_TEXT_KEY;
       const currentText = isOpen ? this.openText : this.closeText;
       const nextText = prompt("修改文字:", currentText)?.trim();
       if (!nextText) return;
       if (isOpen) this.openText = nextText;
       else this.closeText = nextText;
-      GM_setValue(key, nextText);
     },
 
     onCustomColorInput() {
       applyCustomFontColor(this.customFontColor);
-      GM_setValue(CUSTOM_FONT_COLOR_KEY, this.customFontColor);
     },
 
     clearCustomColor() {
       this.customFontColor = "";
       applyCustomFontColor("");
-      GM_setValue(CUSTOM_FONT_COLOR_KEY, "");
       alert("已取消自定义字体颜色");
     },
 
@@ -194,7 +227,6 @@ export function createPanelPrefsStore({
       const nextCss = this.customMemoCss || "";
       const result = setCustomMemoCss(nextCss);
       this.cssStatus = resolveCssStatus(nextCss, result);
-      GM_setValue(CUSTOM_MEMO_CSS_KEY, nextCss);
     },
   };
 }

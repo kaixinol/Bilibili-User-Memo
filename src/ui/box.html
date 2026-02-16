@@ -2,9 +2,10 @@
   class="user-box"
   x-data="userCard(user.id)"
   x-show="currentUser"
-  :class="{ 'is-selected': isSelected }"
+  :class="{ 'is-selected': isSelected, 'multi-select': isMultiSelect }"
+  @click="handleCardClick($event)"
 >
-  <label class="user-select" x-show="isMultiSelect">
+  <label class="user-select" x-show="isMultiSelect" @click.stop>
     <input type="checkbox" :value="user.id" x-model="selectedIds" @click.stop />
     <span class="user-select-mark"></span>
   </label>

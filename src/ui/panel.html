@@ -7,7 +7,11 @@
   @keydown.window="handleSelectAll($event)"
   x-cloak
 >
-  <div class="panel-inner" x-data="panelSettings">
+  <div
+    class="panel-inner"
+    x-data="panelSettings"
+    x-trap.inert.noscroll="showAdvancedCss"
+  >
     <button
       class="panel-toggle-btn"
       title="右键点击修改文本~"
@@ -99,15 +103,8 @@
     </div>
 
     <div class="panel-control-bar" x-data="panelActions">
-      <button class="panel-btn" @click="userList.importData()" title="导入JSON文件，支持老格式">
-        导入
-      </button>
-      <button
-        class="panel-btn"
-        @click="userList.toggleMultiSelect()"
-        :class="{ 'btn-active': userList.isMultiSelect }"
-        title="按Ctrl + A 全选 / 反选"
-      >
+      <button x-bind="panelImportBtn">导入</button>
+      <button x-bind="panelMultiSelectBtn">
         <span x-show="!userList.isMultiSelect">多选用户</span>
         <span x-show="userList.isMultiSelect">退出多选</span>
       </button>
@@ -139,13 +136,7 @@
         ></span>
       </button>
       <div class="panel-title">备注列表</div>
-      <button
-        class="panel-btn"
-        @click="userList.refreshData()"
-        :disabled="userList.isRefreshing"
-        :class="{ 'btn-disabled': userList.isRefreshing }"
-        :title="userList.isRefreshing ? '正在同步 Bilibili 最新数据...' : '刷新UP主名字和头像'"
-      >
+      <button x-bind="panelRefreshBtn">
         <span x-show="!userList.isRefreshing">⚡一键刷新数据</span>
 
         <span x-show="userList.isRefreshing" class="refresh-content">
@@ -163,16 +154,11 @@
           class="panel-search-input"
           x-model.debounce.200ms="userList.searchQuery"
         />
-        <button
-          class="panel-search-clear"
-          x-show="userList.searchQuery"
-          x-transition.opacity
-          @click="clearSearch()"
-        >
+        <button x-bind="panelSearchClearBtn" x-transition.opacity>
           ×
         </button>
       </div>
-      <button class="panel-btn" @click="userList.exportData()">导出</button>
+      <button x-bind="panelExportBtn">导出</button>
     </div>
 
     <div

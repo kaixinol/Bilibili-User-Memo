@@ -21,6 +21,7 @@ const DISPLAY_MODE_OPTIONS: DisplayModeOption[] = [
 ];
 
 let panelComponentsRegistered = false;
+let panelBindingsRegistered = false;
 
 function useUserListStore(): UserListStore {
   return Alpine.store("userList") as UserListStore;
@@ -30,9 +31,51 @@ function usePanelPrefsStore(): PanelPrefsStore {
   return Alpine.store("panelPrefs") as PanelPrefsStore;
 }
 
+function registerPanelBindings() {
+  if (panelBindingsRegistered) return;
+  panelBindingsRegistered = true;
+
+  Alpine.bind("panelImportBtn", () => ({
+    type: "button",
+    class: "panel-btn",
+    title: "导入JSON文件，支持老格式",
+    "@click": "userList.importData()",
+  }));
+
+  Alpine.bind("panelMultiSelectBtn", () => ({
+    type: "button",
+    title: "按Ctrl + A 全选 / 反选",
+    ":class": "{ 'panel-btn': true, 'btn-active': userList.isMultiSelect }",
+    "@click": "userList.toggleMultiSelect()",
+  }));
+
+  Alpine.bind("panelRefreshBtn", () => ({
+    type: "button",
+    ":disabled": "userList.isRefreshing",
+    ":class": "{ 'panel-btn': true, 'btn-disabled': userList.isRefreshing }",
+    ":title":
+      "userList.isRefreshing ? '正在同步 Bilibili 最新数据...' : '刷新UP主名字和头像'",
+    "@click": "userList.refreshData()",
+  }));
+
+  Alpine.bind("panelSearchClearBtn", () => ({
+    type: "button",
+    class: "panel-search-clear",
+    "x-show": "userList.searchQuery",
+    "@click": "clearSearch()",
+  }));
+
+  Alpine.bind("panelExportBtn", () => ({
+    type: "button",
+    class: "panel-btn",
+    "@click": "userList.exportData()",
+  }));
+}
+
 function registerPanelComponents() {
   if (panelComponentsRegistered) return;
   panelComponentsRegistered = true;
+  registerPanelBindings();
 
   Alpine.data("panelShell", () => ({
     init() {
@@ -181,6 +224,22 @@ function registerPanelComponents() {
     set selectedIds(next: string[]) {
       this.userList.selectedIds = next;
     },
+    toggleSelected() {
+      const next = new Set(this.userList.selectedIds);
+      if (next.has(this.userId)) next.delete(this.userId);
+      else next.add(this.userId);
+      this.userList.selectedIds = Array.from(next);
+    },
+    handleCardClick(event: MouseEvent) {
+      if (!this.isMultiSelect) return;
+
+      const target = event.target as HTMLElement | null;
+      if (!target) return;
+      if (target.closest(".user-select")) return;
+
+      event.preventDefault();
+      this.toggleSelected();
+    },
     confirmRemove() {
       if (confirm("确定要删除吗？")) {
         this.userList.removeUser(this.userId);
@@ -191,6 +250,9 @@ function registerPanelComponents() {
   Alpine.data("copyableUid", (uid: string) => ({
     uid,
     copied: false,
+    get isMultiSelect(): boolean {
+      return useUserListStore().isMultiSelect;
+    },
     init() {
       this.refreshOverflow();
     },
@@ -201,6 +263,7 @@ function registerPanelComponents() {
       });
     },
     copy() {
+      if (this.isMultiSelect) return;
       navigator.clipboard.writeText(`UID:${this.uid}`);
       this.copied = true;
       window.setTimeout(() => {
@@ -219,6 +282,9 @@ function registerPanelComponents() {
     get userList(): UserListStore {
       return useUserListStore();
     },
+    get isMultiSelect(): boolean {
+      return this.userList.isMultiSelect;
+    },
     get currentMemo(): string {
       return (
         this.userList.users.find((item) => item.id === this.userId)?.memo || ""
@@ -230,6 +296,7 @@ function registerPanelComponents() {
       }
     },
     startEdit() {
+      if (this.isMultiSelect) return;
       this.isEditing = true;
       (this as any).$nextTick(() => {
         const input = (this as any).$refs.memoInput as

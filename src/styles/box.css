@@ -42,6 +42,9 @@
   border-color: var(--primary-color);
   box-shadow: 0 0 0 2px var(--primary-alpha);
 }
+.user-box.multi-select {
+  cursor: pointer;
+}
 
 .user-select {
   display: inline-flex;

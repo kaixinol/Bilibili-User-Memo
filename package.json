@@ -1,6 +1,6 @@
 {
   "name": "bili-user-memo",
-  "version": "2.0.0a4",
+  "version": "2.0.0b",
   "description": "B站UP主一键备注 | B站一键备注 Rev 的重写版本",
   "main": "main.js",
   "scripts": {
@@ -31,6 +31,8 @@
     "vite-plugin-monkey": "^7.1.9"
   },
   "dependencies": {
+    "@alpinejs/focus": "^3.15.8",
+    "@alpinejs/persist": "^3.15.8",
     "@trim21/gm-fetch": "^0.3.0",
     "alpinejs": "^3.15.8",
     "gm-fetch": "^2.0.1",

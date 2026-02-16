@@ -1,9 +1,13 @@
 import Alpine from "alpinejs";
+import focus from "@alpinejs/focus";
+import persist from "@alpinejs/persist";
 import { initMainPanel } from "./ui/panel";
 import { initPageInjection } from "./core/injection/injector";
 import { unsafeWindow } from "$";
 
 (async () => {
+  Alpine.plugin([focus, persist]);
+
   initPageInjection();
   initMainPanel();
 

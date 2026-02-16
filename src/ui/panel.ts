@@ -5,7 +5,7 @@ import "../styles/panel.css";
 import "../styles/global.css";
 import "../styles/box.css";
 import { GM_getValue, GM_setValue } from "vite-plugin-monkey/dist/client";
-import { setCustomMemoCss } from "../core/injector";
+import { setCustomMemoCss } from "../core/injection/injector";
 import { registerUserStore, UserListStore } from "./user-list-store";
 
 const CUSTOM_FONT_COLOR_KEY = "customFontColor";

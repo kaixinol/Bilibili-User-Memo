@@ -1,11 +1,11 @@
 // src/core/renderer.ts
-import { BiliUser, ElementMeta } from "./types";
-import { PageRule, StyleScope } from "../configs/rules";
-import { resolveRuleTextTarget } from "./dom-utils";
-import { userStore } from "./store";
+import { BiliUser, ElementMeta } from "../types/types";
+import { PageRule, StyleScope } from "../../configs/rules";
+import { resolveRuleTextTarget } from "../dom/dom-utils";
+import { userStore } from "../store/store";
 import { enterEditMode } from "./editor";
-import { ensureStylesForElement } from "./style-manager";
-import { logger } from "../utils/logger";
+import { ensureStylesForElement } from "../style/style-manager";
+import { logger } from "../../utils/logger";
 import { syncElementMeta, syncRenderedNodeState } from "./rendered-node";
 
 // ✅ 核心优化：使用 WeakMap 建立 "B站原元素" -> "我们注入的元素" 的映射

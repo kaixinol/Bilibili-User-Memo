@@ -3,8 +3,8 @@ import { GM_getValue } from "vite-plugin-monkey/dist/client";
 import { getUserInfo } from "../utils/sign";
 import { logger } from "../utils/logger";
 import { validateEitherJSON } from "../configs/schema";
-import { userStore } from "../core/store";
-import { BiliUser } from "../core/types";
+import { userStore } from "../core/store/store";
+import { BiliUser } from "../core/types/types";
 
 export interface UserListStore {
   isOpen: boolean;

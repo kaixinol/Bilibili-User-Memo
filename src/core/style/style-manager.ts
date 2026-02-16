@@ -1,7 +1,7 @@
 // src/core/style-manager.ts
 import { querySelectorAllDeep } from "query-selector-shadow-dom";
-import { logger } from "../utils/logger";
-import allStyle from "../styles/memo.css?inline";
+import { logger } from "../../utils/logger";
+import allStyle from "../../styles/memo.css?inline";
 
 // 全局基础样式表
 const GLOBAL_STYLE_SHEET = new CSSStyleSheet();

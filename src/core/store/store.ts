@@ -1,6 +1,6 @@
-import { logger } from "../utils/logger";
-import { BiliUser } from "./types";
-import { getUserAvatar } from "./dom-utils";
+import { logger } from "../../utils/logger";
+import { BiliUser } from "../types/types";
+import { getUserAvatar } from "../dom/dom-utils";
 import { GM_addValueChangeListener } from "$";
 import {
   DEFAULT_DISPLAY_MODE,

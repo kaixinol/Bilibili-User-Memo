@@ -2,8 +2,8 @@ import {
   querySelectorAllDeep,
   querySelectorDeep,
 } from "query-selector-shadow-dom";
-import { DynamicPageRule, PollingPageRule } from "../configs/rules";
-import { logger } from "../utils/logger";
+import { DynamicPageRule, PollingPageRule } from "../../configs/rules";
+import { logger } from "../../utils/logger";
 
 type WatchScope = HTMLElement | ShadowRoot | Document;
 

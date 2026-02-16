@@ -33,6 +33,7 @@ export default defineConfig(({ mode }) => {
               "querySelectorShadowDom",
               "dist/querySelectorShadowDom.js",
             ),
+            valibot: cdn.jsdelivr("valibot", "dist/valibot.umd.js"),
           },
         },
         server: { mountGmApi: true }, // 修复production莫名其妙没有gm api的问题

@@ -7,22 +7,24 @@ import {
   PageRule,
   DynamicPageRule,
   PollingPageRule,
-} from "../configs/rules";
-import { logger } from "../utils/logger";
-import { sleep } from "../utils/sleep";
-import { userStore, UserStoreChange } from "./store";
+} from "../../configs/rules";
+import { logger } from "../../utils/logger";
+import { sleep } from "../../utils/sleep";
+import { userStore, UserStoreChange } from "../store/store";
 import {
   extractUid,
   getElementDisplayName,
-} from "./dom-utils";
-import { injectMemoRenderer } from "./renderer";
-import { refreshRenderedMemoNodes } from "./dom-refresh";
+} from "../dom/dom-utils";
+import { injectMemoRenderer } from "../render/renderer";
+import { refreshRenderedMemoNodes } from "../render/dom-refresh";
 import { DynamicRuleWatcher, PollingRuleWatcher } from "./watchers";
 import { getMatchedRulesByUrl } from "./rule-matcher";
 
 export class PageInjector {
   private domReady = false;
   private lastUrl = "";
+  private staticRetryTimers: number[] = [];
+  private staticRetryToken = 0;
 
   // 活跃的动态规则监听器
   private activeWatchers = new Map<DynamicPageRule, DynamicRuleWatcher>();
@@ -78,15 +80,14 @@ export class PageInjector {
 
     if (change.type === "users") {
       refreshRenderedMemoNodes(change.users, userStore.displayMode, change.changedIds);
-      // 用户数据变化时触发一次活跃规则重扫，覆盖“当前已在页面但尚未处理”的节点
-      if (change.reason !== "remote") {
-        this.scanActiveRules(document);
+      // 仅在导入数据时，按昵称回退规则可能需要补扫当前已有节点
+      if (change.reason === "import") {
+        this.scanMatchByNameRules(document);
       }
       return;
     }
 
     refreshRenderedMemoNodes(change.users, change.displayMode);
-    this.scanActiveRules(document);
   }
 
   private scanActiveRules(scope: HTMLElement | ShadowRoot | Document) {
@@ -138,6 +139,9 @@ export class PageInjector {
     // 3. 执行静态规则 (每次 URL 变动都尝试执行一次，因为页面结构可能重绘)
     if (staticRules.length > 0) {
       this.scanSpecificRules(staticRules, document);
+      this.scheduleStaticRuleRetries(staticRules, document);
+    } else {
+      this.clearStaticRetryTimers();
     }
 
     // 4. 管理动态规则监听器 (Diff 算法: 停止旧的，启动新的)
@@ -187,6 +191,39 @@ export class PageInjector {
         this.activePollingWatchers.set(rule, watcher);
         watcher.start();
       }
+    });
+  }
+
+  private scanMatchByNameRules(scope: HTMLElement | ShadowRoot | Document) {
+    const rules = [
+      ...this.activeWatchers.keys(),
+      ...this.activePollingWatchers.keys(),
+    ].filter((rule) => Boolean(rule.matchByName));
+    if (rules.length > 0) {
+      this.scanSpecificRules(rules, scope);
+    }
+  }
+
+  private clearStaticRetryTimers() {
+    this.staticRetryToken++;
+    this.staticRetryTimers.forEach((timerId) => clearTimeout(timerId));
+    this.staticRetryTimers = [];
+  }
+
+  private scheduleStaticRuleRetries(
+    staticRules: PageRule[],
+    scope: HTMLElement | ShadowRoot | Document,
+  ) {
+    this.clearStaticRetryTimers();
+    const token = this.staticRetryToken;
+    const retryDelays = [350, 900];
+
+    retryDelays.forEach((delay) => {
+      const timerId = window.setTimeout(() => {
+        if (!this.domReady || token !== this.staticRetryToken) return;
+        this.scanSpecificRules(staticRules, scope);
+      }, delay);
+      this.staticRetryTimers.push(timerId);
     });
   }
 
@@ -270,22 +307,9 @@ export class PageInjector {
 
     let selector = `${baseSelector}`;
     if (!rule.ignoreProcessed) selector += ":not([data-bili-processed])";
-    // Static 模式：通常 scope 是 document，尝试几次防止加载延迟
+    // Static 模式：只做一次当前扫描；额外重试由 handleUrlChange 统一调度
     if (rule.injectMode === InjectionMode.Static) {
-      // 1. 初始获取所有匹配的元素
-      let elements = querySelectorAllDeep(selector, scope);
-
-      // 2. 增强的重试机制 (针对列表加载延迟)
-      if (elements.length === 0) {
-        for (let i = 0; i < 3; i++) {
-          await sleep(300);
-          elements = querySelectorAllDeep(selector, scope);
-          // 只要找到了至少一个元素，就跳出重试
-          if (elements.length > 0) break;
-        }
-      }
-
-      // 3. 批量应用规则
+      const elements = querySelectorAllDeep(selector, scope);
       if (elements.length > 0) {
         logger.debug(
           `💉 静态注入: 找到 ${elements.length} 个目标元素 [${selector}]`,
@@ -414,4 +438,4 @@ export function refreshPageInjection() {
   pageInjector?.refreshData();
 }
 
-export { setCustomMemoCss } from "./style-manager";
+export { setCustomMemoCss } from "../style/style-manager";

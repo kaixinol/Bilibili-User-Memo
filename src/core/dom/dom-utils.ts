@@ -1,8 +1,8 @@
 // src/core/dom-utils.ts
 import { querySelectorDeep } from "query-selector-shadow-dom";
-import { logger } from "../utils/logger";
-import { PageRule } from "../configs/rules";
-import { BiliUser } from "./types";
+import { logger } from "../../utils/logger";
+import { PageRule } from "../../configs/rules";
+import { BiliUser } from "../types/types";
 import { unsafeWindow } from "$";
 /**
  * 尝试从 DOM 元素中提取 B站 UID

@@ -1,6 +1,6 @@
 // src/core/editor.ts
-import { BiliUser } from "./types";
-import { userStore } from "./store";
+import { BiliUser } from "../types/types";
+import { userStore } from "../store/store";
 import { syncRenderedNodeState } from "./rendered-node";
 
 /**

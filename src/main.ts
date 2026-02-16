@@ -1,6 +1,6 @@
 import Alpine from "alpinejs";
 import { initMainPanel } from "./ui/panel";
-import { initPageInjection } from "./core/injector";
+import { initPageInjection } from "./core/injection/injector";
 import { unsafeWindow } from "$";
 
 (async () => {

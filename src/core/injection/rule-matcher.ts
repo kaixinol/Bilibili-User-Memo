@@ -1,4 +1,4 @@
-import { config, PageRule } from "../configs/rules";
+import { config, PageRule } from "../../configs/rules";
 
 export function getMatchedRulesByUrl(currentUrl: string): PageRule[] {
   return Array.from(config.entries())

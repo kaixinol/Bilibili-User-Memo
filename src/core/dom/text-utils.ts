@@ -1,5 +1,6 @@
 import { BiliUser } from "../types/types";
 import { DynamicPageRule, PageRule, PollingPageRule } from "../../configs/rules";
+import { querySelectorAllDeep } from "query-selector-shadow-dom";
 
 function readPreferredText(node: HTMLElement | null): string | null {
   if (!node) return null;
@@ -26,12 +27,30 @@ function resolveSelfTextTarget(
 }
 
 function resolveWatchTextTarget(
+  el: HTMLElement,
   rule: DynamicPageRule | PollingPageRule,
   textSelector: string,
 ): HTMLElement | null {
-  const watchRoot = document.querySelector(rule.trigger.watch);
-  if (!watchRoot) return null;
-  return watchRoot.querySelector(textSelector) as HTMLElement | null;
+  // 1) 优先命中“当前元素所属”的 watch 容器，避免多容器串数据
+  const directContainer = el.closest(rule.trigger.watch);
+  if (directContainer) {
+    return directContainer.querySelector(textSelector) as HTMLElement | null;
+  }
+
+  // 2) 兜底：遍历 deep 查询结果，找到包含当前元素的容器实例
+  const watchTargets = querySelectorAllDeep(rule.trigger.watch);
+  for (const target of watchTargets) {
+    const scope = target.shadowRoot || target;
+    if (scope.contains(el)) {
+      return scope.querySelector(textSelector) as HTMLElement | null;
+    }
+  }
+
+  // 3) 最后兜底：保持原有行为（取第一个）
+  const first = watchTargets[0];
+  if (!first) return null;
+  const fallbackScope = first.shadowRoot || first;
+  return fallbackScope.querySelector(textSelector) as HTMLElement | null;
 }
 
 /**
@@ -48,7 +67,7 @@ export function resolveRuleTextTarget(
   }
 
   if (!hasWatchTrigger(rule)) return null;
-  return resolveWatchTextTarget(rule, rule.textSelector);
+  return resolveWatchTextTarget(el, rule, rule.textSelector);
 }
 
 /**

@@ -363,7 +363,6 @@ const rawConfig = [
       aSelector: "div.bili-dyn-title span.bili-dyn-title__text",
       trigger: { watch: "div.bili-dyn-item__main", interval: 1000 },
       dynamicWatch: true,
-      textSource: "watch",
       matchByName: true,
     },
   },

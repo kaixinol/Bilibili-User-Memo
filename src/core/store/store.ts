@@ -42,6 +42,7 @@ export type UserStoreChange =
     };
 
 type StoreListener = (change: UserStoreChange) => void;
+type UserUpdates = Partial<Pick<BiliUser, "nickname" | "avatar" | "memo">>;
 
 function cloneUsers(users: BiliUser[]): BiliUser[] {
   return users.map((u) => ({ ...u }));
@@ -116,51 +117,38 @@ class UserStore {
    * 监听来自其他标签页或域名的 GM_setValue 变更
    */
   private listenToRemoteChanges() {
-    // 1. 监听用户列表变更
-    GM_addValueChangeListener(USERS_KEY, (name, oldValue, newValue, remote) => {
-      // 如果正在进行本地系统写入，忽略可能的即时回传，避免冲突
-      if (this.isSystemChanging) return;
-
-      // remote = true 表示变更来自其他标签页/脚本实例
-      if (remote) {
-        logger.debug("🔄 [Sync] 检测到外部数据变更，正在同步...");
-
-        // 标记为正在变更，防止触发连锁反应
-        this.isSystemChanging = true;
-
-        try {
-          this.users = normalizeUsers(newValue);
-          this.emit({
-            type: "users",
-            users: this.getUsers(),
-            reason: "remote",
-          });
-        } catch (e) {
-          logger.error("同步外部数据失败", e);
-        } finally {
-          // 确保释放锁
-          this.isSystemChanging = false;
-        }
-      }
+    GM_addValueChangeListener(USERS_KEY, (_name, _oldValue, newValue, remote) => {
+      if (!remote || this.isSystemChanging) return;
+      this.applyRemoteUsers(newValue);
     });
 
-    // 2. 监听显示模式变更
     GM_addValueChangeListener(
       DISPLAY_MODE_KEY,
-      (name, oldValue, newValue, remote) => {
-        if (remote) {
-          const nextMode = normalizeDisplayMode(newValue);
-          if (nextMode !== this._displayMode) {
-            this._displayMode = nextMode;
-            this.emit({
-              type: "displayMode",
-              displayMode: this._displayMode,
-              reason: "remote",
-            });
-          }
-        }
+      (_name, _oldValue, newValue, remote) => {
+        if (!remote) return;
+        this.applyRemoteDisplayMode(newValue);
       },
     );
+  }
+
+  private applyRemoteUsers(rawUsers: unknown) {
+    logger.debug("🔄 [Sync] 检测到外部数据变更，正在同步...");
+    try {
+      this.withSystemLock(() => {
+        this.users = normalizeUsers(rawUsers);
+      });
+      this.emitUsers("remote");
+    } catch (error) {
+      logger.error("同步外部数据失败", error);
+    }
+  }
+
+  private applyRemoteDisplayMode(rawMode: unknown) {
+    const nextMode = normalizeDisplayMode(rawMode);
+    if (nextMode === this._displayMode) return;
+
+    this._displayMode = nextMode;
+    this.emitDisplayMode("remote");
   }
 
   public get displayMode(): number {
@@ -184,12 +172,7 @@ class UserStore {
     this.withSystemLock(() => {
       saveDisplayModeToStorage(nextMode);
     });
-
-    this.emit({
-      type: "displayMode",
-      displayMode: this._displayMode,
-      reason: "update",
-    });
+    this.emitDisplayMode("update");
   }
 
   /**
@@ -228,38 +211,21 @@ class UserStore {
    */
   public updateUser(
     uid: string,
-    updates: Partial<Pick<BiliUser, "nickname" | "avatar" | "memo">>,
+    updates: UserUpdates,
     fallbackName = "",
   ): boolean {
     if (!uid) return false;
 
-    const userIndex = this.users.findIndex((u) => u.id === uid);
+    const userIndex = this.findUserIndex(uid);
     const existing = userIndex === -1 ? null : this.users[userIndex];
-    const nextMemo =
-      updates.memo !== undefined
-        ? updates.memo.trim()
-        : (existing?.memo || "").trim();
+    const nextMemo = this.resolveNextMemo(existing, updates);
 
     if (!existing) {
-      // 不创建空备注记录
-      if (!nextMemo) return false;
-      const created: BiliUser = {
-        id: uid,
-        nickname: (updates.nickname || fallbackName || uid).trim(),
-        avatar: updates.avatar ?? getUserAvatar(uid),
-        memo: nextMemo,
-      };
-      this.users.push(created);
-      this.commitUsers("update", [uid]);
-      logger.info(`📝 备注已更新 | UID:${uid} -> ${nextMemo}`);
-      return true;
+      return this.createUserIfNeeded(uid, updates, fallbackName, nextMemo);
     }
 
     if (!nextMemo) {
-      this.users.splice(userIndex, 1);
-      this.commitUsers("remove", [uid]);
-      logger.info(`🗑️ 备注清空，已删除用户记录 | UID:${uid}`);
-      return true;
+      return this.removeExistingUser(uid, userIndex);
     }
 
     const nextNickname =
@@ -291,6 +257,41 @@ class UserStore {
     fallbackName = "",
   ): boolean {
     return this.updateUser(uid, { memo: newMemo }, fallbackName);
+  }
+
+  private findUserIndex(uid: string): number {
+    return this.users.findIndex((u) => u.id === uid);
+  }
+
+  private resolveNextMemo(existing: BiliUser | null, updates: UserUpdates): string {
+    if (updates.memo !== undefined) return updates.memo.trim();
+    return (existing?.memo || "").trim();
+  }
+
+  private createUserIfNeeded(
+    uid: string,
+    updates: UserUpdates,
+    fallbackName: string,
+    nextMemo: string,
+  ): boolean {
+    if (!nextMemo) return false;
+
+    this.users.push({
+      id: uid,
+      nickname: (updates.nickname || fallbackName || uid).trim(),
+      avatar: updates.avatar ?? getUserAvatar(uid),
+      memo: nextMemo,
+    });
+    this.commitUsers("update", [uid]);
+    logger.info(`📝 备注已更新 | UID:${uid} -> ${nextMemo}`);
+    return true;
+  }
+
+  private removeExistingUser(uid: string, userIndex: number): boolean {
+    this.users.splice(userIndex, 1);
+    this.commitUsers("remove", [uid]);
+    logger.info(`🗑️ 备注清空，已删除用户记录 | UID:${uid}`);
+    return true;
   }
 
   public removeUser(uid: string): boolean {
@@ -404,11 +405,23 @@ class UserStore {
     this.withSystemLock(() => {
       saveUsersToStorage(this.users);
     });
+    this.emitUsers(reason, changedIds);
+  }
+
+  private emitUsers(reason: ChangeReason, changedIds: string[] = []) {
     this.emit({
       type: "users",
       users: this.getUsers(),
       reason,
       changedIds,
+    });
+  }
+
+  private emitDisplayMode(reason: ChangeReason) {
+    this.emit({
+      type: "displayMode",
+      displayMode: this._displayMode,
+      reason,
     });
   }
 

@@ -1,10 +1,12 @@
 import Alpine from "alpinejs";
 import { GM_getValue } from "vite-plugin-monkey/dist/client";
-import { getUserInfo } from "../utils/sign";
-import { logger } from "../utils/logger";
-import { validateEitherJSON } from "../configs/schema";
 import { userStore } from "../core/store/store";
 import { BiliUser } from "../core/types";
+import {
+  exportUsersAsJson,
+  fetchLatestProfiles,
+  readImportUsersFromDialog,
+} from "./user-list-io";
 
 export interface UserListStore {
   isOpen: boolean;
@@ -107,26 +109,10 @@ export function registerUserStore() {
       this.isRefreshing = true;
       this.refreshCurrent = 0;
       this.refreshTotal = this.users.length;
-      const profiles: Array<{ id: string; nickname: string; avatar: string }> =
-        [];
 
-      const tasks = this.users.map(async (user) => {
-        try {
-          const newData = await getUserInfo(String(user.id));
-          if (!newData.nickname) return;
-          profiles.push({
-            id: user.id,
-            nickname: newData.nickname,
-            avatar: newData.avatar,
-          });
-        } catch (error) {
-          logger.error(`刷新用户 [${user.id}] 失败:`, error);
-        } finally {
-          this.refreshCurrent++;
-        }
+      const profiles = await fetchLatestProfiles(this.users, () => {
+        this.refreshCurrent++;
       });
-
-      await Promise.allSettled(tasks);
       userStore.updateUserProfiles(profiles);
       setTimeout(() => {
         this.isRefreshing = false;
@@ -134,85 +120,24 @@ export function registerUserStore() {
     },
 
     exportData() {
-      const exportData = this.users.map((user) => ({
-        id: user.id,
-        nickname: user.nickname,
-        avatar: user.avatar || "",
-        memo: user.memo || "",
-      }));
-      const jsonContent = JSON.stringify(exportData, null, 2);
-      const blob = new Blob([jsonContent], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `bili-user-notes-${new Date().toISOString().split("T")[0]}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
+      exportUsersAsJson(this.users);
       alert(`导出成功！\n已导出 ${this.users.length} 个用户的数据`);
     },
 
     async importData() {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = "application/json";
+      const readResult = await readImportUsersFromDialog();
+      if (readResult.status === "cancelled") return;
+      if (readResult.status === "error") {
+        alert(readResult.message);
+        return;
+      }
 
-      input.onchange = async () => {
-        const file = input.files?.[0];
-        if (!file) return;
-
-        try {
-          const fileContent = await file.text();
-          const parsedData = JSON.parse(fileContent);
-
-          const validation = validateEitherJSON(parsedData);
-          if (!validation.ok) {
-            alert(`导入失败：${validation.error}`);
-            return;
-          }
-
-          let importedUsers: BiliUser[] = [];
-          if (Array.isArray(parsedData)) {
-            importedUsers = parsedData.map((user) => ({
-              id: user.id || user.bid,
-              nickname: user.nickname || "",
-              avatar: user.avatar || "",
-              memo: user.memo || "",
-            }));
-          } else if (typeof parsedData === "object") {
-            importedUsers = Object.values(parsedData).map((user: any) => ({
-              id: user.id || user.bid,
-              nickname: user.nickname || "",
-              avatar: user.avatar || "",
-              memo: user.memo || "",
-            }));
-          } else {
-            alert("导入失败：不支持的数据格式");
-            return;
-          }
-
-          importedUsers = importedUsers.filter(
-            (user) => user.id && user.nickname,
-          );
-          if (importedUsers.length === 0) {
-            alert("导入失败：没有有效的用户数据");
-            return;
-          }
-
-          const result = userStore.upsertImportedUsers(importedUsers);
-          if (result.added === 0 && result.updated === 0) {
-            alert("导入完成，但没有可应用的变更");
-            return;
-          }
-
-          alert(
-            `导入成功！\n新增：${result.added} 个用户\n更新：${result.updated} 个用户`,
-          );
-        } catch (error) {
-          console.error("Import error:", error);
-          alert("导入失败：JSON 格式错误或数据解析失败");
-        }
-      };
-      input.click();
+      const result = userStore.upsertImportedUsers(readResult.users);
+      if (result.added === 0 && result.updated === 0) {
+        alert("导入完成，但没有可应用的变更");
+        return;
+      }
+      alert(`导入成功！\n新增：${result.added} 个用户\n更新：${result.updated} 个用户`);
     },
   };
 
@@ -221,7 +146,6 @@ export function registerUserStore() {
   const reactiveStore = Alpine.store("userList") as UserListStore;
 
   const syncUsers = (users: BiliUser[]) => {
-    const prevCount = reactiveStore.users.length;
     reactiveStore.users = users;
     if (reactiveStore.selectedIds.length === 0) return;
     const userIds = new Set(users.map((u) => u.id));

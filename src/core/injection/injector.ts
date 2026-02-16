@@ -1,19 +1,28 @@
-// src/core/injector.ts
 import { querySelectorAllDeep } from "query-selector-shadow-dom";
 import {
   InjectionMode,
   PageRule,
+  StaticPageRule,
   DynamicPageRule,
   PollingPageRule,
 } from "../../configs/rules";
 import { logger } from "../../utils/logger";
 import { sleep } from "../../utils/sleep";
-import { userStore, UserStoreChange } from "../store/store";
 import { extractUid, getElementDisplayName } from "../dom/dom-utils";
-import { injectMemoRenderer } from "../render/renderer";
 import { refreshRenderedMemoNodes } from "../render/dom-refresh";
-import { DynamicRuleWatcher, PollingRuleWatcher } from "./watchers";
+import { injectMemoRenderer } from "../render/renderer";
+import { userStore, UserStoreChange } from "../store/store";
+import { BiliUser } from "../types";
 import { getMatchedRulesByUrl } from "./rule-matcher";
+import { DynamicRuleWatcher, PollingRuleWatcher } from "./watchers";
+
+type ScanScope = HTMLElement | ShadowRoot | Document;
+
+interface RuleGroups {
+  staticRules: StaticPageRule[];
+  dynamicRules: DynamicPageRule[];
+  pollingRules: PollingPageRule[];
+}
 
 export class PageInjector {
   private domReady = false;
@@ -21,186 +30,165 @@ export class PageInjector {
   private staticRetryTimers: number[] = [];
   private staticRetryToken = 0;
 
-  // 活跃的动态规则监听器
   private activeWatchers = new Map<DynamicPageRule, DynamicRuleWatcher>();
-  // 活跃的輪詢規則執行器
-  private activePollingWatchers = new Map<
-    PollingPageRule,
-    PollingRuleWatcher
-  >();
+  private activePollingWatchers = new Map<PollingPageRule, PollingRuleWatcher>();
 
-  // 防抖计时器（按 rule + scope 独立防抖）
-  private ruleDebounceTimers = new Map<
-    DynamicPageRule,
-    Map<HTMLElement | ShadowRoot | Document, number>
-  >();
+  // rule + scope 双键防抖，避免不同容器互相覆盖定时器
+  private ruleDebounceTimers = new Map<DynamicPageRule, Map<ScanScope, number>>();
 
   constructor() {
     logger.info("🚀 PageInjector 正在启动...");
     userStore.refreshData();
     userStore.subscribe((change) => this.handleStoreChange(change));
 
-    // 启动 URL 监控 (处理 SPA 跳转)
     this.startUrlMonitor();
-
     this.onDomReady(async () => {
       await this.waitForBiliEnvironment();
       await sleep(100);
       this.domReady = true;
-
-      // DOM Ready 后手动触发一次当前 URL 的处理
       this.handleUrlChange();
     });
   }
 
-  /**
-   * 数据刷新入口 (通常由外部或菜单触发)
-   */
   public refreshData() {
     userStore.refreshData();
-
-    if (this.domReady) {
-      // 重新触发所有活跃规则的扫描 (从 document 开始，确保全覆盖)
-      this.scanActiveRules(document);
-    }
+    if (!this.domReady) return;
+    this.scanActiveRules(document);
   }
 
   private handleStoreChange(change: UserStoreChange) {
     if (!this.domReady) return;
 
     if (change.type === "displayMode") {
-      refreshRenderedMemoNodes(userStore.getUsers(), change.displayMode);
+      this.refreshRenderedNodes(userStore.getUsers(), change.displayMode);
       return;
     }
 
     if (change.type === "users") {
-      refreshRenderedMemoNodes(
+      this.refreshRenderedNodes(
         change.users,
         userStore.displayMode,
         change.changedIds,
       );
-      // 仅在导入数据时，按昵称回退规则可能需要补扫当前已有节点
       if (change.reason === "import") {
         this.scanMatchByNameRules(document);
       }
       return;
     }
 
-    refreshRenderedMemoNodes(change.users, change.displayMode);
+    this.refreshRenderedNodes(change.users, change.displayMode);
   }
 
-  private scanActiveRules(scope: HTMLElement | ShadowRoot | Document) {
+  private refreshRenderedNodes(
+    users: BiliUser[],
+    displayMode: number,
+    changedIds?: string[],
+  ) {
+    refreshRenderedMemoNodes(users, displayMode, changedIds);
+  }
+
+  private scanActiveRules(scope: ScanScope) {
     const activeRules = [
       ...this.activeWatchers.keys(),
       ...this.activePollingWatchers.keys(),
     ];
-    if (activeRules.length > 0) {
-      this.scanSpecificRules(activeRules, scope);
-    }
+    if (activeRules.length === 0) return;
+    this.scanSpecificRules(activeRules, scope);
   }
 
-  /**
-   * 启动简单的 URL 轮询监控
-   * B站是 SPA，pushState/replaceState 难以完全覆盖所有跳转场景，轮询最稳健
-   */
   private startUrlMonitor() {
     this.lastUrl = unsafeWindow.location.href;
     window.setInterval(() => {
       const currentUrl = unsafeWindow.location.href;
-      if (currentUrl !== this.lastUrl) {
-        this.lastUrl = currentUrl;
-        logger.debug(`🌏 URL 变更检测: ${currentUrl}`);
-        this.handleUrlChange();
-      }
+      if (currentUrl === this.lastUrl) return;
+      this.lastUrl = currentUrl;
+      logger.debug(`🌏 URL 变更检测: ${currentUrl}`);
+      this.handleUrlChange();
     }, 1000);
   }
 
-  /**
-   * 处理 URL 变更 / 页面初始化
-   */
   private handleUrlChange() {
     if (!this.domReady) return;
 
-    // 1. 获取当前 URL 匹配的所有规则
-    const matchedRules = this.getMatchedRules();
+    const groups = this.groupRulesByMode(this.getMatchedRules());
+    this.applyStaticRules(groups.staticRules, document);
+    this.reconcileWatchers(groups.dynamicRules);
+    this.reconcilePollingWatchers(groups.pollingRules);
+  }
 
-    // 2. 分类规则
-    const staticRules = matchedRules.filter(
-      (r) => r.injectMode === InjectionMode.Static,
-    );
-    const dynamicRules = matchedRules.filter(
-      (r) => r.injectMode === InjectionMode.Dynamic,
-    ) as DynamicPageRule[];
-    const pollingRules = matchedRules.filter(
-      (r) => r.injectMode === InjectionMode.Polling,
-    ) as PollingPageRule[];
+  private groupRulesByMode(rules: PageRule[]): RuleGroups {
+    const groups: RuleGroups = {
+      staticRules: [],
+      dynamicRules: [],
+      pollingRules: [],
+    };
 
-    // 3. 执行静态规则 (每次 URL 变动都尝试执行一次，因为页面结构可能重绘)
-    if (staticRules.length > 0) {
-      this.scanSpecificRules(staticRules, document);
-      this.scheduleStaticRuleRetries(staticRules, document);
-    } else {
+    rules.forEach((rule) => {
+      if (rule.injectMode === InjectionMode.Static) {
+        groups.staticRules.push(rule);
+        return;
+      }
+      if (rule.injectMode === InjectionMode.Dynamic) {
+        groups.dynamicRules.push(rule);
+        return;
+      }
+      groups.pollingRules.push(rule);
+    });
+
+    return groups;
+  }
+
+  private applyStaticRules(staticRules: StaticPageRule[], scope: ScanScope) {
+    if (staticRules.length === 0) {
       this.clearStaticRetryTimers();
+      return;
     }
-
-    // 4. 管理动态规则监听器 (Diff 算法: 停止旧的，启动新的)
-    this.reconcileWatchers(dynamicRules);
-    // 5. 管理輪詢規則執行器
-    this.reconcilePollingWatchers(pollingRules);
+    this.scanSpecificRules(staticRules, scope);
+    this.scheduleStaticRuleRetries(staticRules, scope);
   }
 
-  /**
-   * 调和 Watchers：清理不再匹配的，启动新增的
-   */
-  private reconcileWatchers(newRules: DynamicPageRule[]) {
-    // A. 找出需要移除的 (当前活跃但不在新规则列表中的)
+  private reconcileWatchers(nextRules: DynamicPageRule[]) {
     for (const [rule, watcher] of this.activeWatchers) {
-      if (!newRules.includes(rule)) {
-        watcher.stop();
-        this.clearRuleDebounceTimers(rule);
-        this.activeWatchers.delete(rule);
-      }
+      if (nextRules.includes(rule)) continue;
+      watcher.stop();
+      this.clearRuleDebounceTimers(rule);
+      this.activeWatchers.delete(rule);
     }
 
-    // B. 找出需要新增的
-    newRules.forEach((rule) => {
-      if (!this.activeWatchers.has(rule)) {
-        const watcher = new DynamicRuleWatcher(rule, (r, scope) => {
-          this.scheduleRuleScan(r, r.trigger.debounceMs, scope);
-        });
-        this.activeWatchers.set(rule, watcher);
-        watcher.start();
-      }
+    nextRules.forEach((rule) => {
+      if (this.activeWatchers.has(rule)) return;
+      const watcher = new DynamicRuleWatcher(rule, (r, scope) => {
+        this.scheduleRuleScan(r, r.trigger.debounceMs, scope);
+      });
+      this.activeWatchers.set(rule, watcher);
+      watcher.start();
     });
   }
 
-  private reconcilePollingWatchers(newRules: PollingPageRule[]) {
+  private reconcilePollingWatchers(nextRules: PollingPageRule[]) {
     for (const [rule, watcher] of this.activePollingWatchers) {
-      if (!newRules.includes(rule)) {
-        watcher.stop();
-        this.activePollingWatchers.delete(rule);
-      }
+      if (nextRules.includes(rule)) continue;
+      watcher.stop();
+      this.activePollingWatchers.delete(rule);
     }
 
-    newRules.forEach((rule) => {
-      if (!this.activePollingWatchers.has(rule)) {
-        const watcher = new PollingRuleWatcher(rule, (r, scope) => {
-          this.scanSpecificRules([r], scope);
-        });
-        this.activePollingWatchers.set(rule, watcher);
-        watcher.start();
-      }
+    nextRules.forEach((rule) => {
+      if (this.activePollingWatchers.has(rule)) return;
+      const watcher = new PollingRuleWatcher(rule, (r, scope) => {
+        this.scanSpecificRules([r], scope);
+      });
+      this.activePollingWatchers.set(rule, watcher);
+      watcher.start();
     });
   }
 
-  private scanMatchByNameRules(scope: HTMLElement | ShadowRoot | Document) {
+  private scanMatchByNameRules(scope: ScanScope) {
     const rules = [
       ...this.activeWatchers.keys(),
       ...this.activePollingWatchers.keys(),
     ].filter((rule) => Boolean(rule.matchByName));
-    if (rules.length > 0) {
-      this.scanSpecificRules(rules, scope);
-    }
+    if (rules.length === 0) return;
+    this.scanSpecificRules(rules, scope);
   }
 
   private clearStaticRetryTimers() {
@@ -210,8 +198,8 @@ export class PageInjector {
   }
 
   private scheduleStaticRuleRetries(
-    staticRules: PageRule[],
-    scope: HTMLElement | ShadowRoot | Document,
+    staticRules: StaticPageRule[],
+    scope: ScanScope,
   ) {
     this.clearStaticRetryTimers();
     const token = this.staticRetryToken;
@@ -226,21 +214,16 @@ export class PageInjector {
     });
   }
 
-  private scheduleRuleScan(
-    rule: DynamicPageRule,
-    delay: number,
-    scope: HTMLElement | ShadowRoot | Document,
-  ) {
+  private scheduleRuleScan(rule: DynamicPageRule, delay: number, scope: ScanScope) {
     let scopeTimers = this.ruleDebounceTimers.get(rule);
     if (!scopeTimers) {
-      scopeTimers = new Map<HTMLElement | ShadowRoot | Document, number>();
+      scopeTimers = new Map<ScanScope, number>();
       this.ruleDebounceTimers.set(rule, scopeTimers);
     }
 
-    const existing = scopeTimers.get(scope);
-    if (existing) clearTimeout(existing);
+    const existingTimer = scopeTimers.get(scope);
+    if (existingTimer) clearTimeout(existingTimer);
 
-    // 使用 window.setTimeout 确保 ID 类型正确
     const timerId = window.setTimeout(() => {
       const activeScopeTimers = this.ruleDebounceTimers.get(rule);
       activeScopeTimers?.delete(scope);
@@ -256,22 +239,16 @@ export class PageInjector {
   private clearRuleDebounceTimers(rule: DynamicPageRule) {
     const scopeTimers = this.ruleDebounceTimers.get(rule);
     if (!scopeTimers) return;
-
     scopeTimers.forEach((timerId) => clearTimeout(timerId));
     this.ruleDebounceTimers.delete(rule);
   }
 
-  private scanSpecificRules(
-    rules: PageRule[],
-    scope: HTMLElement | ShadowRoot | Document,
-  ) {
+  private scanSpecificRules(rules: PageRule[], scope: ScanScope) {
     if (rules.length === 0) return;
 
     const queue = [...rules];
-
     const runChunk = (deadline: IdleDeadline) => {
       const processNext = async () => {
-        // 剩余时间 > 1ms 且队列不为空
         while (queue.length > 0 && deadline.timeRemaining() > 1) {
           const rule = queue.shift()!;
           await this.scanAndInjectRule(rule, scope);
@@ -280,7 +257,7 @@ export class PageInjector {
           this.requestIdle(runChunk);
         }
       };
-      processNext();
+      void processNext();
     };
 
     this.requestIdle(runChunk);
@@ -293,47 +270,39 @@ export class PageInjector {
     ric(cb, { timeout: 1000 });
   }
 
-  /**
-   * 执行单条规则注入
-   * @param scope - 搜索范围 (优化核心)
-   */
-  private async scanAndInjectRule(
-    rule: PageRule,
-    scope: HTMLElement | ShadowRoot | Document,
-  ) {
-    const baseSelector = rule.aSelector || rule.textSelector;
-    if (!baseSelector) return;
+  private async scanAndInjectRule(rule: PageRule, scope: ScanScope) {
+    const selector = this.buildRuleSelector(rule);
+    if (!selector) return;
 
-    let selector = `${baseSelector}`;
-    if (!rule.ignoreProcessed) selector += ":not([data-bili-processed])";
-    // Static 模式：只做一次当前扫描；额外重试由 handleUrlChange 统一调度
+    const elements = querySelectorAllDeep(selector, scope);
+    this.logRuleScanResult(rule, selector, elements.length);
+    if (elements.length === 0) return;
+
+    elements.forEach((el) => {
+      void this.applyRuleToElement(el, rule);
+    });
+  }
+
+  private buildRuleSelector(rule: PageRule): string | null {
+    const baseSelector = rule.aSelector || rule.textSelector;
+    if (!baseSelector) return null;
+    if (rule.ignoreProcessed) return baseSelector;
+    return `${baseSelector}:not([data-bili-processed])`;
+  }
+
+  private logRuleScanResult(rule: PageRule, selector: string, count: number) {
+    if (count === 0) return;
+
     if (rule.injectMode === InjectionMode.Static) {
-      const elements = querySelectorAllDeep(selector, scope);
-      if (elements.length > 0) {
-        logger.debug(
-          `💉 静态注入: 找到 ${elements.length} 个目标元素 [${selector}]`,
-        );
-        elements.forEach((element) => {
-          this.applyRuleToElement(element, rule);
-        });
-      }
+      logger.debug(`💉 静态注入: 找到 ${count} 个目标元素 [${selector}]`);
       return;
     }
-
-    // Polling 模式 或 Dynamic 模式：利用 scope 局部查找
-    const elements = querySelectorAllDeep(selector, scope);
     if (rule.injectMode === InjectionMode.Polling) {
-      if (elements.length > 0) {
-        logger.debug(
-          `🔁 轮询注入 [${rule.name}]: 找到 ${elements.length} 个目标元素`,
-        );
-      }
+      logger.debug(`🔁 轮询注入 [${rule.name}]: 找到 ${count} 个目标元素`);
     }
-    elements.forEach((el) => this.applyRuleToElement(el, rule));
   }
 
   private async applyRuleToElement(el: HTMLElement, rule: PageRule) {
-    // 防御性处理：跳过我们自己插入的可编辑节点，避免自我递归注入
     if (el.classList.contains("editable-textarea")) {
       el.setAttribute("data-bili-processed", "true");
       return;
@@ -344,13 +313,7 @@ export class PageInjector {
     if (!uid) return;
 
     const user = userStore.ensureUser(uid, originalName);
-
-    // 执行渲染
-    const applied = await injectMemoRenderer(el, user, rule, {
-      uid,
-      originalName,
-    });
-
+    const applied = await injectMemoRenderer(el, user, rule, { uid, originalName });
     if (applied) {
       el.setAttribute("data-bili-processed", "true");
     }
@@ -364,17 +327,14 @@ export class PageInjector {
     const uid = extractUid(el, Boolean(rule.matchByName));
     if (uid) return uid;
 
-    // 私信右侧当前会话名节点本身不带 UID，回退到左侧激活会话读取
     if (el.matches('div[class^="_ContactName_"]')) {
       const whisperUid = this.getActiveWhisperUid();
       if (whisperUid) return whisperUid;
     }
 
-    // 启用 matchByName 时，允许按原始昵称回退查找 UID
     if (rule.matchByName && originalName) {
       return userStore.findUserByName(originalName)?.id || null;
     }
-
     return null;
   }
 
@@ -389,14 +349,10 @@ export class PageInjector {
     );
   }
 
-  /**
-   * 获取当前 URL 匹配的规则
-   */
   private getMatchedRules(): PageRule[] {
     return getMatchedRulesByUrl(unsafeWindow.location.href);
   }
 
-  // 辅助方法
   private onDomReady(callback: () => void) {
     if (
       document.readyState === "complete" ||
@@ -414,7 +370,6 @@ export class PageInjector {
     return new Promise((resolve) => {
       const check = () => {
         const win = unsafeWindow as any;
-        // 适当放宽检测条件，部分页面可能只依赖 Vue
         if (win.__VUE__) resolve();
         else setTimeout(check, 50);
       };
@@ -423,7 +378,6 @@ export class PageInjector {
   }
 }
 
-// 单例导出
 let pageInjector: PageInjector | null = null;
 
 export function initPageInjection() {

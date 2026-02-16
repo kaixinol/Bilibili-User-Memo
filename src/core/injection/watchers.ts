@@ -7,6 +7,14 @@ import { logger } from "../../utils/logger";
 
 type WatchScope = HTMLElement | ShadowRoot | Document;
 
+function resolveWatchScope(target: HTMLElement): WatchScope {
+  return target.shadowRoot || target;
+}
+
+function hasAddedNodes(mutations: MutationRecord[]): boolean {
+  return mutations.some((m) => m.addedNodes.length > 0);
+}
+
 export class DynamicRuleWatcher {
   // Legacy Mode (dynamicWatch = false): Single target management
   private legacyObserver: MutationObserver | null = null;
@@ -94,7 +102,7 @@ export class DynamicRuleWatcher {
 
     targets.forEach((target) => {
       // 如果这个元素还没有被监听，则挂载
-      const scope = target.shadowRoot || target; // 优先监听 ShadowRoot
+      const scope = resolveWatchScope(target); // 优先监听 ShadowRoot
       const keyNode = target; // 使用元素本身作为 Map 的 Key
 
       if (!this.instanceObservers.has(keyNode)) {
@@ -104,25 +112,21 @@ export class DynamicRuleWatcher {
     });
   }
 
-  private attachInstanceWatcher(keyNode: Node, scope: Node) {
+  private createScopeObserver(scope: WatchScope): MutationObserver {
     const observer = new MutationObserver((mutations) => {
-      const hasAddedNodes = mutations.some((m) => m.addedNodes.length > 0);
-      if (hasAddedNodes) {
-        // 将 scope 传回 Injector，实现局部扫描
-        this.onTrigger(this.rule, scope as WatchScope);
-      }
+      if (!hasAddedNodes(mutations)) return;
+      this.onTrigger(this.rule, scope);
     });
+    observer.observe(scope, { childList: true, subtree: true });
+    return observer;
+  }
 
-    observer.observe(scope, {
-      childList: true,
-      subtree: true,
-    });
-
-    // 保存引用
+  private attachInstanceWatcher(keyNode: Node, scope: WatchScope) {
+    const observer = this.createScopeObserver(scope);
     this.instanceObservers.set(keyNode, observer);
 
     // 首次挂载成功，立即执行一次局部扫描
-    this.onTrigger(this.rule, scope as WatchScope);
+    this.onTrigger(this.rule, scope);
   }
 
   /**
@@ -163,22 +167,8 @@ export class DynamicRuleWatcher {
     const watchTarget = querySelectorDeep(this.rule.trigger.watch);
     if (!watchTarget) return false;
 
-    // 关键优化：确定监听范围 (优先 ShadowRoot)
-    const scope = watchTarget.shadowRoot || watchTarget;
-
-    this.legacyObserver = new MutationObserver((mutations) => {
-      // 只有当有节点增加时才触发扫描
-      const hasAddedNodes = mutations.some((m) => m.addedNodes.length > 0);
-      if (hasAddedNodes) {
-        // 将 scope 传回 Injector，实现局部扫描
-        this.onTrigger(this.rule, scope);
-      }
-    });
-
-    this.legacyObserver.observe(scope, {
-      childList: true,
-      subtree: true,
-    });
+    const scope = resolveWatchScope(watchTarget);
+    this.legacyObserver = this.createScopeObserver(scope);
 
     // 首次挂载成功，立即执行一次局部扫描
     this.onTrigger(this.rule, scope);
@@ -215,10 +205,8 @@ export class PollingRuleWatcher {
 
   private tick() {
     const watchTarget = querySelectorDeep(this.rule.trigger.watch);
-    if (!watchTarget) {
-      return;
-    }
-    const scope = watchTarget.shadowRoot || watchTarget;
+    if (!watchTarget) return;
+    const scope = resolveWatchScope(watchTarget);
     this.onTrigger(this.rule, scope);
   }
 }

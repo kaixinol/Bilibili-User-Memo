@@ -33,7 +33,7 @@ export default defineConfig(({ mode }) => {
               "querySelectorShadowDom",
               "dist/querySelectorShadowDom.js",
             ),
-            valibot: cdn.jsdelivr("valibot", "dist/valibot.umd.js"),
+            valibot: cdn.jsdelivr("valibot", "dist/index.min.mjs"),
           },
         },
         server: { mountGmApi: true }, // 修复production莫名其妙没有gm api的问题
@@ -55,20 +55,44 @@ export default defineConfig(({ mode }) => {
         },
       },
 
-      terserOptions: {
-        compress: {
-          unused: true,
-          dead_code: true,
-          drop_console: false,
-          passes: 2,
-        },
-        mangle: false,
-        format: {
-          beautify: !isDebug,
-          comments: /^\s*(@|==UserScript==|==\/UserScript==)/,
-        },
-      },
-      cssMinify: true,
+      terserOptions: isDebug
+        ? {
+            compress: false,
+            mangle: false,
+            format: {
+              beautify: true,
+              comments: "all",
+            },
+          }
+        : {
+            compress: {
+              // 基础清理
+              unused: true,
+              dead_code: true,
+              drop_debugger: true,
+              passes: 2,
+
+              // 安全结构优化
+              hoist_funs: true, // 函数提升
+              hoist_vars: false, // 避免影响可读性
+              collapse_vars: true,
+              reduce_vars: true,
+              evaluate: true,
+              booleans: true,
+              conditionals: true,
+              sequences: false, // ❗ 保持语句可读
+              inline: 1, // 仅简单内联
+            },
+
+            mangle: false, // GF 友好：保留变量名
+
+            format: {
+              beautify: false,
+              comments: /^\s*(@|==UserScript==|==\/UserScript==)/,
+            },
+          },
+
+      cssMinify: !isDebug,
     },
   };
 });

@@ -180,6 +180,12 @@ const RawConfigSchema = array(RawRuleEntrySchema);
 
 type RawRule = InferOutput<typeof RawRuleSchema>;
 type RawRuleEntry = InferOutput<typeof RawRuleEntrySchema>;
+type RawRuleBase = Omit<RawRule, "injectMode" | "trigger">;
+type NormalizedRuleBase = {
+  name: string;
+  styleScope: StyleScope;
+  fontSize?: string;
+} & SelectorShape;
 
 function normalizeSelectors(
   rawRule: Pick<RawRule, "aSelector" | "textSelector">,
@@ -200,49 +206,68 @@ function normalizeSelectors(
   throw new Error("[rules] aSelector/textSelector 缺失，无法归一化规则");
 }
 
-function normalizeRule(rawRule: RawRule): PageRule {
-  const base = {
+function normalizeRuleBase(rawRule: RawRuleBase): NormalizedRuleBase {
+  return {
     name: rawRule.name,
     styleScope: rawRule.styleScope,
     ...normalizeSelectors(rawRule),
     ...(rawRule.fontSize !== undefined ? { fontSize: rawRule.fontSize } : {}),
   };
+}
 
-  switch (rawRule.injectMode) {
-    case InjectionMode.Static:
-      return {
-        ...base,
-        injectMode: InjectionMode.Static,
-        textSource: "self",
-        ignoreProcessed: false,
-        matchByName: false,
-      };
-    case InjectionMode.Dynamic:
-      return {
-        ...base,
-        injectMode: InjectionMode.Dynamic,
-        textSource: rawRule.textSource ?? "self",
-        ignoreProcessed: false,
-        matchByName: rawRule.matchByName ?? false,
-        dynamicWatch: rawRule.dynamicWatch ?? false,
-        trigger: {
-          watch: rawRule.trigger.watch,
-          debounceMs: rawRule.trigger.interval,
-        },
-      };
-    case InjectionMode.Polling:
-      return {
-        ...base,
-        injectMode: InjectionMode.Polling,
-        textSource: rawRule.textSource ?? "self",
-        ignoreProcessed: rawRule.ignoreProcessed ?? false,
-        matchByName: rawRule.matchByName ?? false,
-        trigger: {
-          watch: rawRule.trigger.watch,
-          intervalMs: rawRule.trigger.interval,
-        },
-      };
+function normalizeStaticRule(
+  rawRule: Extract<RawRule, { injectMode: InjectionMode.Static }>,
+): StaticPageRule {
+  return {
+    ...normalizeRuleBase(rawRule),
+    injectMode: InjectionMode.Static,
+    textSource: "self",
+    ignoreProcessed: false,
+    matchByName: false,
+  };
+}
+
+function normalizeDynamicRule(
+  rawRule: Extract<RawRule, { injectMode: InjectionMode.Dynamic }>,
+): DynamicPageRule {
+  return {
+    ...normalizeRuleBase(rawRule),
+    injectMode: InjectionMode.Dynamic,
+    textSource: rawRule.textSource ?? "self",
+    ignoreProcessed: false,
+    matchByName: rawRule.matchByName ?? false,
+    dynamicWatch: rawRule.dynamicWatch ?? false,
+    trigger: {
+      watch: rawRule.trigger.watch,
+      debounceMs: rawRule.trigger.interval,
+    },
+  };
+}
+
+function normalizePollingRule(
+  rawRule: Extract<RawRule, { injectMode: InjectionMode.Polling }>,
+): PollingPageRule {
+  return {
+    ...normalizeRuleBase(rawRule),
+    injectMode: InjectionMode.Polling,
+    textSource: rawRule.textSource ?? "self",
+    ignoreProcessed: rawRule.ignoreProcessed ?? false,
+    matchByName: rawRule.matchByName ?? false,
+    trigger: {
+      watch: rawRule.trigger.watch,
+      intervalMs: rawRule.trigger.interval,
+    },
+  };
+}
+
+function normalizeRule(rawRule: RawRule): PageRule {
+  if (rawRule.injectMode === InjectionMode.Static) {
+    return normalizeStaticRule(rawRule);
   }
+  if (rawRule.injectMode === InjectionMode.Dynamic) {
+    return normalizeDynamicRule(rawRule);
+  }
+  return normalizePollingRule(rawRule);
 }
 
 function normalizeEntry(entry: RawRuleEntry): RuleConfigEntry {

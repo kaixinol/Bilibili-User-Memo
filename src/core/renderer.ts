@@ -1,11 +1,12 @@
 // src/core/renderer.ts
 import { BiliUser, ElementMeta } from "./types";
 import { PageRule, StyleScope } from "../configs/rules";
-import { formatDisplayName } from "./dom-utils";
+import { resolveRuleTextTarget } from "./dom-utils";
 import { userStore } from "./store";
 import { enterEditMode } from "./editor";
 import { ensureStylesForElement } from "./style-manager";
 import { logger } from "../utils/logger";
+import { syncElementMeta, syncRenderedNodeState } from "./rendered-node";
 
 // ✅ 核心优化：使用 WeakMap 建立 "B站原元素" -> "我们注入的元素" 的映射
 // 这样可以避免重复创建 DOM，也能防止内存泄漏（当 B 站元素被回收时，我们的记录也会自动回收）
@@ -20,42 +21,18 @@ export async function injectMemoRenderer(
   rule: PageRule,
   meta: ElementMeta,
 ): Promise<boolean> {
-  const displayText = formatDisplayName(
-    user,
-    meta.originalName,
-    userStore.displayMode,
-  );
+  const displayMode = userStore.displayMode;
   // 根据样式作用域分发处理逻辑
   switch (rule.styleScope) {
     case StyleScope.Minimal:
-      if (!rule.textSelector) {
-        return renderMinimal(el, displayText, user, meta);
-      } else {
-        if (!rule.useFallback) {
-          const target =
-            (el.querySelector(rule.textSelector) as HTMLElement | null) ||
-            (el.matches(rule.textSelector) ? el : null);
-          return renderMinimal(
-            target,
-            displayText,
-            user,
-            meta,
-          );
-        } else if ("trigger" in rule && rule.trigger) {
-          // 针对 私信 - 当前
-
-          return renderMinimal(
-            document
-              .querySelector(rule.trigger.watch)!
-              .querySelector(rule.textSelector),
-            displayText,
-            user,
-            meta,
-          );
-        }
-      }
+      return renderMinimal(
+        resolveRuleTextTarget(el, rule),
+        user,
+        meta,
+        displayMode,
+      );
     case StyleScope.Editable:
-      return renderEditable(el, displayText, user, rule, meta);
+      return renderEditable(el, user, rule, meta, displayMode);
     default:
       logger.warn(`⚠️ 不支持的样式作用域: ${rule.styleScope}`);
       return false;
@@ -68,22 +45,16 @@ export async function injectMemoRenderer(
 
 function renderMinimal(
   element: HTMLElement | null,
-  text: string,
   user: BiliUser,
   meta: ElementMeta,
+  displayMode: number,
 ): boolean {
   if (!element) return false;
 
   // 只需检查一次样式
   ensureStylesForElement(element);
-
-  // 只有文本变了才更新
-  if (element.textContent !== text) {
-    element.textContent = text;
-  }
-
-  // 更新状态
-  updateElementState(element, user, meta);
+  syncRenderedNodeState(element, user, meta.originalName, displayMode);
+  syncElementMeta(element, meta);
 
   return true;
 }
@@ -94,10 +65,10 @@ function renderMinimal(
  */
 function renderEditable(
   el: HTMLElement,
-  text: string,
   user: BiliUser,
   rule: PageRule,
   meta: ElementMeta,
+  displayMode: number,
 ): boolean {
   let wrapper = wrapperCache.get(el);
 
@@ -139,43 +110,16 @@ function renderEditable(
   }
 
   // 2. 更新：无论是新建的还是缓存的，都需要更新数据
-  if (wrapper.textContent !== text) {
-    wrapper.textContent = text;
-  }
+  syncRenderedNodeState(wrapper, user, meta.originalName, displayMode, {
+    isEditableWrapper: true,
+  });
 
   if (rule.fontSize) {
     wrapper.style.setProperty("--custom-font-size", rule.fontSize);
   }
 
-  updateElementState(wrapper, user, meta);
+  syncElementMeta(wrapper, meta);
 
   ensureStylesForElement(wrapper);
   return true;
-}
-/**
- * 通用辅助：更新元素的 Dataset 和 Class
- */
-function updateElementState(
-  el: HTMLElement,
-  user: BiliUser,
-  meta: ElementMeta,
-) {
-  // 设置 UID
-  if (el.dataset.biliUid !== meta.uid) {
-    el.dataset.biliUid = meta.uid;
-  }
-
-  // 设置原始名称 (用于恢复)
-  if (el.dataset.biliOriginal !== meta.originalName) {
-    el.dataset.biliOriginal = meta.originalName;
-  }
-
-  // 设置高亮 Class
-  if (
-    !el.classList.contains("bili-memo-tag") &&
-    user.memo &&
-    user.memo !== meta.originalName
-  ) {
-    el.classList.add("bili-memo-tag");
-  }
 }

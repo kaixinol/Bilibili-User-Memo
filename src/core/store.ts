@@ -1,12 +1,71 @@
-import Alpine from "alpinejs";
 import { logger } from "../utils/logger";
 import { BiliUser } from "./types";
-import { getUserAvatar, formatDisplayName } from "./dom-utils";
-import { querySelectorAllDeep } from "query-selector-shadow-dom";
-import { GM_getValue, GM_setValue, GM_addValueChangeListener } from "$";
+import { getUserAvatar } from "./dom-utils";
+import { GM_addValueChangeListener } from "$";
+import {
+  DEFAULT_DISPLAY_MODE,
+  DISPLAY_MODE_KEY,
+  USERS_KEY,
+  loadDisplayModeFromStorage,
+  loadUsersFromStorage,
+  normalizeDisplayMode,
+  normalizeUsers,
+  saveDisplayModeToStorage,
+  saveUsersToStorage,
+} from "./user-storage";
+
+type ChangeReason =
+  | "refresh"
+  | "remote"
+  | "update"
+  | "remove"
+  | "import"
+  | "profile";
+
+export type UserStoreChange =
+  | {
+      type: "users";
+      users: BiliUser[];
+      reason: ChangeReason;
+      changedIds?: string[];
+    }
+  | {
+      type: "displayMode";
+      displayMode: number;
+      reason: ChangeReason;
+    }
+  | {
+      type: "full";
+      users: BiliUser[];
+      displayMode: number;
+      reason: ChangeReason;
+    };
+
+type StoreListener = (change: UserStoreChange) => void;
+
+function cloneUsers(users: BiliUser[]): BiliUser[] {
+  return users.map((u) => ({ ...u }));
+}
+
+function usersEqual(a: BiliUser[], b: BiliUser[]): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (
+      a[i].id !== b[i].id ||
+      a[i].nickname !== b[i].nickname ||
+      a[i].avatar !== b[i].avatar ||
+      a[i].memo !== b[i].memo
+    ) {
+      return false;
+    }
+  }
+  return true;
+}
+
 class UserStore {
-  public users: BiliUser[] = [];
-  public displayMode: number = 2;
+  private users: BiliUser[] = [];
+  private _displayMode = DEFAULT_DISPLAY_MODE;
+  private listeners = new Set<StoreListener>();
 
   // 标记是否正在进行系统级的数据变更
   // private 访问权限，强制通过方法修改
@@ -25,27 +84,31 @@ class UserStore {
    * 从油猴存储刷新数据 (初始化用)
    */
   public refreshData() {
-    const raw = GM_getValue<BiliUser[]>("biliUsers", []);
-    const rawUsers = Array.isArray(raw) ? raw : [];
-    const cleaned = new Map<string, BiliUser>();
+    const { raw: rawUsers, users: nextUsers } = loadUsersFromStorage();
+    const nextDisplayMode = loadDisplayModeFromStorage();
 
-    // 清理历史污染数据：去重 + 过滤空 memo 记录
-    rawUsers.forEach((u) => {
-      if (!u?.id) return;
-      if (!u.memo?.trim()) return;
-      cleaned.set(u.id, u);
-    });
+    const usersChanged = !usersEqual(this.users, nextUsers);
+    const modeChanged = this._displayMode !== nextDisplayMode;
 
-    this.users = Array.from(cleaned.values());
-    this.displayMode = GM_getValue<number>("displayMode", 2);
+    this.users = nextUsers;
+    this._displayMode = nextDisplayMode;
 
     // 仅在有清理动作时回写，避免无意义写入
-    if (this.users.length !== rawUsers.length) {
-      GM_setValue("biliUsers", this.users);
+    if (Array.isArray(rawUsers) && this.users.length !== rawUsers.length) {
+      saveUsersToStorage(this.users);
+    }
+
+    if (usersChanged || modeChanged) {
+      this.emit({
+        type: "full",
+        users: this.getUsers(),
+        displayMode: this._displayMode,
+        reason: "refresh",
+      });
     }
 
     logger.debug(
-      `📊 Store 数据已刷新: 记录数=${this.users.length}, 模式=${this.displayMode}`,
+      `📊 Store 数据已刷新: 记录数=${this.users.length}, 模式=${this._displayMode}`,
     );
   }
 
@@ -55,7 +118,7 @@ class UserStore {
   private listenToRemoteChanges() {
     // 1. 监听用户列表变更
     GM_addValueChangeListener(
-      "biliUsers",
+      USERS_KEY,
       (name, oldValue, newValue, remote) => {
         // 如果正在进行本地系统写入，忽略可能的即时回传，避免冲突
         if (this.isSystemChanging) return;
@@ -68,9 +131,12 @@ class UserStore {
           this.isSystemChanging = true;
 
           try {
-            this.users = newValue || [];
-            this.syncFullStateToAlpine();
-            this.refreshAllDomNodes();
+            this.users = normalizeUsers(newValue);
+            this.emit({
+              type: "users",
+              users: this.getUsers(),
+              reason: "remote",
+            });
           } catch (e) {
             logger.error("同步外部数据失败", e);
           } finally {
@@ -83,14 +149,50 @@ class UserStore {
 
     // 2. 监听显示模式变更
     GM_addValueChangeListener(
-      "displayMode",
+      DISPLAY_MODE_KEY,
       (name, oldValue, newValue, remote) => {
         if (remote) {
-          this.displayMode = newValue ?? 2;
-          this.refreshAllDomNodes();
+          const nextMode = normalizeDisplayMode(newValue);
+          if (nextMode !== this._displayMode) {
+            this._displayMode = nextMode;
+            this.emit({
+              type: "displayMode",
+              displayMode: this._displayMode,
+              reason: "remote",
+            });
+          }
         }
       },
     );
+  }
+
+  public get displayMode(): number {
+    return this._displayMode;
+  }
+
+  public getUsers(): BiliUser[] {
+    return cloneUsers(this.users);
+  }
+
+  public subscribe(listener: StoreListener): () => void {
+    this.listeners.add(listener);
+    return () => this.listeners.delete(listener);
+  }
+
+  public setDisplayMode(mode: number) {
+    const nextMode = normalizeDisplayMode(mode);
+    if (nextMode === this._displayMode) return;
+
+    this._displayMode = nextMode;
+    this.withSystemLock(() => {
+      saveDisplayModeToStorage(nextMode);
+    });
+
+    this.emit({
+      type: "displayMode",
+      displayMode: this._displayMode,
+      reason: "update",
+    });
   }
 
   /**
@@ -125,145 +227,194 @@ class UserStore {
   }
 
   /**
-   * 更新用户备注的核心逻辑
-   * 包含：更新内存 -> 更新存储 -> 同步 Alpine -> 同步 DOM
+   * 更新或创建用户记录
    */
-  public updateUserMemo(uid: string, newMemo: string, fallbackName = "") {
-    // 如果已经处于锁定状态，可能是短时间内重复调用，可以做防抖处理或直接返回
-    // 这里选择直接执行，但加上锁保护
-    this.isSystemChanging = true;
+  public updateUser(
+    uid: string,
+    updates: Partial<Pick<BiliUser, "nickname" | "avatar" | "memo">>,
+    fallbackName = "",
+  ): boolean {
+    if (!uid) return false;
 
-    try {
-      // 1. 更新内存
-      let userIndex = this.users.findIndex((u) => u.id === uid);
-      let user: BiliUser;
+    const userIndex = this.users.findIndex((u) => u.id === uid);
+    const existing = userIndex === -1 ? null : this.users[userIndex];
+    const nextMemo =
+      updates.memo !== undefined
+        ? updates.memo.trim()
+        : (existing?.memo || "").trim();
 
-      if (userIndex === -1) {
-        user = {
-          id: uid,
-          nickname: fallbackName || uid,
-          avatar: getUserAvatar(uid),
-          memo: newMemo,
-        };
-        this.users.push(user);
-        userIndex = this.users.length - 1;
-      } else {
-        user = this.users[userIndex];
-        user.memo = newMemo;
-      }
-
-      // 2. 持久化 (如果备注为空则删除)
-      if (newMemo.trim() === "") {
-        this.users.splice(userIndex, 1);
-        logger.info(`🗑️ 备注清空，已删除用户记录 | UID:${uid}`);
-      } else {
-        logger.info(`📝 备注已更新 | UID:${uid} -> ${newMemo}`);
-      }
-
-      // 核心保存动作
-      GM_setValue("biliUsers", this.users);
-
-      // 3. 同步到 Alpine Store (UI 面板)
-      this.syncToAlpine(uid, newMemo, user);
-
-      // 4. 同步到页面 DOM
-      this.syncDomNodes(uid, newMemo, user, fallbackName);
-    } catch (error) {
-      logger.error("保存备注时发生错误", error);
-    } finally {
-      // 【关键】使用 finally 确保锁一定会被解开
-      // 给予一点缓冲时间 (debounce buffer)，防止高频操作导致的闪烁
-      setTimeout(() => {
-        this.isSystemChanging = false;
-      }, 200);
-    }
-  }
-
-  private syncToAlpine(uid: string, newMemo: string, user: BiliUser) {
-    try {
-      const store = Alpine.store("userList") as any;
-      if (!store || !store.users) return;
-
-      const storeIndex = store.users.findIndex((u: BiliUser) => u.id === uid);
-
-      if (newMemo.trim() === "") {
-        if (storeIndex !== -1) {
-          store.users.splice(storeIndex, 1);
-        }
-      } else {
-        if (storeIndex !== -1) {
-          store.users[storeIndex].memo = newMemo;
-        } else {
-          store.users.push({ ...user });
-        }
-      }
-    } catch {
-      // ignore
-    }
-  }
-
-  private syncFullStateToAlpine() {
-    try {
-      const store = Alpine.store("userList") as any;
-      if (store && store.users) {
-        store.users = [...this.users];
-      }
-    } catch {
-      // ignore
-    }
-  }
-
-  private refreshAllDomNodes() {
-    const allTags = querySelectorAllDeep(`[data-bili-uid]`);
-
-    allTags.forEach((tag) => {
-      const uid = tag.getAttribute("data-bili-uid");
-      const originalName = tag.getAttribute("data-bili-original") || "";
-
-      if (!uid) return;
-
-      const user = this.users.find((u) => u.id === uid);
-      const memo = user ? user.memo : "";
-      const userObj = user || {
+    if (!existing) {
+      // 不创建空备注记录
+      if (!nextMemo) return false;
+      const created: BiliUser = {
         id: uid,
-        nickname: originalName,
-        avatar: "",
-        memo: "",
+        nickname: (updates.nickname || fallbackName || uid).trim(),
+        avatar: updates.avatar ?? getUserAvatar(uid),
+        memo: nextMemo,
       };
+      this.users.push(created);
+      this.commitUsers("update", [uid]);
+      logger.info(`📝 备注已更新 | UID:${uid} -> ${nextMemo}`);
+      return true;
+    }
 
-      this.syncDomNodes(uid, memo, userObj, originalName);
+    if (!nextMemo) {
+      this.users.splice(userIndex, 1);
+      this.commitUsers("remove", [uid]);
+      logger.info(`🗑️ 备注清空，已删除用户记录 | UID:${uid}`);
+      return true;
+    }
+
+    const nextNickname =
+      updates.nickname !== undefined ? updates.nickname.trim() : existing.nickname;
+    const nextAvatar =
+      updates.avatar !== undefined ? updates.avatar : existing.avatar;
+
+    if (
+      existing.memo === nextMemo &&
+      existing.nickname === nextNickname &&
+      existing.avatar === nextAvatar
+    ) {
+      return false;
+    }
+
+    existing.memo = nextMemo;
+    existing.nickname = nextNickname || uid;
+    existing.avatar = nextAvatar;
+    this.commitUsers("update", [uid]);
+    logger.info(`📝 备注已更新 | UID:${uid} -> ${nextMemo}`);
+    return true;
+  }
+
+  public updateUserMemo(uid: string, newMemo: string, fallbackName = ""): boolean {
+    return this.updateUser(uid, { memo: newMemo }, fallbackName);
+  }
+
+  public removeUser(uid: string): boolean {
+    if (!uid) return false;
+    const index = this.users.findIndex((u) => u.id === uid);
+    if (index === -1) return false;
+
+    this.users.splice(index, 1);
+    this.commitUsers("remove", [uid]);
+    return true;
+  }
+
+  public removeUsers(ids: string[]): number {
+    const idSet = new Set(ids.filter(Boolean));
+    if (idSet.size === 0) return 0;
+
+    const before = this.users.length;
+    this.users = this.users.filter((u) => !idSet.has(u.id));
+    const removed = before - this.users.length;
+    if (removed > 0) {
+      this.commitUsers("remove", Array.from(idSet));
+    }
+    return removed;
+  }
+
+  public upsertImportedUsers(importedUsers: BiliUser[]): {
+    added: number;
+    updated: number;
+  } {
+    const normalized = normalizeUsers(importedUsers);
+    if (normalized.length === 0) return { added: 0, updated: 0 };
+
+    let added = 0;
+    let updated = 0;
+    const changedIds: string[] = [];
+    const userMap = new Map(this.users.map((u) => [u.id, u]));
+
+    normalized.forEach((incoming) => {
+      const existing = userMap.get(incoming.id);
+      if (!existing) {
+        this.users.push({ ...incoming });
+        userMap.set(incoming.id, this.users[this.users.length - 1]);
+        added++;
+        changedIds.push(incoming.id);
+        return;
+      }
+
+      if (
+        existing.nickname === incoming.nickname &&
+        existing.avatar === incoming.avatar &&
+        existing.memo === incoming.memo
+      ) {
+        return;
+      }
+
+      existing.nickname = incoming.nickname;
+      existing.avatar = incoming.avatar;
+      existing.memo = incoming.memo;
+      updated++;
+      changedIds.push(incoming.id);
+    });
+
+    if (added > 0 || updated > 0) {
+      this.commitUsers("import", changedIds);
+    }
+
+    return { added, updated };
+  }
+
+  public updateUserProfiles(
+    profiles: Array<{ id: string; nickname: string; avatar: string }>,
+  ): number {
+    if (profiles.length === 0) return 0;
+
+    let updatedCount = 0;
+    const changedIds: string[] = [];
+    const userMap = new Map(this.users.map((u) => [u.id, u]));
+
+    profiles.forEach((profile) => {
+      const target = userMap.get(profile.id);
+      if (!target) return;
+      if (
+        target.nickname === profile.nickname &&
+        target.avatar === profile.avatar
+      ) {
+        return;
+      }
+      target.nickname = profile.nickname || target.nickname;
+      target.avatar = profile.avatar || target.avatar;
+      updatedCount++;
+      changedIds.push(profile.id);
+    });
+
+    if (updatedCount > 0) {
+      this.commitUsers("profile", changedIds);
+    }
+
+    return updatedCount;
+  }
+
+  private withSystemLock(action: () => void) {
+    this.isSystemChanging = true;
+    try {
+      action();
+    } finally {
+      this.isSystemChanging = false;
+    }
+  }
+
+  private commitUsers(reason: ChangeReason, changedIds: string[] = []) {
+    this.withSystemLock(() => {
+      saveUsersToStorage(this.users);
+    });
+    this.emit({
+      type: "users",
+      users: this.getUsers(),
+      reason,
+      changedIds,
     });
   }
 
-  private syncDomNodes(
-    uid: string,
-    newMemo: string,
-    user: BiliUser,
-    fallbackName: string,
-  ) {
-    const allTags = querySelectorAllDeep(`[data-bili-uid="${uid}"]`);
-
-    allTags.forEach((tag) => {
-      const originalName =
-        tag.getAttribute("data-bili-original") || fallbackName;
-
-      if (newMemo.trim() === "") {
-        tag.textContent = originalName;
-        if (!tag.classList.contains("editable-textarea")) {
-          tag.classList.remove("bili-memo-tag");
-        }
-      } else {
-        tag.textContent = formatDisplayName(
-          user,
-          originalName,
-          this.displayMode,
-        );
-        if (
-          !tag.classList.contains("bili-memo-tag") &&
-          tag.classList.contains("editable-textarea") === false
-        ) {
-          tag.classList.add("bili-memo-tag");
-        }
+  private emit(change: UserStoreChange) {
+    this.listeners.forEach((listener) => {
+      try {
+        listener(change);
+      } catch (error) {
+        logger.error("UserStore 监听器执行失败", error);
       }
     });
   }

@@ -1,7 +1,7 @@
 // src/core/editor.ts
 import { BiliUser } from "./types";
 import { userStore } from "./store";
-import { formatDisplayName } from "./dom-utils";
+import { syncRenderedNodeState } from "./rendered-node";
 
 /**
  * 进入行内编辑模式
@@ -53,20 +53,17 @@ export function enterEditMode(targetElement: HTMLElement, user: BiliUser) {
 
     if (shouldSave && newValue !== currentMemo) {
       userStore.updateUserMemo(user.id, newValue, originalName);
-
-      const newDisplayText = formatDisplayName(
+      syncRenderedNodeState(
+        targetElement,
         { ...user, memo: newValue },
         originalName,
         userStore.displayMode,
+        {
+          isEditableWrapper: targetElement.classList.contains(
+            "editable-textarea",
+          ),
+        },
       );
-
-      targetElement.textContent = newDisplayText;
-
-      if (newValue) {
-        targetElement.classList.add("bili-memo-tag");
-      } else {
-        targetElement.classList.remove("bili-memo-tag");
-      }
     }
   };
 

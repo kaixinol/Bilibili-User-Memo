@@ -60,30 +60,11 @@ export function extractUid(el: Element, silent = false): string | null {
  * @param rule 当前匹配的规则
  */
 export function getElementDisplayName(el: HTMLElement, rule: PageRule): string {
-  // 如果提供了 textSelector 且 el 是容器，则优先在容器内提取原名
-  if (rule.textSelector && rule.aSelector) {
-    const target =
-      (el.querySelector(rule.textSelector) as HTMLElement | null) ||
-      (el.matches(rule.textSelector) ? el : null);
-    const originalText = target?.dataset.biliOriginal?.trim();
+  const target = resolveRuleTextTarget(el, rule);
+  if (target) {
+    const originalText = target.dataset.biliOriginal?.trim();
     if (originalText) return originalText;
-    if (target?.textContent) return target.textContent.trim();
-  }
-
-  // useFallback 规则下，textSelector 可能用于“渲染目标”而非“容器内提取”
-  // 这里回退到 watch 范围查找目标，并优先读取 data-bili-original 防止原名漂移
-  if (
-    rule.useFallback &&
-    rule.textSelector &&
-    "trigger" in rule &&
-    rule.trigger
-  ) {
-    const fallbackTarget = document
-      .querySelector(rule.trigger.watch)
-      ?.querySelector(rule.textSelector) as HTMLElement | null;
-    const originalText = fallbackTarget?.dataset.biliOriginal?.trim();
-    if (originalText) return originalText;
-    if (fallbackTarget?.textContent) return fallbackTarget.textContent.trim();
+    if (target.textContent) return target.textContent.trim();
   }
 
   const selfOriginal = el.dataset.biliOriginal?.trim();
@@ -91,6 +72,30 @@ export function getElementDisplayName(el: HTMLElement, rule: PageRule): string {
 
   // 否则直接取当前元素的文本
   return el.textContent?.trim() || "";
+}
+
+export function resolveRuleTextTarget(
+  el: HTMLElement,
+  rule: PageRule,
+): HTMLElement | null {
+  if (!rule.textSelector) return el;
+
+  if (!rule.useFallback) {
+    return (
+      (el.querySelector(rule.textSelector) as HTMLElement | null) ||
+      (el.matches(rule.textSelector) ? el : null)
+    );
+  }
+
+  if ("trigger" in rule && rule.trigger) {
+    return (
+      (document
+        .querySelector(rule.trigger.watch)
+        ?.querySelector(rule.textSelector) as HTMLElement | null) || null
+    );
+  }
+
+  return null;
 }
 
 /**

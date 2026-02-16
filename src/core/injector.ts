@@ -1,10 +1,8 @@
 // src/core/injector.ts
 import {
   querySelectorAllDeep,
-  querySelectorDeep,
 } from "query-selector-shadow-dom";
 import {
-  config,
   InjectionMode,
   PageRule,
   DynamicPageRule,
@@ -12,249 +10,15 @@ import {
 } from "../configs/rules";
 import { logger } from "../utils/logger";
 import { sleep } from "../utils/sleep";
-import { userStore } from "./store";
+import { userStore, UserStoreChange } from "./store";
 import {
   extractUid,
   getElementDisplayName,
-  formatDisplayName,
 } from "./dom-utils";
 import { injectMemoRenderer } from "./renderer";
-
-/**
- * 动态规则观察者
- * 职责：管理单个或多个规则目标的生命周期
- * 升级：支持 dynamicWatch 模式，可同时管理多个 watch 目标的监听（如动态加载的评论区列表）
- */
-class DynamicRuleWatcher {
-  // Legacy Mode (dynamicWatch = false): Single target management
-  private legacyObserver: MutationObserver | null = null;
-  private legacyPollTimer: number | null = null;
-
-  // Global Mode (dynamicWatch = true): Multi-target management
-  private globalObserver: MutationObserver | null = null;
-  private instanceObservers = new Map<Node, MutationObserver>();
-
-  constructor(
-    public readonly rule: DynamicPageRule, // 公开 rule 以便 Map 索引比对
-    private onTrigger: (
-      rule: DynamicPageRule,
-      root: HTMLElement | ShadowRoot | Document,
-    ) => void,
-  ) {}
-
-  public start() {
-    if (this.rule.dynamicWatch) {
-      this.startGlobalWatch();
-    } else {
-      this.tryAttachOrPollLegacy();
-    }
-  }
-
-  public stop() {
-    // Stop Legacy
-    if (this.legacyPollTimer) {
-      clearInterval(this.legacyPollTimer);
-      this.legacyPollTimer = null;
-    }
-    if (this.legacyObserver) {
-      this.legacyObserver.disconnect();
-      this.legacyObserver = null;
-    }
-
-    // Stop Global
-    if (this.globalObserver) {
-      this.globalObserver.disconnect();
-      this.globalObserver = null;
-    }
-    this.instanceObservers.forEach((obs) => obs.disconnect());
-    this.instanceObservers.clear();
-
-    // logger.debug(`🛑 规则 [${this.rule.name}] 停止监听`);
-  }
-
-  // ==========================================================
-  // 模式 A: Dynamic Watch (新模式 - 持续监听 DOM 变化以发现 watch 目标)
-  // ==========================================================
-
-  private startGlobalWatch() {
-    logger.debug(
-      `📡 启动动态全域监听: [${this.rule.name}] watch=${this.rule.trigger.watch}`,
-    );
-
-    // 1. 立即扫描现有的目标
-    this.scanAndAttachNewTargets();
-
-    // 2. 监听 document.body 寻找新出现的目标
-    // 注意：监听整个 body subtree 有性能成本，但对于捕捉动态容器是必须的
-    this.globalObserver = new MutationObserver((mutations) => {
-      let needScan = false;
-      let nodesRemoved = false;
-
-      // 粗略过滤：只有当有节点增删时才尝试去 querySelector
-      for (const m of mutations) {
-        if (m.addedNodes.length > 0) needScan = true;
-        if (m.removedNodes.length > 0) nodesRemoved = true;
-      }
-
-      if (needScan) {
-        this.scanAndAttachNewTargets();
-      }
-
-      if (nodesRemoved) {
-        this.cleanupDetachedTargets();
-      }
-    });
-
-    this.globalObserver.observe(document.body, {
-      childList: true,
-      subtree: true,
-    });
-  }
-
-  private scanAndAttachNewTargets() {
-    // 查找所有符合 watch 选择器的元素
-    const targets = querySelectorAllDeep(this.rule.trigger.watch);
-
-    targets.forEach((target) => {
-      // 如果这个元素还没有被监听，则挂载
-      const scope = target.shadowRoot || target; // 优先监听 ShadowRoot
-      const keyNode = target; // 使用元素本身作为 Map 的 Key
-
-      if (!this.instanceObservers.has(keyNode)) {
-        logger.debug(`🔭 [${this.rule.name}] 捕获新容器实例`, target);
-        this.attachInstanceWatcher(keyNode, scope);
-      }
-    });
-  }
-
-  private attachInstanceWatcher(keyNode: Node, scope: Node) {
-    const observer = new MutationObserver((mutations) => {
-      const hasAddedNodes = mutations.some((m) => m.addedNodes.length > 0);
-      if (hasAddedNodes) {
-        // 将 scope 传回 Injector，实现局部扫描
-        this.onTrigger(this.rule, scope as HTMLElement | ShadowRoot | Document);
-      }
-    });
-
-    observer.observe(scope, {
-      childList: true,
-      subtree: true,
-    });
-
-    // 保存引用
-    this.instanceObservers.set(keyNode, observer);
-
-    // 首次挂载成功，立即执行一次局部扫描
-    this.onTrigger(this.rule, scope as HTMLElement | ShadowRoot | Document);
-  }
-
-  /**
-   * 清理已经从 DOM 中移除的元素的监听器
-   * 防止内存泄漏
-   */
-  private cleanupDetachedTargets() {
-    for (const [node, observer] of this.instanceObservers) {
-      // document.contains(node) 对 Shadow DOM 内节点会误判为 false
-      // isConnected 能正确反映“是否仍连接在文档树（含 shadow tree）”
-      if (!node.isConnected) {
-        logger.debug(`🗑️ [${this.rule.name}] 容器已销毁，移除监听器`);
-        observer.disconnect();
-        this.instanceObservers.delete(node);
-      }
-    }
-  }
-
-  // ==========================================================
-  // 模式 B: Legacy (旧模式 - 只找一个目标，找不到就轮询)
-  // ==========================================================
-
-  private tryAttachOrPollLegacy() {
-    if (this.attachLegacy()) return;
-
-    if (!this.legacyPollTimer) {
-      // logger.debug(`⚠️ 规则 [${this.rule.name}] 等待目标容器...`);
-      this.legacyPollTimer = window.setInterval(() => {
-        if (this.attachLegacy()) {
-          if (this.legacyPollTimer) clearInterval(this.legacyPollTimer);
-          this.legacyPollTimer = null;
-          logger.debug(`👀 规则 [${this.rule.name}] 监听器挂载成功`);
-        }
-      }, 800); // 稍微放宽轮询间隔，减少空转消耗
-    }
-  }
-
-  private attachLegacy(): boolean {
-    const watchTarget = querySelectorDeep(this.rule.trigger.watch);
-    if (!watchTarget) return false;
-
-    // 关键优化：确定监听范围 (优先 ShadowRoot)
-    const scope = watchTarget.shadowRoot || watchTarget;
-
-    this.legacyObserver = new MutationObserver((mutations) => {
-      // 只有当有节点增加时才触发扫描
-      const hasAddedNodes = mutations.some((m) => m.addedNodes.length > 0);
-      if (hasAddedNodes) {
-        // 将 scope 传回 Injector，实现局部扫描
-        this.onTrigger(this.rule, scope);
-      }
-    });
-
-    this.legacyObserver.observe(scope, {
-      childList: true,
-      subtree: true,
-    });
-
-    // 首次挂载成功，立即执行一次局部扫描
-    this.onTrigger(this.rule, scope);
-    return true;
-  }
-}
-
-/**
- * 輪詢規則執行器
- * 職責：定時掃描指定容器 (不依賴 MutationObserver)
- */
-class PollingRuleWatcher {
-  private pollTimer: number | null = null;
-
-  constructor(
-    public readonly rule: PollingPageRule,
-    private onTrigger: (
-      rule: PollingPageRule,
-      root: HTMLElement | ShadowRoot | Document,
-    ) => void,
-  ) {}
-
-  public start() {
-    logger.debug(
-      `⏱️ 轮询规则启动: [${this.rule.name}] interval=${this.rule.trigger.interval}ms watch=${this.rule.trigger.watch}`,
-    );
-    this.tick();
-    this.pollTimer = window.setInterval(
-      () => this.tick(),
-      this.rule.trigger.interval,
-    );
-  }
-
-  public stop() {
-    if (this.pollTimer) {
-      clearInterval(this.pollTimer);
-      this.pollTimer = null;
-    }
-    logger.debug(`🛑 轮询规则停止: [${this.rule.name}]`);
-  }
-
-  private tick() {
-    const watchTarget = querySelectorDeep(this.rule.trigger.watch);
-    if (!watchTarget) {
-      // logger.debug(`❓ 轮询未找到 watch 目标: [${this.rule.name}]`);
-      return;
-    }
-    const scope = watchTarget.shadowRoot || watchTarget;
-    // logger.debug(`🔁 轮询触发: [${this.rule.name}]`);
-    this.onTrigger(this.rule, scope);
-  }
-}
+import { refreshRenderedMemoNodes } from "./dom-refresh";
+import { DynamicRuleWatcher, PollingRuleWatcher } from "./watchers";
+import { getMatchedRulesByUrl } from "./rule-matcher";
 
 export class PageInjector {
   private domReady = false;
@@ -277,6 +41,7 @@ export class PageInjector {
   constructor() {
     logger.info("🚀 PageInjector 正在启动...");
     userStore.refreshData();
+    userStore.subscribe((change) => this.handleStoreChange(change));
 
     // 启动 URL 监控 (处理 SPA 跳转)
     this.startUrlMonitor();
@@ -298,18 +63,39 @@ export class PageInjector {
     userStore.refreshData();
 
     if (this.domReady) {
-      // 1. 更新已存在的 DOM 节点文字
-      this.refreshExistingDomNodes();
+      // 重新触发所有活跃规则的扫描 (从 document 开始，确保全覆盖)
+      this.scanActiveRules(document);
+    }
+  }
 
-      // 2. 重新触发所有活跃规则的扫描 (从 document 开始，确保全覆盖)
-      // 注意：这里我们让活跃的 watcher 对应的规则再跑一遍
-      const activeRules = [
-        ...this.activeWatchers.keys(),
-        ...this.activePollingWatchers.keys(),
-      ];
-      if (activeRules.length > 0) {
-        this.scanSpecificRules(activeRules, document);
+  private handleStoreChange(change: UserStoreChange) {
+    if (!this.domReady) return;
+
+    if (change.type === "displayMode") {
+      refreshRenderedMemoNodes(userStore.getUsers(), change.displayMode);
+      return;
+    }
+
+    if (change.type === "users") {
+      refreshRenderedMemoNodes(change.users, userStore.displayMode, change.changedIds);
+      // 用户数据变化时触发一次活跃规则重扫，覆盖“当前已在页面但尚未处理”的节点
+      if (change.reason !== "remote") {
+        this.scanActiveRules(document);
       }
+      return;
+    }
+
+    refreshRenderedMemoNodes(change.users, change.displayMode);
+    this.scanActiveRules(document);
+  }
+
+  private scanActiveRules(scope: HTMLElement | ShadowRoot | Document) {
+    const activeRules = [
+      ...this.activeWatchers.keys(),
+      ...this.activePollingWatchers.keys(),
+    ];
+    if (activeRules.length > 0) {
+      this.scanSpecificRules(activeRules, scope);
     }
   }
 
@@ -544,7 +330,7 @@ export class PageInjector {
 
     if (applied) {
       el.setAttribute("data-bili-processed", "true");
-      // 可以在这里存储 originalName 到 dataset 以便 refreshExistingDomNodes 使用
+      // 渲染器会同步 data-bili-original / data-bili-uid
       // el.setAttribute("data-bili-original", originalName || "");
       // el.setAttribute("data-bili-uid", uid);
     }
@@ -587,38 +373,7 @@ export class PageInjector {
    * 获取当前 URL 匹配的规则
    */
   private getMatchedRules(): PageRule[] {
-    const currentUrl = unsafeWindow.location.href;
-    return Array.from(config.entries())
-      .filter(([pattern]) => pattern.test(currentUrl))
-      .map(([_, rule]) => rule);
-  }
-
-  private refreshExistingDomNodes() {
-    const allTags = querySelectorAllDeep(`[data-bili-uid]`);
-    allTags.forEach((tag) => {
-      const uid = tag.getAttribute("data-bili-uid");
-      const originalName = tag.getAttribute("data-bili-original") || "";
-      if (!uid) return;
-
-      const user = userStore.users.find((u) => u.id === uid);
-
-      if (!user || !user.memo) {
-        tag.textContent = originalName;
-        tag.classList.remove("bili-memo-tag");
-      } else {
-        tag.textContent = formatDisplayName(
-          user,
-          originalName,
-          userStore.displayMode,
-        );
-        if (
-          !tag.classList.contains("bili-memo-tag") &&
-          !tag.classList.contains("editable-textarea")
-        ) {
-          tag.classList.add("bili-memo-tag");
-        }
-      }
-    });
+    return getMatchedRulesByUrl(unsafeWindow.location.href);
   }
 
   // 辅助方法

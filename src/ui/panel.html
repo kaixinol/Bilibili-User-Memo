@@ -7,11 +7,7 @@
   @keydown.window="handleSelectAll($event)"
   x-cloak
 >
-  <div
-    class="panel-inner"
-    x-data="panelSettings"
-    x-trap.inert.noscroll="showAdvancedCss"
-  >
+  <div class="panel-inner" x-data="panelSettings">
     <button
       class="panel-toggle-btn"
       title="右键点击修改文本~"

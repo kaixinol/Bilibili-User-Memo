@@ -5,7 +5,7 @@ import { syncRenderedNodeState } from "./rendered-node";
 
 /**
  * 进入行内编辑模式
- * @param targetElement 用户点击的元素 (在 Editable 模式下是我们的 span，Extended 模式下是原元素)
+ * @param targetElement 用户点击的元素（Editable 模式下为注入的 span）
  * @param user 用户对象
  */
 export function enterEditMode(targetElement: HTMLElement, user: BiliUser) {

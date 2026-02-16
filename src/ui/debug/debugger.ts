@@ -98,9 +98,10 @@ export function initDebugger() {
 
       init() {
         let id = 1;
-        for (const [key, rule] of defaultRules.entries()) {
-          if (typeof key === "string" && key === "GLOBAL_INIT") continue;
+        for (const entry of defaultRules) {
+          const rule = entry.rule;
           const selectorString = rule.textSelector || rule.aSelector;
+          if (!selectorString) continue;
           this.rules.push({
             id: id++,
             name: rule.name,

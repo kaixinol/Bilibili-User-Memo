@@ -1,7 +1,5 @@
 // src/core/injector.ts
-import {
-  querySelectorAllDeep,
-} from "query-selector-shadow-dom";
+import { querySelectorAllDeep } from "query-selector-shadow-dom";
 import {
   InjectionMode,
   PageRule,
@@ -11,10 +9,7 @@ import {
 import { logger } from "../../utils/logger";
 import { sleep } from "../../utils/sleep";
 import { userStore, UserStoreChange } from "../store/store";
-import {
-  extractUid,
-  getElementDisplayName,
-} from "../dom/dom-utils";
+import { extractUid, getElementDisplayName } from "../dom/dom-utils";
 import { injectMemoRenderer } from "../render/renderer";
 import { refreshRenderedMemoNodes } from "../render/dom-refresh";
 import { DynamicRuleWatcher, PollingRuleWatcher } from "./watchers";
@@ -79,7 +74,11 @@ export class PageInjector {
     }
 
     if (change.type === "users") {
-      refreshRenderedMemoNodes(change.users, userStore.displayMode, change.changedIds);
+      refreshRenderedMemoNodes(
+        change.users,
+        userStore.displayMode,
+        change.changedIds,
+      );
       // 仅在导入数据时，按昵称回退规则可能需要补扫当前已有节点
       if (change.reason === "import") {
         this.scanMatchByNameRules(document);
@@ -167,7 +166,7 @@ export class PageInjector {
     newRules.forEach((rule) => {
       if (!this.activeWatchers.has(rule)) {
         const watcher = new DynamicRuleWatcher(rule, (r, scope) => {
-          this.scheduleRuleScan(r, r.trigger.interval, scope);
+          this.scheduleRuleScan(r, r.trigger.debounceMs, scope);
         });
         this.activeWatchers.set(rule, watcher);
         watcher.start();
@@ -354,9 +353,6 @@ export class PageInjector {
 
     if (applied) {
       el.setAttribute("data-bili-processed", "true");
-      // 渲染器会同步 data-bili-original / data-bili-uid
-      // el.setAttribute("data-bili-original", originalName || "");
-      // el.setAttribute("data-bili-uid", uid);
     }
   }
 

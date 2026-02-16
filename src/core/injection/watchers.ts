@@ -196,12 +196,12 @@ export class PollingRuleWatcher {
 
   public start() {
     logger.debug(
-      `⏱️ 轮询规则启动: [${this.rule.name}] interval=${this.rule.trigger.interval}ms watch=${this.rule.trigger.watch}`,
+      `⏱️ 轮询规则启动: [${this.rule.name}] interval=${this.rule.trigger.intervalMs}ms watch=${this.rule.trigger.watch}`,
     );
     this.tick();
     this.pollTimer = window.setInterval(
       () => this.tick(),
-      this.rule.trigger.interval,
+      this.rule.trigger.intervalMs,
     );
   }
 

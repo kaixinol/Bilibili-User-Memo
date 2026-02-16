@@ -28,12 +28,6 @@
   background: var(--glass);
 }
 
-/* 聚焦高亮 */
-.editable-textarea:focus {
-  border-bottom-color: var(--focus-color);
-  background: var(--bg-main);
-  opacity: 1;
-}
 .bili-memo-tag {
   cursor: pointer;
   display: inline;
@@ -66,11 +60,6 @@
   background: var(--overlay);
   border-bottom-color: var(--glass);
   color: var(--custom-font-color, white);
-}
-
-:host-context(.memo-container-dark-theme) .editable-textarea:focus {
-  background: var(--bg-sub);
-  border-bottom-color: var(--primary-color);
 }
 
 :host-context(.memo-container-dark-theme) .bili-memo-input,

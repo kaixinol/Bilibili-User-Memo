@@ -1,0 +1,74 @@
+name: "新适配 URL 请求"
+description: "请求适配尚未支持的页面/路由"
+title: "[Adapt URL] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        该模板用于“新增页面适配”。
+        请提供可定位用户节点的 DOM 结构（含 UID 或 space 链接）。
+
+  - type: input
+    id: target_url
+    attributes:
+      label: "目标 URL"
+      description: "请提供完整地址；若有多种地址可分行写"
+      placeholder: "https://www.bilibili.com/..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: url_pattern_hint
+    attributes:
+      label: "URL 规律（可选）"
+      description: "如果你知道可匹配规律，请写出来"
+      placeholder: "例如：https://www.bilibili.com/c/<channel>/"
+    validations:
+      required: false
+
+  - type: textarea
+    id: user_dom
+    attributes:
+      label: "用户节点 DOM 片段"
+      description: "至少包含用户名节点和可提取 UID 的信息（href/data-id 等）"
+      render: html
+    validations:
+      required: true
+
+  - type: input
+    id: selector_hint
+    attributes:
+      label: "建议选择器（可选）"
+      description: "例如 aSelector / textSelector / watch 容器"
+      placeholder: ".bili-video-card__info--owner | .bili-video-card__info--author"
+    validations:
+      required: false
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: "期望行为"
+      description: "希望以哪种方式展示（只显示备注 / 昵称(备注) / 可编辑等）"
+      placeholder: "例如：在该页面按 Minimal 模式展示备注"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: frequency
+    attributes:
+      label: "页面使用频率"
+      description: "帮助评估优先级"
+      options:
+        - "高（每天都会用）"
+        - "中（每周会用）"
+        - "低（偶尔使用）"
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra_context
+    attributes:
+      label: "补充信息"
+      description: "截图、录屏、相关路由截图等"
+    validations:
+      required: false

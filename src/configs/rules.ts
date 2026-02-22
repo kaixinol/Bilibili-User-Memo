@@ -323,13 +323,92 @@ const rawConfig = [
     },
   },
   {
-    urlPattern: /^https:\/\/space\.bilibili\.com\/\d+\/favlist?fid=\d+&ftype=create/,
+    urlPattern:
+      /^https:\/\/space\.bilibili\.com\/\d+\/favlist\?(?=[^#]*\bfid=\d+\b)(?=[^#]*\bftype=create\b)[^#]*(?:#.*)?$/,
     rule: {
       name: "空间收藏夹",
       injectMode: InjectionMode.Dynamic,
       styleScope: StyleScope.Minimal,
       aSelector: ".bili-video-card__author",
+      textSelector: ".bili-video-card__text span[title]",
       trigger: { watch: ".favlist-main", interval: 1000 },
+    },
+  },
+  {
+    urlPattern:
+      /^https:\/\/www\.bilibili\.com\/watchlater\/list(?:\?[^#]*)?(?:#.*)?$/,
+    rule: {
+      name: "稍后再看",
+      injectMode: InjectionMode.Dynamic,
+      styleScope: StyleScope.Minimal,
+      aSelector: ".bili-video-card__author",
+      textSelector: ".bili-video-card__text span[title]",
+      trigger: { watch: "body", interval: 1000 },
+    },
+  },
+  {
+    urlPattern: /^https:\/\/www\.bilibili\.com\/?(?:\?[^#]*)?(?:#.*)?$/,
+    rule: {
+      name: "首页推荐",
+      injectMode: InjectionMode.Dynamic,
+      styleScope: StyleScope.Minimal,
+      aSelector:
+        ".bili-video-card__info--owner, .bili-video-card__author, a.up-name",
+      textSelector:
+        ".bili-video-card__info--author, .bili-video-card__text span[title], .up-name__text",
+      trigger: { watch: "#app", interval: 1000 },
+    },
+  },
+  {
+    urlPattern: /^https:\/\/search\.bilibili\.com\/(?:all|video|bangumi|pgc|live|article|user)(?:\?[^#]*)?(?:#.*)?$/,
+    rule: {
+      name: "搜索结果",
+      injectMode: InjectionMode.Dynamic,
+      styleScope: StyleScope.Minimal,
+      aSelector:
+        ".bili-video-card__info--owner, .bili-video-card__author, a.up-name",
+      textSelector:
+        ".bili-video-card__info--author, .bili-video-card__text span[title], .up-name__text",
+      trigger: { watch: "#app", interval: 1000 },
+    },
+  },
+  {
+    urlPattern: /^https:\/\/www\.bilibili\.com\/v\/popular\/?(?:\?[^#]*)?(?:#.*)?$/,
+    rule: {
+      name: "热门页",
+      injectMode: InjectionMode.Dynamic,
+      styleScope: StyleScope.Minimal,
+      aSelector:
+        ".bili-video-card__info--owner, .bili-video-card__author, a.up-name",
+      textSelector:
+        ".bili-video-card__info--author, .bili-video-card__text span[title], .up-name__text",
+      trigger: { watch: "#app", interval: 1000 },
+    },
+  },
+  {
+    urlPattern: /^https:\/\/www\.bilibili\.com\/v\/[a-z]+\/?(?:\?[^#]*)?(?:#.*)?$/,
+    rule: {
+      name: "分区页",
+      injectMode: InjectionMode.Dynamic,
+      styleScope: StyleScope.Minimal,
+      aSelector:
+        ".bili-video-card__info--owner, .bili-video-card__author, a.up-name",
+      textSelector:
+        ".bili-video-card__info--author, .bili-video-card__text span[title], .up-name__text",
+      trigger: { watch: "#app", interval: 1000 },
+    },
+  },
+  {
+    urlPattern: /^https:\/\/www\.bilibili\.com\/c\/[a-z0-9_-]+\/?(?:\?[^#]*)?(?:#.*)?$/,
+    rule: {
+      name: "频道页",
+      injectMode: InjectionMode.Dynamic,
+      styleScope: StyleScope.Minimal,
+      aSelector:
+        ".bili-video-card__info--owner, .bili-video-card__author, a.up-name",
+      textSelector:
+        ".bili-video-card__info--author, .bili-video-card__text span[title], .up-name__text",
+      trigger: { watch: "#app", interval: 1000 },
     },
   },
   {
@@ -344,7 +423,8 @@ const rawConfig = [
     },
   },
   {
-    urlPattern: /^https:\/\/message\.bilibili\.com\/.*\/whisper\//,
+    urlPattern:
+      /^https:\/\/message\.bilibili\.com\/(?:[^#]*)?(?:#\/)?whisper(?:\/|$)/,
     rule: {
       name: "个人消息 - 私信",
       injectMode: InjectionMode.Polling,
@@ -370,7 +450,8 @@ const rawConfig = [
     },
   },
   {
-    urlPattern: /^https:\/\/message\.bilibili\.com\/.*\/(reply|love|at)\//,
+    urlPattern:
+      /^https:\/\/message\.bilibili\.com\/(?:[^#]*)?(?:#\/)?(?:reply|love|at)(?:\/|$)/,
     rule: {
       name: "个人消息 - 回复/赞/AT",
       injectMode: InjectionMode.Dynamic,

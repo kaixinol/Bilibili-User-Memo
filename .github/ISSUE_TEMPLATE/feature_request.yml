@@ -1,0 +1,74 @@
+name: "新功能要求"
+description: "提出一个功能改进或新能力"
+title: "[Feature] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        请尽量描述“问题背景 + 期望结果”，避免只写实现手段。
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: "痛点/问题背景"
+      description: "当前方案哪里不够用"
+      placeholder: "例如：目前只能在页面 A 编辑备注，页面 B 无法快速编辑"
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: "期望方案"
+      description: "希望新增什么能力"
+      placeholder: "例如：在 xxx 页面支持快捷编辑备注"
+    validations:
+      required: true
+
+  - type: textarea
+    id: use_case
+    attributes:
+      label: "使用场景"
+      description: "你会在什么情况下使用该功能"
+      placeholder: |
+        场景 1:
+        场景 2:
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: "替代方案（可选）"
+      description: "你考虑过的其他做法"
+      placeholder: "例如：也可以通过设置项开关实现"
+    validations:
+      required: false
+
+  - type: textarea
+    id: acceptance_criteria
+    attributes:
+      label: "验收标准（可选）"
+      description: "如何判断这个需求完成"
+      placeholder: |
+        1. 在 xxx 页面出现 ...
+        2. 保存后 ...
+        3. 刷新后 ...
+    validations:
+      required: false
+
+  - type: input
+    id: related_url
+    attributes:
+      label: "相关页面 URL（可选）"
+      placeholder: "https://www.bilibili.com/..."
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra_context
+    attributes:
+      label: "补充信息"
+      description: "截图、参考实现、原型图等"
+    validations:
+      required: false

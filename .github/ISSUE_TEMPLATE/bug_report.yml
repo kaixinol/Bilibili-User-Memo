@@ -1,0 +1,111 @@
+name: "Bug 反馈"
+description: "报告一个可复现的问题"
+title: "[Bug] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。请尽量提供可复现信息，便于快速定位问题。
+
+  - type: input
+    id: affected_url
+    attributes:
+      label: "问题页面 URL"
+      description: "请粘贴完整页面地址"
+      placeholder: "https://www.bilibili.com/..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: bug_description
+    attributes:
+      label: "问题描述"
+      description: "一句话说明哪里不对"
+      placeholder: "例如：编辑备注后失去焦点会回弹为原名"
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce_steps
+    attributes:
+      label: "复现步骤"
+      description: "按顺序列出操作步骤"
+      placeholder: |
+        1. 打开 ...
+        2. 点击 ...
+        3. 输入 ...
+        4. 观察到 ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected_behavior
+    attributes:
+      label: "预期行为"
+      placeholder: "你希望发生什么"
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual_behavior
+    attributes:
+      label: "实际行为"
+      placeholder: "实际发生了什么"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: browser
+    attributes:
+      label: "浏览器"
+      options:
+        - "Chrome"
+        - "Edge"
+        - "Firefox"
+        - "Safari"
+        - "其他"
+    validations:
+      required: true
+
+  - type: input
+    id: extension_env
+    attributes:
+      label: "脚本管理器与版本"
+      description: "例如 Tampermonkey 5.1.1"
+      placeholder: "Tampermonkey x.y.z"
+    validations:
+      required: false
+
+  - type: input
+    id: script_version
+    attributes:
+      label: "脚本版本"
+      placeholder: "例如 v2.0.0rc"
+    validations:
+      required: false
+
+  - type: textarea
+    id: console_logs
+    attributes:
+      label: "控制台日志"
+      description: "请粘贴与问题相关的日志（如 [Bili-User-Memo] / DIAG）"
+      render: shell
+    validations:
+      required: false
+
+  - type: textarea
+    id: dom_snippet
+    attributes:
+      label: "相关 DOM 片段"
+      description: "请提供含用户名/UID 的 HTML 结构"
+      render: html
+    validations:
+      required: false
+
+  - type: textarea
+    id: extra_context
+    attributes:
+      label: "补充信息"
+      description: "截图、录屏、临时 workaround 等"
+    validations:
+      required: false

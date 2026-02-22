@@ -6,13 +6,12 @@ body:
     attributes:
       value: |
         该模板用于“新增页面适配”。
-        请提供可定位用户节点的 DOM 结构（含 UID 或 space 链接）。
 
   - type: input
     id: target_url
     attributes:
       label: "目标 URL"
-      description: "请提供完整地址；若有多种地址可分行写"
+      description: "请提供完整地址，便于快速定位页面"
       placeholder: "https://www.bilibili.com/..."
     validations:
       required: true
@@ -29,7 +28,7 @@ body:
   - type: textarea
     id: user_dom
     attributes:
-      label: "用户节点 DOM 片段"
+      label: "用户节点 DOM 片段（可选）"
       description: "至少包含用户名节点和可提取 UID 的信息（href/data-id 等）"
       render: html
     validations:
@@ -43,15 +42,6 @@ body:
       placeholder: ".bili-video-card__info--owner | .bili-video-card__info--author"
     validations:
       required: false
-
-  - type: textarea
-    id: expected_behavior
-    attributes:
-      label: "期望行为"
-      description: "希望以哪种方式展示（只显示备注 / 昵称(备注) / 可编辑等）"
-      placeholder: "例如：在该页面按 Minimal 模式展示备注"
-    validations:
-      required: true
 
   - type: dropdown
     id: frequency
@@ -68,7 +58,7 @@ body:
   - type: textarea
     id: extra_context
     attributes:
-      label: "补充信息"
+      label: "补充信息（可选）"
       description: "截图、录屏、相关路由截图等"
     validations:
       required: false

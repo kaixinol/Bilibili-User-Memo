@@ -54,7 +54,7 @@ body:
   - type: textarea
     id: extra_context
     attributes:
-      label: "补充信息"
+      label: "补充信息（可选）"
       description: "截图、参考实现、原型图等"
     validations:
       required: false

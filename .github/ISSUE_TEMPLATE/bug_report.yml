@@ -87,7 +87,8 @@ body:
     id: console_logs
     attributes:
       label: "控制台日志"
-      description: "请粘贴与问题相关的日志（[Bili-User-Memo]）"
+      description: "请粘贴与问题相关的日志（过滤器：[Bili-User-Memo]，日记等级为详细）"
+      placeholder: "例如：\n[Bili-User-Memo] Error: xxx at ...\n..."
       render: shell
     validations:
       required: false
@@ -95,7 +96,7 @@ body:
   - type: textarea
     id: dom_snippet
     attributes:
-      label: "相关 DOM 片段"
+      label: "相关 DOM 片段（可选）"
       description: "请提供含用户名/UID 的 HTML 结构"
       render: html
     validations:
@@ -104,7 +105,7 @@ body:
   - type: textarea
     id: extra_context
     attributes:
-      label: "补充信息"
+      label: "补充信息（可选）"
       description: "截图、录屏、临时 workaround 等"
     validations:
       required: false

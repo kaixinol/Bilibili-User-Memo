@@ -87,9 +87,12 @@ body:
     id: console_logs
     attributes:
       label: "控制台日志"
-      description: "请粘贴与问题相关的日志（过滤器：[Bili-User-Memo]，日记等级为详细）"
-      placeholder: "例如：\n[Bili-User-Memo] Error: xxx at ...\n..."
-      render: shell
+      description: "请粘贴与问题相关的日志（过滤器：[Bili-User-Memo]，日志等级为详细）"
+      value: |
+        <details>
+        <summary>日志</summary>
+        日志在这里填写
+        </details>
     validations:
       required: true
 

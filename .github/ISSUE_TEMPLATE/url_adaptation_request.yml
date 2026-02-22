@@ -34,12 +34,12 @@ body:
     validations:
       required: false
 
-  - type: input
+  - type: textarea
     id: selector_hint
     attributes:
       label: "建议选择器（可选）"
-      description: "例如 aSelector / textSelector / watch 容器"
-      placeholder: ".bili-video-card__info--owner | .bili-video-card__info--author"
+      description: 例如 aSelector / textSelector / watch 容器
+      render: css
     validations:
       required: false
 

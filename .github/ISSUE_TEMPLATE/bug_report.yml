@@ -12,7 +12,7 @@ body:
     attributes:
       label: "问题页面 URL"
       description: "请粘贴完整页面地址"
-      placeholder: "https://www.bilibili.com/..."
+      placeholder: "https://www.bilibili.com/"
     validations:
       required: true
 
@@ -20,8 +20,7 @@ body:
     id: bug_description
     attributes:
       label: "问题描述"
-      description: "一句话说明哪里不对"
-      placeholder: "例如：编辑备注后失去焦点会回弹为原名"
+      description: "一句话说明哪里不正常"
     validations:
       required: true
 
@@ -88,7 +87,7 @@ body:
     id: console_logs
     attributes:
       label: "控制台日志"
-      description: "请粘贴与问题相关的日志（如 [Bili-User-Memo] / DIAG）"
+      description: "请粘贴与问题相关的日志（[Bili-User-Memo]）"
       render: shell
     validations:
       required: false

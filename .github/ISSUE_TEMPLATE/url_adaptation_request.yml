@@ -33,7 +33,7 @@ body:
       description: "至少包含用户名节点和可提取 UID 的信息（href/data-id 等）"
       render: html
     validations:
-      required: true
+      required: false
 
   - type: input
     id: selector_hint

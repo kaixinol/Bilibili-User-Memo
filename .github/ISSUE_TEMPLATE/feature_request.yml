@@ -12,7 +12,6 @@ body:
     attributes:
       label: "痛点/问题背景"
       description: "当前方案哪里不够用"
-      placeholder: "例如：目前只能在页面 A 编辑备注，页面 B 无法快速编辑"
     validations:
       required: true
 
@@ -21,7 +20,6 @@ body:
     attributes:
       label: "期望方案"
       description: "希望新增什么能力"
-      placeholder: "例如：在 xxx 页面支持快捷编辑备注"
     validations:
       required: true
 
@@ -42,18 +40,6 @@ body:
       label: "替代方案（可选）"
       description: "你考虑过的其他做法"
       placeholder: "例如：也可以通过设置项开关实现"
-    validations:
-      required: false
-
-  - type: textarea
-    id: acceptance_criteria
-    attributes:
-      label: "验收标准（可选）"
-      description: "如何判断这个需求完成"
-      placeholder: |
-        1. 在 xxx 页面出现 ...
-        2. 保存后 ...
-        3. 刷新后 ...
     validations:
       required: false
 

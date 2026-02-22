@@ -1,10 +1,4 @@
 import { querySelectorDeep } from "query-selector-shadow-dom";
-export { extractUid } from "./uid-extractor";
-export {
-  formatDisplayName,
-  getElementDisplayName,
-  resolveRuleTextTarget,
-} from "./text-utils";
 
 const DEFAULT_AVATAR_URL =
   "https://i0.hdslb.com/bfs/face/member/noface.jpg@96w_96h_1c_1s.avif";

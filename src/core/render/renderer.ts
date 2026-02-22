@@ -1,7 +1,7 @@
 // src/core/renderer.ts
 import { BiliUser, ElementMeta } from "../types";
 import { PageRule, StyleScope } from "../../configs/rules";
-import { resolveRuleTextTarget } from "../dom/dom-utils";
+import { resolveRuleTextTarget } from "../dom/text-utils";
 import { userStore } from "../store/store";
 import { enterEditMode } from "./editor";
 import { ensureStylesForElement } from "../style/style-manager";
@@ -22,6 +22,7 @@ export async function injectMemoRenderer(
   meta: ElementMeta,
 ): Promise<boolean> {
   const displayMode = userStore.displayMode;
+
   // 根据样式作用域分发处理逻辑
   switch (rule.styleScope) {
     case StyleScope.Minimal:

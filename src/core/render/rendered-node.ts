@@ -1,5 +1,5 @@
 import { BiliUser, ElementMeta } from "../types";
-import { formatDisplayName } from "../dom/dom-utils";
+import { formatDisplayName } from "../dom/text-utils";
 
 interface RenderedNodeOptions {
   isEditableWrapper?: boolean;

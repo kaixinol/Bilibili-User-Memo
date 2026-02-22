@@ -1,5 +1,6 @@
 import { querySelectorAllDeep } from "query-selector-shadow-dom";
 import {
+  config,
   InjectionMode,
   PageRule,
   StaticPageRule,
@@ -7,13 +8,12 @@ import {
   PollingPageRule,
 } from "../../configs/rules";
 import { logger } from "../../utils/logger";
-import { sleep } from "../../utils/sleep";
-import { extractUid, getElementDisplayName } from "../dom/dom-utils";
+import { extractUid } from "../dom/uid-extractor";
+import { getElementDisplayName } from "../dom/text-utils";
 import { refreshRenderedMemoNodes } from "../render/dom-refresh";
 import { injectMemoRenderer } from "../render/renderer";
 import { userStore, UserStoreChange } from "../store/store";
 import { BiliUser } from "../types";
-import { getMatchedRulesByUrl } from "./rule-matcher";
 import { DynamicRuleWatcher, PollingRuleWatcher } from "./watchers";
 
 type ScanScope = HTMLElement | ShadowRoot | Document;
@@ -44,7 +44,7 @@ export class PageInjector {
     this.startUrlMonitor();
     this.onDomReady(async () => {
       await this.waitForBiliEnvironment();
-      await sleep(100);
+      await new Promise((resolve) => setTimeout(resolve, 100));
       this.domReady = true;
       this.handleUrlChange();
     });
@@ -110,7 +110,8 @@ export class PageInjector {
   private handleUrlChange() {
     if (!this.domReady) return;
 
-    const groups = this.groupRulesByMode(this.getMatchedRules());
+    const matchedRules = this.getMatchedRules();
+    const groups = this.groupRulesByMode(matchedRules);
     this.applyStaticRules(groups.staticRules, document);
     this.reconcileWatchers(groups.dynamicRules);
     this.reconcilePollingWatchers(groups.pollingRules);
@@ -350,7 +351,10 @@ export class PageInjector {
   }
 
   private getMatchedRules(): PageRule[] {
-    return getMatchedRulesByUrl(unsafeWindow.location.href);
+    const currentUrl = unsafeWindow.location.href;
+    return config
+      .filter((entry) => entry.urlPattern.test(currentUrl))
+      .map((entry) => entry.rule);
   }
 
   private onDomReady(callback: () => void) {

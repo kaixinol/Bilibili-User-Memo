@@ -1,8 +1,8 @@
 {
   "name": "bili-user-memo",
-  "version": "2.0.0rc1",
+  "version": "2.0.0",
   "description": "B站UP主一键备注 | B站一键备注 Rev 的重写版本",
-  "main": "main.js",
+  "main": "src/main.ts",
   "scripts": {
     "dev": "vite --mode debug",
     "build": "vite build --mode production",
@@ -19,11 +19,11 @@
   "packageManager": "pnpm@10.28.0",
   "devDependencies": {
     "@types/alpinejs": "^3.13.11",
-    "@types/node": "^25.3.0",
+    "@types/node": "^25.3.3",
     "@types/tampermonkey": "^5.0.5",
-    "@typescript-eslint/eslint-plugin": "^8.56.0",
-    "@typescript-eslint/parser": "^8.56.0",
-    "eslint": "^10.0.1",
+    "@typescript-eslint/eslint-plugin": "^8.56.1",
+    "@typescript-eslint/parser": "^8.56.1",
+    "eslint": "^10.0.2",
     "rollup-plugin-visualizer": "^7.0.0",
     "terser": "^5.46.0",
     "typescript": "^5.9.3",

@@ -22,9 +22,11 @@ export default defineConfig(({ mode }) => {
             "GM_xmlhttpRequest",
             "GM_addValueChangeListener",
             "unsafeWindow",
+            "GM_registerMenuCommand",
           ],
           connect: ["api.bilibili.com"],
           "run-at": "document-body",
+          supportURL: "https://github.com/kaixinol/Bilibili-User-Memo/issues",
         },
         build: {
           externalGlobals: {

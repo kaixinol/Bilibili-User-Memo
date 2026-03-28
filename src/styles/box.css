@@ -16,6 +16,15 @@
   font-size: 14px;
 }
 
+.panel-loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  color: var(--text-sub);
+  font-size: 14px;
+}
+
 /* --- 用户卡片单体 --- */
 .user-box {
   display: flex;

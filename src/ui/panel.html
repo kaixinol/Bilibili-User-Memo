@@ -194,13 +194,24 @@
     </div>
 
     <div class="panel-users-container">
-      <div class="panel-users-list">
-        <template x-for="user in $store.userList.filteredUsers" :key="user.id">
-          ${boxTemplate}
-        </template>
+      <div>
+        <div
+          x-show="$store.userList.isOpen && $store.userList.isUsersLoading"
+          class="panel-loading-state"
+        >
+          加载中...
+        </div>
+        <div
+          x-show="$store.userList.hasLoadedUsers"
+          class="panel-users-list"
+        >
+          <template x-for="user in $store.userList.filteredUsers" :key="user.id">
+            ${boxTemplate}
+          </template>
 
-        <div x-show="$store.userList.filteredUsers.length === 0" class="panel-empty-state">
-          没有找到用户
+          <div x-show="$store.userList.filteredUsers.length === 0" class="panel-empty-state">
+            没有找到用户
+          </div>
         </div>
       </div>
     </div>

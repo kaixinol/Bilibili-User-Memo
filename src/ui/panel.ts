@@ -86,7 +86,7 @@ function registerPanelComponents() {
       return useUserListStore().isOpen;
     },
     set isOpen(next: boolean) {
-      useUserListStore().isOpen = Boolean(next);
+      useUserListStore().setOpen(next);
     },
     handleSelectAll(event: KeyboardEvent) {
       const userList = useUserListStore();
@@ -107,7 +107,7 @@ function registerPanelComponents() {
       return useUserListStore().isOpen;
     },
     set isOpen(next: boolean) {
-      useUserListStore().isOpen = Boolean(next);
+      useUserListStore().setOpen(next);
     },
     get openText(): string {
       return this.prefs.openText;
@@ -263,6 +263,13 @@ function registerPanelComponents() {
         el.classList.toggle("can-expand", el.scrollWidth > el.clientWidth);
       });
     },
+    handleMouseEnter() {
+      this.refreshOverflow();
+    },
+    handleMouseLeave() {
+      const el = (this as any).$el as HTMLElement;
+      el.classList.remove("can-expand");
+    },
     copy() {
       if (this.isMultiSelect) return;
       navigator.clipboard.writeText(`UID:${this.uid}`);
@@ -270,6 +277,7 @@ function registerPanelComponents() {
       window.setTimeout(() => {
         this.copied = false;
       }, 500);
+      this.refreshOverflow();
     },
     get displayText(): string {
       return this.copied ? "✅ 已复制" : this.uid;

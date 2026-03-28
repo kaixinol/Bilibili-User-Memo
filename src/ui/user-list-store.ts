@@ -1,5 +1,5 @@
 import Alpine from "alpinejs";
-import { GM_getValue } from "vite-plugin-monkey/dist/client";
+import { GM_getValue, GM_setValue } from "vite-plugin-monkey/dist/client";
 import { userStore } from "../core/store/store";
 import { BiliUser } from "../core/types";
 import {
@@ -14,6 +14,9 @@ export interface UserListStore {
   users: BiliUser[];
   readonly filteredUsers: BiliUser[];
   isDark: boolean;
+  preloadAllCards: boolean;
+  isUsersLoading: boolean;
+  hasLoadedUsers: boolean;
   isRefreshing: boolean;
   refreshCurrent: number;
   refreshTotal: number;
@@ -28,18 +31,36 @@ export interface UserListStore {
   invertSelection(ids: string[]): void;
   removeSelected(): void;
   setDisplayMode(mode: number): void;
+  setOpen(next: boolean): void;
+  setPreloadAllCards(next: boolean): void;
+  ensureUsersLoaded(): Promise<void>;
   exportData(): void;
   importData(): void;
   refreshData(): void;
 }
 
+const PRELOAD_ALL_CARDS_KEY = "panelPreloadAllCards";
+
+export function getPanelPreloadAllCards(): boolean {
+  return GM_getValue<boolean>(PRELOAD_ALL_CARDS_KEY, true);
+}
+
+export function setPanelPreloadAllCards(value: boolean) {
+  GM_setValue(PRELOAD_ALL_CARDS_KEY, value);
+}
+
 export function registerUserStore() {
   if (Alpine.store("userList")) return;
+  const preloadAllCards = getPanelPreloadAllCards();
+  const shouldPreloadImmediately = __IS_DEBUG__ || preloadAllCards;
 
   const store: UserListStore = {
     isOpen: __IS_DEBUG__ ? true : false,
-    users: userStore.getUsers(),
+    users: shouldPreloadImmediately ? userStore.getUsers() : [],
     isDark: GM_getValue<boolean>("isDark", false),
+    preloadAllCards,
+    isUsersLoading: false,
+    hasLoadedUsers: shouldPreloadImmediately,
     isRefreshing: false,
     refreshCurrent: 0,
     refreshTotal: 0,
@@ -103,6 +124,67 @@ export function registerUserStore() {
       userStore.setDisplayMode(mode);
     },
 
+    setOpen(next: boolean) {
+      const shouldOpen = Boolean(next);
+      this.isOpen = shouldOpen;
+      if (shouldOpen) {
+        void this.ensureUsersLoaded();
+      }
+    },
+
+    setPreloadAllCards(next: boolean) {
+      const shouldPreload = Boolean(next);
+      this.preloadAllCards = shouldPreload;
+      setPanelPreloadAllCards(shouldPreload);
+
+      if (shouldPreload) {
+        if (this.hasLoadedUsers) return;
+        this.users = userStore.getUsers();
+        this.hasLoadedUsers = true;
+        this.isUsersLoading = false;
+        return;
+      }
+
+      if (this.isOpen) return;
+      this.users = [];
+      this.hasLoadedUsers = false;
+      this.isUsersLoading = false;
+    },
+
+    async ensureUsersLoaded() {
+      if (this.hasLoadedUsers || this.isUsersLoading) return;
+      this.isUsersLoading = true;
+
+      await new Promise<void>((resolve) => {
+        window.requestAnimationFrame(() => resolve());
+      });
+      await new Promise<void>((resolve) => {
+        window.requestAnimationFrame(() => resolve());
+      });
+      await new Promise<void>((resolve) => {
+        const ric =
+          (window as Window & {
+            requestIdleCallback?: (
+              callback: () => void,
+              options?: { timeout: number },
+            ) => number;
+          }).requestIdleCallback;
+        if (!ric) {
+          window.setTimeout(resolve, 0);
+          return;
+        }
+        ric(() => resolve(), { timeout: 300 });
+      });
+
+      const latestUsers = userStore.getUsers();
+      this.users = latestUsers;
+      this.hasLoadedUsers = true;
+      this.isUsersLoading = false;
+      if (this.selectedIds.length === 0) return;
+      const userIds = new Set(latestUsers.map((u) => u.id));
+      this.selectedIds = this.selectedIds.filter((id) => userIds.has(id));
+    },
+
     async refreshData() {
       if (this.isRefreshing || this.users.length === 0) return;
       this.isRefreshing = true;
@@ -145,6 +227,7 @@ export function registerUserStore() {
   const reactiveStore = Alpine.store("userList") as UserListStore;
 
   const syncUsers = (users: BiliUser[]) => {
+    if (!reactiveStore.hasLoadedUsers) return;
     reactiveStore.users = users;
     if (reactiveStore.selectedIds.length === 0) return;
     const userIds = new Set(users.map((u) => u.id));

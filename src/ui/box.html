@@ -10,7 +10,13 @@
     <span class="user-select-mark"></span>
   </label>
   <div class="user-avatar-wrapper">
-    <img :src="currentUser?.avatar || ''" class="user-avatar" :alt="currentUser?.nickname || user.id" />
+    <img
+      :src="currentUser?.avatar || ''"
+      class="user-avatar"
+      :alt="currentUser?.nickname || user.id"
+      loading="lazy"
+      decoding="async"
+    />
   </div>
   <div class="user-info-section">
     <div class="user-info-label">BilibiliID</div>
@@ -18,9 +24,10 @@
       class="user-id"
       x-data="copyableUid(user.id)"
       x-init="init()"
-      x-effect="refreshOverflow()"
       x-text="displayText"
       @click="copy()"
+      @mouseenter="handleMouseEnter()"
+      @mouseleave="handleMouseLeave()"
       :class="{ 'copied-status': copied }"
       :title="copied ? '' : '点击复制 ID'"
     ></div>

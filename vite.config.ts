@@ -31,6 +31,7 @@ export default defineConfig(({ mode }) => {
         build: {
           externalGlobals: {
             alpinejs: cdn.jsdelivr("Alpine", "dist/cdn.min.js"),
+            "opencc-js": cdn.jsdelivr("OpenCC", "dist/umd/full.js"),
             "query-selector-shadow-dom": cdn.jsdelivr(
               "querySelectorShadowDom",
               "dist/querySelectorShadowDom.js",

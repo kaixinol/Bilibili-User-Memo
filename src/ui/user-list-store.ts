@@ -7,6 +7,7 @@ import {
   fetchLatestProfiles,
   readImportUsersFromDialog,
 } from "./user-list-io";
+import { getSearchForms, matchesChineseSearch } from "../utils/chinese-search";
 
 export interface UserListStore {
   isOpen: boolean;
@@ -48,16 +49,14 @@ export function registerUserStore() {
     selectedIds: [],
 
     get filteredUsers() {
-      const query = this.searchQuery.trim().toLowerCase();
-      if (!query) return this.users;
+      const queryForms = getSearchForms(this.searchQuery);
+      if (!queryForms.raw) return this.users;
 
       return this.users.filter((user) => {
-        const id = String(user.id || "");
-        const nickname = (user.nickname || "").toLowerCase();
-        const memo = (user.memo || "").toLowerCase();
-
         return (
-          id.includes(query) || nickname.includes(query) || memo.includes(query)
+          matchesChineseSearch(user.id, queryForms) ||
+          matchesChineseSearch(user.nickname, queryForms) ||
+          matchesChineseSearch(user.memo, queryForms)
         );
       });
     },

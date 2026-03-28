@@ -28,6 +28,7 @@ export type UserStoreChange =
       users: BiliUser[];
       reason: ChangeReason;
       changedIds?: string[];
+      rescanMatchByName?: boolean;
     }
   | {
       type: "displayMode";
@@ -43,6 +44,13 @@ export type UserStoreChange =
 
 type StoreListener = (change: UserStoreChange) => void;
 type UserUpdates = Partial<Pick<BiliUser, "nickname" | "avatar" | "memo">>;
+
+interface UserDiffResult {
+  changedIds: string[];
+  hasContentChanges: boolean;
+  orderOnly: boolean;
+  rescanMatchByName: boolean;
+}
 
 function cloneUsers(users: BiliUser[]): BiliUser[] {
   return users.map((u) => ({ ...u }));
@@ -61,6 +69,62 @@ function usersEqual(a: BiliUser[], b: BiliUser[]): boolean {
     }
   }
   return true;
+}
+
+function userContentEqual(a: BiliUser, b: BiliUser): boolean {
+  return (
+    a.id === b.id &&
+    a.nickname === b.nickname &&
+    a.avatar === b.avatar &&
+    a.memo === b.memo
+  );
+}
+
+function diffUsers(previous: BiliUser[], next: BiliUser[]): UserDiffResult {
+  if (usersEqual(previous, next)) {
+    return {
+      changedIds: [],
+      hasContentChanges: false,
+      orderOnly: false,
+      rescanMatchByName: false,
+    };
+  }
+
+  const previousMap = new Map(previous.map((user) => [user.id, user]));
+  const nextMap = new Map(next.map((user) => [user.id, user]));
+  const changedIds = new Set<string>();
+  let hasContentChanges = false;
+  let rescanMatchByName = false;
+
+  next.forEach((user) => {
+    const existing = previousMap.get(user.id);
+    if (!existing) {
+      changedIds.add(user.id);
+      hasContentChanges = true;
+      rescanMatchByName = true;
+      return;
+    }
+    if (userContentEqual(existing, user)) return;
+
+    changedIds.add(user.id);
+    hasContentChanges = true;
+    if (existing.nickname !== user.nickname) {
+      rescanMatchByName = true;
+    }
+  });
+
+  previous.forEach((user) => {
+    if (nextMap.has(user.id)) return;
+    changedIds.add(user.id);
+    hasContentChanges = true;
+  });
+
+  return {
+    changedIds: Array.from(changedIds),
+    hasContentChanges,
+    orderOnly: !hasContentChanges,
+    rescanMatchByName,
+  };
 }
 
 class UserStore {
@@ -134,10 +198,18 @@ class UserStore {
   private applyRemoteUsers(rawUsers: unknown) {
     logger.debug("🔄 [Sync] 检测到外部数据变更，正在同步...");
     try {
+      const nextUsers = normalizeUsers(rawUsers);
+      const diff = diffUsers(this.users, nextUsers);
+      if (!diff.hasContentChanges && !diff.orderOnly) return;
+
       this.withSystemLock(() => {
-        this.users = normalizeUsers(rawUsers);
+        this.users = nextUsers;
       });
-      this.emitUsers("remote");
+      if (diff.orderOnly) {
+        this.emitUsers("remote");
+        return;
+      }
+      this.emitUsers("remote", diff.changedIds, diff.rescanMatchByName);
     } catch (error) {
       logger.error("同步外部数据失败", error);
     }
@@ -355,7 +427,7 @@ class UserStore {
     });
 
     if (added > 0 || updated > 0) {
-      this.commitUsers("import", changedIds);
+      this.commitUsers("import", changedIds, true);
     }
 
     return { added, updated };
@@ -401,19 +473,28 @@ class UserStore {
     }
   }
 
-  private commitUsers(reason: ChangeReason, changedIds: string[] = []) {
+  private commitUsers(
+    reason: ChangeReason,
+    changedIds: string[] = [],
+    rescanMatchByName = reason === "import",
+  ) {
     this.withSystemLock(() => {
       saveUsersToStorage(this.users);
     });
-    this.emitUsers(reason, changedIds);
+    this.emitUsers(reason, changedIds, rescanMatchByName);
   }
 
-  private emitUsers(reason: ChangeReason, changedIds: string[] = []) {
+  private emitUsers(
+    reason: ChangeReason,
+    changedIds: string[] = [],
+    rescanMatchByName = false,
+  ) {
     this.emit({
       type: "users",
       users: this.getUsers(),
       reason,
       changedIds,
+      rescanMatchByName,
     });
   }
 

@@ -4,6 +4,10 @@ import {
 } from "query-selector-shadow-dom";
 import { DynamicPageRule, PollingPageRule } from "../../configs/rules";
 import { logger } from "../../utils/logger";
+import {
+  hasExternalAddedNodes,
+  hasExternalRemovedNodes,
+} from "../dom/owned-node";
 
 type WatchScope = HTMLElement | ShadowRoot | Document;
 type DiscoveryScope = Document | ShadowRoot;
@@ -15,10 +19,6 @@ interface InstanceObserverRecord {
 
 function resolveWatchScope(target: HTMLElement): WatchScope {
   return target.shadowRoot || target;
-}
-
-function hasAddedNodes(mutations: MutationRecord[]): boolean {
-  return mutations.some((m) => m.addedNodes.length > 0);
 }
 
 function isNodeInsideScope(node: Node, scope: WatchScope): boolean {
@@ -145,22 +145,15 @@ export class DynamicRuleWatcher {
     if (this.discoveryObservers.has(scope)) return;
 
     const observer = new MutationObserver((mutations) => {
-      let needScan = false;
-      let nodesRemoved = false;
+      const needScan = hasExternalAddedNodes(mutations);
+      const nodesRemoved = hasExternalRemovedNodes(mutations);
 
-      for (const mutation of mutations) {
-        if (mutation.addedNodes.length > 0) {
-          needScan = true;
+      if (needScan) {
+        mutations.forEach((mutation) => {
           mutation.addedNodes.forEach((node) =>
             this.discoverShadowScopesFromNode(node),
           );
-        }
-        if (mutation.removedNodes.length > 0) {
-          nodesRemoved = true;
-        }
-      }
-
-      if (needScan) {
+        });
         this.scanAndAttachNewTargets();
         this.bridgeShadowMutationsToWatchScopes(scope);
       }
@@ -229,7 +222,7 @@ export class DynamicRuleWatcher {
 
   private createScopeObserver(scope: WatchScope): MutationObserver {
     const observer = new MutationObserver((mutations) => {
-      if (!hasAddedNodes(mutations)) return;
+      if (!hasExternalAddedNodes(mutations)) return;
       this.onTrigger(this.rule, scope);
     });
     observer.observe(scope, { childList: true, subtree: true });

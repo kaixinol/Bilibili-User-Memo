@@ -7,6 +7,7 @@ import "../styles/box.css";
 import { BiliUser } from "../core/types";
 import { createPanelPrefsStore, PanelPrefsStore } from "./panel-prefs";
 import { registerUserStore, UserListStore } from "./user-list-store";
+import { markOwnedElement } from "../core/dom/owned-node";
 
 interface DisplayModeOption {
   value: number;
@@ -342,7 +343,7 @@ export function initMainPanel() {
     .replace("${appName}", "备注管理")
     .replace("${boxTemplate}", boxHtml);
 
-  const container = document.createElement("div");
+  const container = markOwnedElement(document.createElement("div"));
   container.id = "bili-memo-container";
   container.innerHTML = finalHtml;
   document.body.appendChild(container);

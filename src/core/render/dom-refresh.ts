@@ -26,9 +26,15 @@ export function refreshRenderedMemoNodes(
   displayMode: number,
   changedIds?: string[],
 ) {
-  const userMap = new Map(users.map((u) => [u.id, u]));
   if (changedIds && changedIds.length > 0) {
     const uniqueIds = Array.from(new Set(changedIds.filter(Boolean)));
+    const targetIdSet = new Set(uniqueIds);
+    const userMap = new Map<string, BiliUser>();
+    users.forEach((user) => {
+      if (targetIdSet.has(user.id)) {
+        userMap.set(user.id, user);
+      }
+    });
     uniqueIds.forEach((uid) => {
       const selector = `[data-bili-uid="${escapeAttrValue(uid)}"]`;
       const tags = querySelectorAllDeep(selector);
@@ -38,6 +44,7 @@ export function refreshRenderedMemoNodes(
     return;
   }
 
+  const userMap = new Map(users.map((u) => [u.id, u]));
   const allTags = querySelectorAllDeep(`[data-bili-uid]`);
   allTags.forEach((tag) => {
     const uid = tag.getAttribute("data-bili-uid");

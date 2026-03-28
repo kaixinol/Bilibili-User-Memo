@@ -2,6 +2,7 @@
 import { BiliUser } from "../types";
 import { userStore } from "../store/store";
 import { syncRenderedNodeState } from "./rendered-node";
+import { markOwnedElement } from "../dom/owned-node";
 
 /**
  * 进入行内编辑模式
@@ -16,7 +17,7 @@ export function enterEditMode(targetElement: HTMLElement, user: BiliUser) {
   const currentMemo = user.memo || originalName;
 
   // 1. 创建 UI
-  const input = document.createElement("input");
+  const input = markOwnedElement(document.createElement("input"));
   input.type = "text";
   input.value = currentMemo;
   input.className = "bili-memo-input";

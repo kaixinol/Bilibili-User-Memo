@@ -1,0 +1,2 @@
+1. 不要全部标签页DOM强制扫描，visibilitychange，当用户浏览时才扫描（如果有pending的）
+2. 支持簡體繁體中文搜索

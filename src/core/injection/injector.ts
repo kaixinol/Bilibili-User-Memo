@@ -29,6 +29,10 @@ export class PageInjector {
   private lastUrl = "";
   private staticRetryTimers: number[] = [];
   private staticRetryToken = 0;
+  private pendingRemoteChangedIds = new Set<string>();
+  private pendingRemoteRescanMatchByName = false;
+  private pendingRemoteNeedsFullRefresh = false;
+  private pendingRemoteDisplayModeChanged = false;
 
   private activeWatchers = new Map<DynamicPageRule, DynamicRuleWatcher>();
   private activePollingWatchers = new Map<PollingPageRule, PollingRuleWatcher>();
@@ -40,6 +44,9 @@ export class PageInjector {
     logger.info("🚀 PageInjector 正在启动...");
     userStore.refreshData();
     userStore.subscribe((change) => this.handleStoreChange(change));
+    document.addEventListener("visibilitychange", () =>
+      this.handleVisibilityChange(),
+    );
 
     this.startUrlMonitor();
     this.onDomReady(async () => {
@@ -58,6 +65,10 @@ export class PageInjector {
 
   private handleStoreChange(change: UserStoreChange) {
     if (!this.domReady) return;
+    if (this.shouldDeferRemoteChange(change)) {
+      this.queuePendingRemoteChange(change);
+      return;
+    }
 
     if (change.type === "displayMode") {
       this.refreshRenderedNodes(userStore.getUsers(), change.displayMode);
@@ -70,13 +81,84 @@ export class PageInjector {
         userStore.displayMode,
         change.changedIds,
       );
-      if (change.reason === "import") {
+      if (change.rescanMatchByName) {
         this.scanMatchByNameRules(document);
       }
       return;
     }
 
     this.refreshRenderedNodes(change.users, change.displayMode);
+  }
+
+  private shouldDeferRemoteChange(change: UserStoreChange): boolean {
+    return (
+      change.reason === "remote" && document.visibilityState !== "visible"
+    );
+  }
+
+  private queuePendingRemoteChange(change: UserStoreChange) {
+    if (change.type === "displayMode") {
+      this.pendingRemoteDisplayModeChanged = true;
+      return;
+    }
+
+    if (change.type !== "users") return;
+
+    this.pendingRemoteRescanMatchByName ||= Boolean(change.rescanMatchByName);
+
+    if (!change.changedIds || change.changedIds.length === 0) {
+      this.pendingRemoteNeedsFullRefresh = true;
+      return;
+    }
+
+    change.changedIds.forEach((id) => {
+      if (id) this.pendingRemoteChangedIds.add(id);
+    });
+  }
+
+  private handleVisibilityChange() {
+    if (document.visibilityState !== "visible") return;
+    if (!this.domReady) return;
+    this.flushPendingRemoteChanges();
+  }
+
+  private flushPendingRemoteChanges() {
+    if (
+      !this.pendingRemoteNeedsFullRefresh &&
+      this.pendingRemoteChangedIds.size === 0 &&
+      !this.pendingRemoteRescanMatchByName &&
+      !this.pendingRemoteDisplayModeChanged
+    ) {
+      return;
+    }
+
+    const currentUrl = unsafeWindow.location.href;
+    if (currentUrl !== this.lastUrl) {
+      this.lastUrl = currentUrl;
+      logger.debug(`🌏 可见性恢复，先同步 URL: ${currentUrl}`);
+      this.handleUrlChange();
+    }
+
+    const users = userStore.getUsers();
+    const displayMode = userStore.displayMode;
+    const needsFullRefresh =
+      this.pendingRemoteNeedsFullRefresh || this.pendingRemoteDisplayModeChanged;
+    const changedIds = Array.from(this.pendingRemoteChangedIds);
+
+    if (needsFullRefresh) {
+      this.refreshRenderedNodes(users, displayMode);
+    } else if (changedIds.length > 0) {
+      this.refreshRenderedNodes(users, displayMode, changedIds);
+    }
+
+    if (this.pendingRemoteRescanMatchByName) {
+      this.scanMatchByNameRules(document);
+    }
+
+    this.pendingRemoteChangedIds.clear();
+    this.pendingRemoteRescanMatchByName = false;
+    this.pendingRemoteNeedsFullRefresh = false;
+    this.pendingRemoteDisplayModeChanged = false;
   }
 
   private refreshRenderedNodes(

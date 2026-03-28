@@ -7,6 +7,7 @@ import { enterEditMode } from "./editor";
 import { ensureStylesForElement } from "../style/style-manager";
 import { logger } from "../../utils/logger";
 import { syncElementMeta, syncRenderedNodeState } from "./rendered-node";
+import { markOwnedElement } from "../dom/owned-node";
 
 // ✅ 核心优化：使用 WeakMap 建立 "B站原元素" -> "我们注入的元素" 的映射
 // 这样可以避免重复创建 DOM，也能防止内存泄漏（当 B 站元素被回收时，我们的记录也会自动回收）
@@ -84,7 +85,7 @@ function renderEditable(
 
   // 1. 初始化：如果是第一次渲染
   if (!wrapper) {
-    wrapper = document.createElement("span");
+    wrapper = markOwnedElement(document.createElement("span"));
     wrapper.classList.add("editable-textarea");
     // 防止被后续选择器当成未处理节点再次注入
     wrapper.setAttribute("data-bili-processed", "true");

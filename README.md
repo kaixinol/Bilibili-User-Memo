@@ -1,6 +1,6 @@
 # Bilibili 用户备注 UI 使用说明
 
-这是原[B站一键备注](https://scriptcat.org/zh-CN/script-show-page/3059)的TypeSciprt + Alpinejs 完全重写的版本
+这是原[B站一键备注](https://scriptcat.org/zh-CN/script-show-page/3059)的TypeScript + Alpinejs 完全重写的版本
 
 原作者：[pxoxq](https://scriptcat.org/zh-CN/users/143794)
 

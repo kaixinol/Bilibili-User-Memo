@@ -46,8 +46,10 @@ export function getSearchForms(value: string): SearchForms {
   const cached = searchFormCache.get(raw);
   if (cached) return cached;
 
-  const toSimplified = createConverter("cn", "tw");
-  const toTraditional = createConverter("tw", "cn");
+  // opencc-js: { from: "tw", to: "cn" } = 繁体转简体
+  //            { from: "cn", to: "tw" } = 简体转繁体
+  const toSimplified = createConverter("tw", "cn");
+  const toTraditional = createConverter("cn", "tw");
   const variants = Array.from(
     new Set([
       raw,
@@ -63,11 +65,70 @@ export function getSearchForms(value: string): SearchForms {
 export function matchesChineseSearch(
   value: string | number | null | undefined,
   queryForms: SearchForms,
+  enableFuzzySearch = false,
 ): boolean {
   if (!queryForms.raw) return true;
 
-  const targetForms = getSearchForms(String(value || ""));
+  const targetStr = String(value || "");
+  const targetForms = getSearchForms(targetStr);
+
+  if (enableFuzzySearch) {
+    return queryForms.variants.some((query) =>
+      targetForms.variants.some((target) => fuzzyMatch(query, target)),
+    );
+  }
+
   return queryForms.variants.some((query) =>
     targetForms.variants.some((target) => target.includes(query)),
   );
+}
+
+/**
+ * 模糊匹配：支持子序列匹配、部分匹配、字符重排匹配
+ * 优先使用 includes，不引入复杂算法
+ */
+export function fuzzyMatch(query: string, target: string): boolean {
+  if (!query || !target) return !query;
+
+  // 1. 优先：标准子串匹配（最快）
+  if (target.includes(query)) return true;
+
+  // 2. 子序列匹配：query 的字符按顺序出现在 target 中
+  if (isSubsequence(query, target)) return true;
+
+  // 2b. 反向子序列：query 比 target 长时，检查 target 是否是 query 的子序列
+  // 例：query="灰色泥巴", target="灰泥" → target 的字符按顺序出现在 query 中 → true
+  if (query.length > target.length && isSubsequence(target, query)) return true;
+
+  // 3. 部分匹配：短词的每个字符都出现在长文本中（类似"灰泥"匹配"灰色泥巴"）
+  if (isPartialMatch(query, target)) return true;
+
+  return false;
+}
+
+/**
+ * 子序列匹配：query 中的所有字符按顺序出现在 target 中
+ * 例：abc 匹配 "aXbXc"
+ */
+function isSubsequence(query: string, target: string): boolean {
+  let qi = 0;
+  for (let ti = 0; ti < target.length && qi < query.length; ti++) {
+    if (target[ti] === query[qi]) qi++;
+  }
+  return qi === query.length;
+}
+
+/**
+ * 部分匹配：query 的每个字符都存在于 target 中（不要求顺序）
+ * 例："灰泥" 匹配 "灰色泥巴"（灰✓ 泥✓）
+ */
+function isPartialMatch(query: string, target: string): boolean {
+  // 短词匹配长文本才有意义
+  if (query.length > target.length) return false;
+
+  const targetChars = new Set(target);
+  for (const ch of query) {
+    if (!targetChars.has(ch)) return false;
+  }
+  return true;
 }

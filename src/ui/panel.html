@@ -154,6 +154,14 @@
           ×
         </button>
       </div>
+      <label class="panel-fuzzy-search-toggle" title="模糊匹配：支持子序列/部分匹配">
+        <input
+          type="checkbox"
+          :checked="fuzzySearchEnabled"
+          @change="toggleFuzzySearch($event)"
+        />
+        <span>模糊搜索</span>
+      </label>
       <button x-bind="panelExportBtn">导出</button>
     </div>
 

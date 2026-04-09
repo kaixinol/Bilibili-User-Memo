@@ -40,6 +40,7 @@ export interface UserListStore {
 }
 
 const PRELOAD_ALL_CARDS_KEY = "panelPreloadAllCards";
+const FUZZY_SEARCH_KEY = "panelFuzzySearch";
 
 export function getPanelPreloadAllCards(): boolean {
   return GM_getValue<boolean>(PRELOAD_ALL_CARDS_KEY, true);
@@ -47,6 +48,14 @@ export function getPanelPreloadAllCards(): boolean {
 
 export function setPanelPreloadAllCards(value: boolean) {
   GM_setValue(PRELOAD_ALL_CARDS_KEY, value);
+}
+
+export function getPanelFuzzySearch(): boolean {
+  return GM_getValue<boolean>(FUZZY_SEARCH_KEY, false);
+}
+
+export function setPanelFuzzySearch(value: boolean) {
+  GM_setValue(FUZZY_SEARCH_KEY, value);
 }
 
 export function registerUserStore() {
@@ -73,11 +82,12 @@ export function registerUserStore() {
       const queryForms = getSearchForms(this.searchQuery);
       if (!queryForms.raw) return this.users;
 
+      const enableFuzzy = getPanelFuzzySearch();
       return this.users.filter((user) => {
         return (
-          matchesChineseSearch(user.id, queryForms) ||
-          matchesChineseSearch(user.nickname, queryForms) ||
-          matchesChineseSearch(user.memo, queryForms)
+          matchesChineseSearch(user.id, queryForms, enableFuzzy) ||
+          matchesChineseSearch(user.nickname, queryForms, enableFuzzy) ||
+          matchesChineseSearch(user.memo, queryForms, enableFuzzy)
         );
       });
     },

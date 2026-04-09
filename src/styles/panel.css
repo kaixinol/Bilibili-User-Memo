@@ -340,6 +340,37 @@
   color: var(--primary-color);
 }
 
+/* Fuzzy Search Toggle */
+.panel-fuzzy-search-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-sub);
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.panel-fuzzy-search-toggle input[type="checkbox"] {
+  accent-color: var(--primary-color);
+  cursor: pointer;
+  width: 14px;
+  height: 14px;
+}
+
+.panel-fuzzy-search-toggle:hover {
+  color: var(--primary-color);
+}
+
+.memo-container-dark-theme .panel-fuzzy-search-toggle {
+  color: var(--text-sub);
+}
+
+.memo-container-dark-theme .panel-fuzzy-search-toggle:hover {
+  color: var(--primary-color);
+}
+
 /* Users List Container */
 .panel-users-container {
   flex: 1;

@@ -17,6 +17,9 @@ import {
 (async () => {
   Alpine.plugin(persist);
 
+  // 👉 统一 Alpine 实例（很关键）
+  unsafeWindow.Alpine = Alpine;
+
   const currentScopePattern = getCurrentPageScopePattern();
   const pageDisabled = isCurrentPageDisabled();
 
@@ -43,16 +46,20 @@ import {
   GM_registerMenuCommand("🐛反馈", () => {
     window.open("https://github.com/kaixinol/Bilibili-User-Memo/issues");
   });
+
   const preloadAllCards = getPanelPreloadAllCards();
   GM_registerMenuCommand(
     `${preloadAllCards ? "✅" : "⬜"}默认预注入全部卡片`,
     () => {
       const next = !getPanelPreloadAllCards();
       setPanelPreloadAllCards(next);
+
       const userList = Alpine.store("userList") as
         | { setPreloadAllCards?: (value: boolean) => void }
         | undefined;
+
       userList?.setPreloadAllCards?.(next);
+
       alert(
         next
           ? "已开启默认预注入全部卡片。当前页面会尽量立即生效。"
@@ -60,22 +67,25 @@ import {
       );
     },
   );
+
   if (pageDisabled) {
     console.info(`[Bilibili-User-Memo] 当前页面已禁用: ${currentScopePattern}`);
     return;
   }
 
-  unsafeWindow.Alpine = Alpine;
-  initPageInjection();
-  initMainPanel();
-
-  if (import.meta.env.DEV) {
-    Alpine.start();
-  }
-
+  // 👉 先注册 debugger（关键修复点）
   if (__IS_DEBUG__) {
     console.debug("调试模式已启用");
     const mod = await import("./ui/debug/debugger");
-    mod.initDebugger();
+    mod.initDebugger(); // 这里会 Alpine.data("monkeyApp")
+  }
+
+  // 👉 再初始化其他逻辑
+  initPageInjection();
+  initMainPanel();
+
+  // 👉 最后再启动 Alpine（只调用一次）
+  if (import.meta.env.DEV) {
+    Alpine.start();
   }
 })();

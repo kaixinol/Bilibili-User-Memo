@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite --mode debug",
     "build": "vite build --mode production",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test": "vitest run"
   },
   "keywords": [
     "bilibili",
@@ -29,7 +30,8 @@
     "terser": "^5.46.1",
     "typescript": "^5.9.3",
     "vite": "^7.3.1",
-    "vite-plugin-monkey": "^7.1.9"
+    "vite-plugin-monkey": "^7.1.9",
+    "vitest": "^4.1.4"
   },
   "dependencies": {
     "@alpinejs/persist": "^3.15.9",

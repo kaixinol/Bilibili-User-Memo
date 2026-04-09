@@ -6,7 +6,12 @@ import "../styles/global.css";
 import "../styles/box.css";
 import { BiliUser } from "../core/types";
 import { createPanelPrefsStore, PanelPrefsStore } from "./panel-prefs";
-import { registerUserStore, UserListStore } from "./user-list-store";
+import {
+  registerUserStore,
+  UserListStore,
+  getPanelFuzzySearch,
+  setPanelFuzzySearch,
+} from "./user-list-store";
 import { markOwnedElement } from "../core/dom/owned-node";
 
 interface DisplayModeOption {
@@ -193,8 +198,20 @@ function registerPanelComponents() {
     get userList(): UserListStore {
       return useUserListStore();
     },
+    get fuzzySearchEnabled(): boolean {
+      return getPanelFuzzySearch();
+    },
     clearSearch() {
       this.userList.searchQuery = "";
+    },
+    toggleFuzzySearch(event: Event) {
+      const checked = (event.target as HTMLInputElement).checked;
+      setPanelFuzzySearch(checked);
+      console.log(`[Panel Debug] Fuzzy search toggled to: ${checked}`);
+      // Force re-computation of filteredUsers by triggering a reactive update
+      const currentQuery = this.userList.searchQuery;
+      this.userList.searchQuery = "";
+      this.userList.searchQuery = currentQuery;
     },
     confirmRemoveSelected() {
       const count = this.userList.selectedIds.length;

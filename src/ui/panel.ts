@@ -228,7 +228,7 @@ function registerPanelComponents() {
       return useUserListStore();
     },
     get currentUser(): BiliUser | undefined {
-      return this.userList.users.find((item) => item.id === this.userId);
+      return this.userList.getUserById(this.userId);
     },
     get isSelected(): boolean {
       return this.userList.selectedIds.includes(this.userId);
@@ -312,9 +312,7 @@ function registerPanelComponents() {
       return this.userList.isMultiSelect;
     },
     get currentMemo(): string {
-      return (
-        this.userList.users.find((item) => item.id === this.userId)?.memo || ""
-      );
+      return this.userList.getUserById(this.userId)?.memo || "";
     },
     syncDraft() {
       if (!this.isEditing) {

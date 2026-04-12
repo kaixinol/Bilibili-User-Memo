@@ -24,9 +24,7 @@ export interface UserListStore {
   searchQuery: string;
   isMultiSelect: boolean;
   selectedIds: string[];
-  _usersMap: Map<string, BiliUser>;
-  _cachedUsers: BiliUser[];
-  addOrUpdateUser(user: BiliUser): void;
+  getUserById(id: string): BiliUser | undefined;
   updateUser(id: string, updates: Partial<BiliUser>): void;
   removeUser(id: string): void;
   toggleMultiSelect(): void;
@@ -40,6 +38,13 @@ export interface UserListStore {
   exportData(): void;
   importData(): void;
   refreshData(): void;
+}
+
+interface InternalUserListStore extends UserListStore {
+  _usersMap: Map<string, BiliUser>;
+  _usersList: BiliUser[];
+  replaceUsersSnapshot(users: BiliUser[]): void;
+  clearUsersSnapshot(): void;
 }
 
 const PRELOAD_ALL_CARDS_KEY = "panelPreloadAllCards";
@@ -66,41 +71,32 @@ export function registerUserStore() {
   const preloadAllCards = getPanelPreloadAllCards();
   const shouldPreloadImmediately = __IS_DEBUG__ || preloadAllCards;
 
-  const store: UserListStore = {
+  const store: InternalUserListStore = {
     isOpen: __IS_DEBUG__ ? true : false,
-    // 使用响应式Map，支持真正的增量更新
+    // UI 层仅保留 core store 的快照索引，方便列表渲染和按 ID 读取。
     _usersMap: Alpine.reactive(new Map<string, BiliUser>()),
-    // 使用响应式数组作为缓存，确保引用稳定，避免不必要的重新渲染
-    _cachedUsers: Alpine.reactive([] as BiliUser[]),
+    _usersList: Alpine.reactive([] as BiliUser[]),
 
     get users() {
-      return Array.from(this._usersMap.values());
+      return this._usersList;
     },
-    // 增量更新方法
-    addOrUpdateUser(user: BiliUser) {
-      const existing = this._usersMap.get(user.id);
-      if (!existing) {
-        // 新用户：添加到Map和缓存数组
-        const reactiveUser = Alpine.reactive(user);
-        this._usersMap.set(user.id, reactiveUser);
-        this._cachedUsers.push(reactiveUser);
-      } else if (
-        existing.nickname !== user.nickname ||
-        existing.avatar !== user.avatar ||
-        existing.memo !== user.memo
-      ) {
-        // 现有用户更新：直接修改对象属性
-        Object.assign(existing, user);
-      }
+    getUserById(id: string) {
+      return this._usersMap.get(id);
+    },
+    replaceUsersSnapshot(users: BiliUser[]) {
+      this.clearUsersSnapshot();
+      users.forEach((user) => {
+        const reactiveUser = Alpine.reactive({ ...user });
+        this._usersMap.set(reactiveUser.id, reactiveUser);
+        this._usersList.push(reactiveUser);
+      });
+    },
+    clearUsersSnapshot() {
+      this._usersMap.clear();
+      this._usersList.length = 0;
     },
     removeUser(userId: string) {
-      if (this._usersMap.delete(userId)) {
-        // 从缓存数组中移除对应的用户，保持数组引用稳定
-        const index = this._cachedUsers.findIndex(user => user.id === userId);
-        if (index !== -1) {
-          this._cachedUsers.splice(index, 1);
-        }
-      }
+      userStore.removeUser(userId);
     },
     isDark: GM_getValue<boolean>("isDark", false),
     preloadAllCards,
@@ -115,17 +111,15 @@ export function registerUserStore() {
     selectedIds: [],
 
     get filteredUsers() {
-      // 快速路径：当没有搜索查询时，返回响应式的缓存数组，避免重新渲染
       if (!this.searchQuery || !this.searchQuery.trim()) {
-        return this._cachedUsers;
+        return this._usersList;
       }
 
-      // 有搜索查询时，进行实时过滤
       const queryForms = getSearchForms(this.searchQuery);
-      if (!queryForms.raw) return this._cachedUsers;
+      if (!queryForms.raw) return this._usersList;
 
       const enableFuzzy = getPanelFuzzySearch();
-      return this._cachedUsers.filter((user) => {
+      return this._usersList.filter((user) => {
         return (
           matchesChineseSearch(user.id, queryForms, enableFuzzy) ||
           matchesChineseSearch(user.nickname, queryForms, enableFuzzy) ||
@@ -135,7 +129,7 @@ export function registerUserStore() {
     },
 
     updateUser(id: string, updates: Partial<BiliUser>) {
-      const before = this._usersMap.get(id);
+      const before = this.getUserById(id);
       if (!before) return;
       userStore.updateUser(id, updates, before.nickname || id);
     },
@@ -187,15 +181,14 @@ export function registerUserStore() {
 
       if (shouldPreload) {
         if (this.hasLoadedUsers) return;
-        const users = userStore.getUsers();
-        users.forEach(user => this.addOrUpdateUser(user));
+        this.replaceUsersSnapshot(userStore.getUsers());
         this.hasLoadedUsers = true;
         this.isUsersLoading = false;
         return;
       }
 
       if (this.isOpen) return;
-      this._usersMap.clear();
+      this.clearUsersSnapshot();
       this.hasLoadedUsers = false;
       this.isUsersLoading = false;
     },
@@ -226,7 +219,7 @@ export function registerUserStore() {
       });
 
       const latestUsers = userStore.getUsers();
-      latestUsers.forEach(user => this.addOrUpdateUser(user));
+      this.replaceUsersSnapshot(latestUsers);
       this.hasLoadedUsers = true;
       this.isUsersLoading = false;
       if (this.selectedIds.length === 0) return;
@@ -235,10 +228,10 @@ export function registerUserStore() {
     },
 
     async refreshData() {
-      if (this.isRefreshing || this._usersMap.size === 0) return;
+      if (this.isRefreshing || this._usersList.length === 0) return;
       this.isRefreshing = true;
       this.refreshCurrent = 0;
-      this.refreshTotal = this._usersMap.size;
+      this.refreshTotal = this._usersList.length;
 
       const profiles = await fetchLatestProfiles(this.users, () => {
         this.refreshCurrent++;
@@ -251,7 +244,7 @@ export function registerUserStore() {
 
     exportData() {
       exportUsersAsJson(this.users);
-      alert(`导出成功！\n已导出 ${this._usersMap.size} 个用户的数据`);
+      alert(`导出成功！\n已导出 ${this._usersList.length} 个用户的数据`);
     },
 
     async importData() {
@@ -273,23 +266,15 @@ export function registerUserStore() {
 
   // Alpine.store(...) 会返回响应式代理；后续必须写入代理对象，才能触发 UI 更新。
   Alpine.store("userList", store);
-  const reactiveStore = Alpine.store("userList") as UserListStore;
+  const reactiveStore = Alpine.store("userList") as InternalUserListStore;
 
-  // 初始化用户数据：如果需要预加载，立即将用户数据加载到Map和缓存中
   if (shouldPreloadImmediately) {
-    const initialUsers = userStore.getUsers();
-    initialUsers.forEach(user => reactiveStore.addOrUpdateUser(user));
+    reactiveStore.replaceUsersSnapshot(userStore.getUsers());
   }
 
   const syncUsers = (users: BiliUser[]) => {
     if (!reactiveStore.hasLoadedUsers) return;
-
-    // 重置缓存数组，然后重新填充（确保顺序正确）
-    reactiveStore._cachedUsers.length = 0;
-    reactiveStore._usersMap.clear();
-
-    // 重新填充所有用户
-    users.forEach(user => reactiveStore.addOrUpdateUser(user));
+    reactiveStore.replaceUsersSnapshot(users);
   };
 
   userStore.subscribe((change) => {

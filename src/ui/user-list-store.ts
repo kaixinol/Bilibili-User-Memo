@@ -24,6 +24,8 @@ export interface UserListStore {
   searchQuery: string;
   isMultiSelect: boolean;
   selectedIds: string[];
+  _usersMap: Map<string, BiliUser>;
+  addOrUpdateUser(user: BiliUser): void;
   updateUser(id: string, updates: Partial<BiliUser>): void;
   removeUser(id: string): void;
   toggleMultiSelect(): void;
@@ -65,7 +67,29 @@ export function registerUserStore() {
 
   const store: UserListStore = {
     isOpen: __IS_DEBUG__ ? true : false,
-    users: shouldPreloadImmediately ? userStore.getUsers() : [],
+    // 使用响应式Map，支持真正的增量更新
+    _usersMap: Alpine.reactive(new Map<string, BiliUser>()),
+    get users() {
+      return Array.from(this._usersMap.values());
+    },
+    // 增量更新方法
+    addOrUpdateUser(user: BiliUser) {
+      const existing = this._usersMap.get(user.id);
+      if (!existing) {
+        // 新用户：添加到Map（触发单个用户添加的响应式更新）
+        this._usersMap.set(user.id, Alpine.reactive(user));
+      } else if (
+        existing.nickname !== user.nickname ||
+        existing.avatar !== user.avatar ||
+        existing.memo !== user.memo
+      ) {
+        // 现有用户更新：直接修改对象属性（触发单个用户更新的响应式更新）
+        Object.assign(existing, user);
+      }
+    },
+    removeUser(userId: string) {
+      this._usersMap.delete(userId);
+    },
     isDark: GM_getValue<boolean>("isDark", false),
     preloadAllCards,
     isUsersLoading: false,
@@ -79,6 +103,11 @@ export function registerUserStore() {
     selectedIds: [],
 
     get filteredUsers() {
+      // 快速路径：当没有搜索查询时，直接返回用户数组，避免不必要的计算
+      if (!this.searchQuery || !this.searchQuery.trim()) {
+        return this.users;
+      }
+
       const queryForms = getSearchForms(this.searchQuery);
       if (!queryForms.raw) return this.users;
 
@@ -93,13 +122,9 @@ export function registerUserStore() {
     },
 
     updateUser(id: string, updates: Partial<BiliUser>) {
-      const before = this.users.find((user) => user.id === id);
+      const before = this._usersMap.get(id);
       if (!before) return;
       userStore.updateUser(id, updates, before.nickname || id);
-    },
-
-    removeUser(id: string) {
-      userStore.removeUser(id);
     },
 
     toggleMultiSelect() {
@@ -196,10 +221,10 @@ export function registerUserStore() {
     },
 
     async refreshData() {
-      if (this.isRefreshing || this.users.length === 0) return;
+      if (this.isRefreshing || this._usersMap.size === 0) return;
       this.isRefreshing = true;
       this.refreshCurrent = 0;
-      this.refreshTotal = this.users.length;
+      this.refreshTotal = this._usersMap.size;
 
       const profiles = await fetchLatestProfiles(this.users, () => {
         this.refreshCurrent++;
@@ -212,7 +237,7 @@ export function registerUserStore() {
 
     exportData() {
       exportUsersAsJson(this.users);
-      alert(`导出成功！\n已导出 ${this.users.length} 个用户的数据`);
+      alert(`导出成功！\n已导出 ${this._usersMap.size} 个用户的数据`);
     },
 
     async importData() {
@@ -238,11 +263,23 @@ export function registerUserStore() {
 
   const syncUsers = (users: BiliUser[]) => {
     if (!reactiveStore.hasLoadedUsers) return;
-    reactiveStore.users = users;
+
+    // 使用真正的增量更新：只修改发生变化的用户
+    users.forEach(user => reactiveStore.addOrUpdateUser(user));
+
+    // 删除不存在的用户
+    const currentUserIds = new Set(users.map(u => u.id));
+    const existingUserIds = Array.from(reactiveStore._usersMap.keys());
+    existingUserIds.forEach(userId => {
+      if (!currentUserIds.has(userId)) {
+        reactiveStore.removeUser(userId);
+      }
+    });
+
+    // 清理不存在用户的选择状态
     if (reactiveStore.selectedIds.length === 0) return;
-    const userIds = new Set(users.map((u) => u.id));
     reactiveStore.selectedIds = reactiveStore.selectedIds.filter((id) =>
-      userIds.has(id),
+      currentUserIds.has(id),
     );
   };
 

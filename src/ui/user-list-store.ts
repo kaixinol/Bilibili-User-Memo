@@ -121,7 +121,7 @@ export function registerUserStore() {
       const enableFuzzy = getPanelFuzzySearch();
       return this._usersList.filter((user) => {
         return (
-          matchesChineseSearch(user.id, queryForms, enableFuzzy) ||
+          String(user.id || "").includes(this.searchQuery) ||
           matchesChineseSearch(user.nickname, queryForms, enableFuzzy) ||
           matchesChineseSearch(user.memo, queryForms, enableFuzzy)
         );

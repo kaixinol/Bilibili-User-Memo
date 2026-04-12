@@ -1,18 +1,36 @@
 import Alpine from "alpinejs";
 import { querySelectorAllDeep } from "query-selector-shadow-dom";
 import { config as defaultRules } from "../../configs/rules";
+import {
+  InjectionMode,
+  StyleScope,
+  type DynamicTriggerConfig,
+  type PollingTriggerConfig,
+  type RuleConfigEntry,
+} from "../../configs/rule-types";
 import "../../styles/global.css";
 import "../../styles/debugger.css";
 import debuggerHtml from "./debugger.html?raw";
 import { logger } from "../../utils/logger";
 
-// --- 类型定义 ---
-interface RuleItem {
+// --- 類型定義 ---
+interface DebugRule {
   id: number;
-  name: string;
-  selector: string;
   color: string;
   active: boolean;
+  // PageRule properties (editable copy)
+  name: string;
+  styleScope: StyleScope;
+  aSelector?: string;
+  textSelector?: string;
+  fontSize?: string;
+  textSource: "self" | "watch";
+  ignoreProcessed: boolean;
+  matchByName: boolean;
+  injectMode: InjectionMode;
+  // Dynamic-specific
+  trigger?: DynamicTriggerConfig | PollingTriggerConfig;
+  dynamicWatch?: boolean;
 }
 
 interface OverlayPair {
@@ -34,7 +52,7 @@ interface MonkeyApp {
   dragging: boolean;
   offsetX: number;
   offsetY: number;
-  rules: RuleItem[];
+  rules: DebugRule[];
   nextId: number;
   overlays: OverlayPair[];
   overlayContainer: HTMLElement | null;
@@ -44,13 +62,23 @@ interface MonkeyApp {
   perfRafId: number;
   perfTimer: number | null;
   perfObserver: PerformanceObserver | null;
+  expandedRuleId: number | null;
   init(): void;
   setupObservers(): void;
   addRule(): void;
   removeRule(id: number): void;
   toggleRule(id: number): void;
+  toggleExpand(id: number): void;
   updateRuleName(id: number, name: string): void;
-  updateRuleSelector(id: number, selector: string): void;
+  updateASelector(id: number, selector: string): void;
+  updateTextSelector(id: number, selector: string): void;
+  updateStyleScope(id: number, styleScope: number): void;
+  updateFontSize(id: number, fontSize: string): void;
+  updateTriggerWatch(id: number, watch: string): void;
+  updateTriggerInterval(id: number, interval: number): void;
+  updateDynamicWatch(id: number, checked: boolean): void;
+  updateMatchByName(id: number, checked: boolean): void;
+  updateIgnoreProcessed(id: number, checked: boolean): void;
   updateRuleColor(id: number, color: string): void;
   scan(): void;
   updatePositions(): void;
@@ -60,14 +88,49 @@ interface MonkeyApp {
   onPointerMove(event: PointerEvent): void;
   onPointerUp(event: PointerEvent): void;
   startPerformanceMonitor(): void;
+  getTriggerConfig(rule: DebugRule): DynamicTriggerConfig | PollingTriggerConfig | undefined;
+  isDynamic(rule: DebugRule): boolean;
+  isPolling(rule: DebugRule): boolean;
+  isStatic(rule: DebugRule): boolean;
+  styleScopeOptions(): { value: number; label: string }[];
+  injectModeLabel(mode: InjectionMode): string;
+  styleScopeLabel(scope: StyleScope): string;
 }
 
-// 这里揉合了原本 panel.ts 的模版渲染逻辑
+// 這裡糅合了原本 panel.ts 的模版渲染邏輯
 function renderDebuggerUI(appName: string) {
   const div = document.createElement("div");
   div.id = "monkey-debugger-root";
   div.innerHTML = debuggerHtml.replace("${appName}", appName);
   document.body.appendChild(div);
+}
+
+function cloneEntryAsDebugRule(
+  entry: RuleConfigEntry,
+  index: number,
+): DebugRule {
+  const rule = entry.rule;
+  const base: DebugRule = {
+    id: index + 1,
+    color: "#1976d2",
+    active: true,
+    name: rule.name,
+    styleScope: rule.styleScope,
+    aSelector: rule.aSelector,
+    textSelector: rule.textSelector,
+    fontSize: rule.fontSize,
+    textSource: rule.textSource,
+    ignoreProcessed: rule.ignoreProcessed,
+    matchByName: rule.matchByName,
+    injectMode: rule.injectMode,
+  };
+  if (rule.injectMode === InjectionMode.Dynamic) {
+    base.trigger = { ...rule.trigger };
+    base.dynamicWatch = rule.dynamicWatch;
+  } else if (rule.injectMode === InjectionMode.Polling) {
+    base.trigger = { ...rule.trigger };
+  }
+  return base;
 }
 
 export function initDebugger() {
@@ -95,20 +158,11 @@ export function initDebugger() {
       perfRafId: 0,
       perfTimer: null,
       perfObserver: null,
+      expandedRuleId: null,
 
       init() {
-        let id = 1;
-        for (const entry of defaultRules) {
-          const rule = entry.rule;
-          const selectorString = rule.textSelector || rule.aSelector;
-          if (!selectorString) continue;
-          this.rules.push({
-            id: id++,
-            name: rule.name,
-            selector: selectorString,
-            color: "#1976d2",
-            active: true,
-          });
+        for (let i = 0; i < defaultRules.length; i++) {
+          this.rules.push(cloneEntryAsDebugRule(defaultRules[i], i));
         }
         window.addEventListener("pointerup", (e) => {
           if (this.dragging) this.onPointerUp(e);
@@ -154,7 +208,12 @@ export function initDebugger() {
         this.rules.push({
           id: this.nextId++,
           name: "自訂",
-          selector: trimmed,
+          styleScope: StyleScope.Minimal,
+          aSelector: trimmed,
+          textSource: "self",
+          ignoreProcessed: false,
+          matchByName: false,
+          injectMode: InjectionMode.Static,
           color: this.color,
           active: true,
         });
@@ -172,21 +231,65 @@ export function initDebugger() {
           this.scan();
         }
       },
-      updateRuleColor(id, color) {
-        const r = this.rules.find((x) => x.id === id);
-        if (r) {
-          r.color = color;
-          this.scan();
-        }
+      toggleExpand(id) {
+        this.expandedRuleId = this.expandedRuleId === id ? null : id;
       },
+
       updateRuleName(id, name) {
         const r = this.rules.find((x) => x.id === id);
         if (r) r.name = name;
       },
-      updateRuleSelector(id, selector) {
+      updateASelector(id, selector) {
         const r = this.rules.find((x) => x.id === id);
         if (r) {
-          r.selector = selector;
+          r.aSelector = selector || undefined;
+          this.scan();
+        }
+      },
+      updateTextSelector(id, selector) {
+        const r = this.rules.find((x) => x.id === id);
+        if (r) {
+          r.textSelector = selector || undefined;
+        }
+      },
+      updateStyleScope(id, styleScope) {
+        const r = this.rules.find((x) => x.id === id);
+        if (r) r.styleScope = styleScope;
+      },
+      updateFontSize(id, fontSize) {
+        const r = this.rules.find((x) => x.id === id);
+        if (r) r.fontSize = fontSize || undefined;
+      },
+      updateTriggerWatch(id, watch) {
+        const r = this.rules.find((x) => x.id === id);
+        if (r && r.trigger) r.trigger.watch = watch;
+      },
+      updateTriggerInterval(id, interval) {
+        const r = this.rules.find((x) => x.id === id);
+        if (r && r.trigger) {
+          if (r.injectMode === InjectionMode.Dynamic) {
+            (r.trigger as DynamicTriggerConfig).debounceMs = interval;
+          } else {
+            (r.trigger as PollingTriggerConfig).intervalMs = interval;
+          }
+        }
+      },
+      updateDynamicWatch(id, checked) {
+        const r = this.rules.find((x) => x.id === id);
+        if (r) r.dynamicWatch = checked;
+      },
+      updateMatchByName(id, checked) {
+        const r = this.rules.find((x) => x.id === id);
+        if (r) r.matchByName = checked;
+      },
+      updateIgnoreProcessed(id, checked) {
+        const r = this.rules.find((x) => x.id === id);
+        if (r) r.ignoreProcessed = checked;
+      },
+      updateRuleColor(id, color) {
+        const r = this.rules.find((x) => x.id === id);
+        if (r) {
+          r.color = color;
           this.scan();
         }
       },
@@ -198,13 +301,13 @@ export function initDebugger() {
         }
         for (const rule of this.rules) {
           if (!rule.active) continue;
-          const selector = rule.selector.trim();
-          if (!selector) continue;
+          const sel = rule.aSelector?.trim();
+          if (!sel) continue;
           let elements: Element[];
           try {
-            elements = querySelectorAllDeep(selector);
+            elements = querySelectorAllDeep(sel);
           } catch {
-            logger.warn(`[Debugger] Invalid selector: ${selector}`);
+            logger.warn(`[Debugger] Invalid selector: ${sel}`);
             continue;
           }
           for (const el of elements) {
@@ -355,6 +458,38 @@ export function initDebugger() {
             this.perf.memory = "n/a";
           }
         }, 1000);
+      },
+
+      getTriggerConfig(rule: DebugRule) {
+        return rule.trigger;
+      },
+      isDynamic(rule: DebugRule) {
+        return rule.injectMode === InjectionMode.Dynamic;
+      },
+      isPolling(rule: DebugRule) {
+        return rule.injectMode === InjectionMode.Polling;
+      },
+      isStatic(rule: DebugRule) {
+        return rule.injectMode === InjectionMode.Static;
+      },
+      styleScopeOptions() {
+        return [
+          { value: StyleScope.Minimal, label: "Minimal" },
+          { value: StyleScope.Editable, label: "Editable" },
+        ];
+      },
+      injectModeLabel(mode: InjectionMode) {
+        switch (mode) {
+          case InjectionMode.Static: return "Static";
+          case InjectionMode.Dynamic: return "Dynamic";
+          case InjectionMode.Polling: return "Polling";
+        }
+      },
+      styleScopeLabel(scope: StyleScope) {
+        switch (scope) {
+          case StyleScope.Minimal: return "Minimal";
+          case StyleScope.Editable: return "Editable";
+        }
       },
     }),
   );

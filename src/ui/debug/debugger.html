@@ -12,7 +12,7 @@
     <span class="debugger-title">Bilibili Debugger</span>
   </div>
   <div class="debugger-content">
-    <div class="debugger-perf" title="当前页面性能监视器">
+    <div class="debugger-perf" title="當前頁面性能監視器">
       <div class="perf-item">
         <span class="perf-label">FPS</span>
         <span class="perf-value" x-text="perf.fps"></span>
@@ -38,35 +38,160 @@
     </div>
     <div class="debugger-rules-container">
       <template x-for="r in rules" :key="r.id">
-        <div class="rule-item">
-          <input
-            type="checkbox"
-            :checked="r.active"
-            @change="toggleRule(r.id)"
-          />
-          <div class="rule-info">
+        <div class="rule-item" :class="{ 'rule-expanded': expandedRuleId === r.id }">
+          <!-- 頂層：簡要資訊 + 控制項 -->
+          <div class="rule-summary">
             <input
-              type="text"
-              :value="r.name"
-              @input="updateRuleName(r.id, $event.target.value)"
-              class="debugger-input"
+              type="checkbox"
+              :checked="r.active"
+              @change="toggleRule(r.id)"
+              class="rule-checkbox"
             />
+            <button
+              class="rule-expand-btn"
+              :class="{ 'rule-expanded-btn': expandedRuleId === r.id }"
+              @click="toggleExpand(r.id)"
+            >▼</button>
+            <span
+              class="rule-mode-badge"
+              :title="injectModeLabel(r.injectMode)"
+              x-text="injectModeLabel(r.injectMode).charAt(0)"
+            ></span>
+            <span
+              class="rule-name"
+              @dblclick="toggleExpand(r.id)"
+              x-text="r.name"
+            ></span>
             <input
-              type="text"
-              :value="r.selector"
-              @input="updateRuleSelector(r.id, $event.target.value)"
-              class="debugger-input debugger-input-selector"
+              type="color"
+              :value="r.color"
+              @input="updateRuleColor(r.id, $event.target.value)"
+              class="debugger-color-picker"
+              title="覆蓋層顏色"
             />
+            <button @click="removeRule(r.id)" class="debugger-btn-danger rule-remove-btn">
+              刪除
+            </button>
           </div>
-          <input
-            type="color"
-            :value="r.color"
-            @input="updateRuleColor(r.id, $event.target.value)"
-            class="debugger-color-picker"
-          />
-          <button @click="removeRule(r.id)" class="debugger-btn-danger">
-            刪除
-          </button>
+          <!-- 展開：完整屬性編輯 -->
+          <template x-if="expandedRuleId === r.id">
+            <div class="rule-details">
+              <div class="rule-detail-row">
+                <label>名稱</label>
+                <input
+                  type="text"
+                  :value="r.name"
+                  @input="updateRuleName(r.id, $event.target.value)"
+                  class="debugger-input"
+                />
+              </div>
+              <div class="rule-detail-row">
+                <label>aSelector</label>
+                <input
+                  type="text"
+                  :value="r.aSelector || ''"
+                  @input="updateASelector(r.id, $event.target.value)"
+                  class="debugger-input debugger-input-selector"
+                  placeholder="錨點選擇器"
+                />
+              </div>
+              <div class="rule-detail-row">
+                <label>textSelector</label>
+                <input
+                  type="text"
+                  :value="r.textSelector || ''"
+                  @input="updateTextSelector(r.id, $event.target.value)"
+                  class="debugger-input debugger-input-selector"
+                  placeholder="文本選擇器（可選）"
+                />
+              </div>
+              <div class="rule-detail-row">
+                <label>Scope</label>
+                <select
+                  :value="r.styleScope"
+                  @change="updateStyleScope(r.id, parseInt($event.target.value))"
+                  class="debugger-input"
+                >
+                  <template x-for="opt in styleScopeOptions()" :key="opt.value">
+                    <option :value="opt.value" x-text="opt.label"></option>
+                  </template>
+                </select>
+                <span class="rule-detail-hint" x-text="styleScopeLabel(r.styleScope)"></span>
+              </div>
+              <div class="rule-detail-row">
+                <label>Font Size</label>
+                <input
+                  type="text"
+                  :value="r.fontSize || ''"
+                  @input="updateFontSize(r.id, $event.target.value)"
+                  class="debugger-input debugger-input-small"
+                  placeholder="如 16px"
+                />
+              </div>
+              <div class="rule-detail-row">
+                <label>Inject Mode</label>
+                <span class="rule-mode-label" x-text="injectModeLabel(r.injectMode)"></span>
+              </div>
+              <template x-if="r.textSource">
+                <div class="rule-detail-row">
+                  <label>Text Source</label>
+                  <span class="rule-mode-label" x-text="r.textSource"></span>
+                </div>
+              </template>
+              <!-- Dynamic/Polling trigger 設定 -->
+              <template x-if="!isStatic(r) && r.trigger">
+                <div class="rule-trigger-section">
+                  <div class="rule-detail-row">
+                    <label>Trigger Watch</label>
+                    <input
+                      type="text"
+                      :value="r.trigger.watch"
+                      @input="updateTriggerWatch(r.id, $event.target.value)"
+                      class="debugger-input debugger-input-selector"
+                    />
+                  </div>
+                  <div class="rule-detail-row">
+                    <label x-text="isDynamic(r) ? 'Debounce (ms)' : 'Interval (ms)'"></label>
+                    <input
+                      type="number"
+                      :value="isDynamic(r) ? r.trigger.debounceMs : r.trigger.intervalMs"
+                      @input="updateTriggerInterval(r.id, parseInt($event.target.value) || 0)"
+                      class="debugger-input debugger-input-small"
+                    />
+                  </div>
+                </div>
+              </template>
+              <!-- Checkboxes -->
+              <div class="rule-checkboxes">
+                <label class="rule-checkbox-label">
+                  <input
+                    type="checkbox"
+                    :checked="r.matchByName"
+                    @change="updateMatchByName(r.id, $event.target.checked)"
+                  />
+                  matchByName
+                </label>
+                <label class="rule-checkbox-label">
+                  <input
+                    type="checkbox"
+                    :checked="r.ignoreProcessed"
+                    @change="updateIgnoreProcessed(r.id, $event.target.checked)"
+                  />
+                  ignoreProcessed
+                </label>
+                <template x-if="isDynamic(r)">
+                  <label class="rule-checkbox-label">
+                    <input
+                      type="checkbox"
+                      :checked="r.dynamicWatch || false"
+                      @change="updateDynamicWatch(r.id, $event.target.checked)"
+                    />
+                    dynamicWatch
+                  </label>
+                </template>
+              </div>
+            </div>
+          </template>
         </div>
       </template>
     </div>

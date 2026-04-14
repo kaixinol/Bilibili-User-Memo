@@ -130,7 +130,15 @@
               </div>
               <div class="rule-detail-row">
                 <label>Inject Mode</label>
-                <span class="rule-mode-label" x-text="injectModeLabel(r.injectMode)"></span>
+                <select
+                  :value="r.injectMode"
+                  @change="updateInjectMode(r.id, parseInt($event.target.value))"
+                  class="debugger-input debugger-input-small"
+                >
+                  <template x-for="opt in injectModeOptions()" :key="opt.value">
+                    <option :value="opt.value" x-text="opt.label"></option>
+                  </template>
+                </select>
               </div>
               <template x-if="r.textSource">
                 <div class="rule-detail-row">

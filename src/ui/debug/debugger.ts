@@ -79,6 +79,7 @@ interface MonkeyApp {
   updateDynamicWatch(id: number, checked: boolean): void;
   updateMatchByName(id: number, checked: boolean): void;
   updateIgnoreProcessed(id: number, checked: boolean): void;
+  updateInjectMode(id: number, mode: InjectionMode): void;
   updateRuleColor(id: number, color: string): void;
   scan(): void;
   updatePositions(): void;
@@ -93,6 +94,7 @@ interface MonkeyApp {
   isPolling(rule: DebugRule): boolean;
   isStatic(rule: DebugRule): boolean;
   styleScopeOptions(): { value: number; label: string }[];
+  injectModeOptions(): { value: InjectionMode; label: string }[];
   injectModeLabel(mode: InjectionMode): string;
   styleScopeLabel(scope: StyleScope): string;
 }
@@ -286,6 +288,42 @@ export function initDebugger() {
         const r = this.rules.find((x) => x.id === id);
         if (r) r.ignoreProcessed = checked;
       },
+      updateInjectMode(id, mode) {
+        const r = this.rules.find((x) => x.id === id);
+        if (!r || r.injectMode === mode) return;
+        const oldMode = r.injectMode;
+        r.injectMode = mode;
+
+        // Migrate trigger data between modes
+        if (mode === InjectionMode.Static) {
+          delete r.trigger;
+          delete r.dynamicWatch;
+        } else if (mode === InjectionMode.Dynamic) {
+          if (oldMode === InjectionMode.Polling && r.trigger) {
+            // Polling → Dynamic: convert intervalMs to debounceMs
+            r.trigger = {
+              watch: (r.trigger as PollingTriggerConfig).watch,
+              debounceMs: (r.trigger as PollingTriggerConfig).intervalMs,
+            };
+          } else if (!r.trigger) {
+            r.trigger = { watch: "#app", debounceMs: 1000 };
+          }
+          if (r.dynamicWatch === undefined) r.dynamicWatch = false;
+        } else if (mode === InjectionMode.Polling) {
+          if (oldMode === InjectionMode.Dynamic && r.trigger) {
+            // Dynamic → Polling: convert debounceMs to intervalMs
+            r.trigger = {
+              watch: (r.trigger as DynamicTriggerConfig).watch,
+              intervalMs: (r.trigger as DynamicTriggerConfig).debounceMs,
+            };
+          } else if (!r.trigger) {
+            r.trigger = { watch: "#app", intervalMs: 2000 };
+          }
+          delete r.dynamicWatch;
+        }
+
+        this.scan();
+      },
       updateRuleColor(id, color) {
         const r = this.rules.find((x) => x.id === id);
         if (r) {
@@ -476,6 +514,13 @@ export function initDebugger() {
         return [
           { value: StyleScope.Minimal, label: "Minimal" },
           { value: StyleScope.Editable, label: "Editable" },
+        ];
+      },
+      injectModeOptions() {
+        return [
+          { value: InjectionMode.Static, label: "Static" },
+          { value: InjectionMode.Dynamic, label: "Dynamic" },
+          { value: InjectionMode.Polling, label: "Polling" },
         ];
       },
       injectModeLabel(mode: InjectionMode) {

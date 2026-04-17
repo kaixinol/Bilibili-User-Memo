@@ -52,7 +52,7 @@ function readUidFromDynamicItemRoot(el: Element): string | null {
 
   return (
     getAttrFromQuery(root, "[bilisponsor-userid]", "bilisponsor-userid") ||
-    getAttrFromQuery(root, "[data-user-profile-id]", "data-user-profile-id") ||
+    getAttrFromQuery(root.parentElement!, "[data-user-profile-id]", "data-user-profile-id") ||
     parseUidFromDataId(
       getAttrFromQuery(root, "[data-id]", "data-id"),
     )

@@ -3,7 +3,7 @@ import { logger } from "../../utils/logger";
 
 const DIRECT_UID_ATTRS = ["data-user-profile-id", "bilisponsor-userid"] as const;
 const DYNAMIC_ITEM_SELECTOR = "div.bili-dyn-item__main";
-const SPACE_UID_REGEX = /space\.bilibili\.com\/(\d+)/;
+const SPACE_UID_REGEX = /(?:space\.bilibili\.com|www\.bilibili\.com\/list)\/(\d+)/;
 
 function normalizeUid(value: unknown): string | null {
   if (value === null || value === undefined) return null;

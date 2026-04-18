@@ -1,6 +1,6 @@
 {
   "name": "bili-user-memo",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "B站UP主一键备注 | B站一键备注 Rev 的重写版本",
   "main": "src/main.ts",
   "scripts": {
@@ -23,9 +23,9 @@
     "@types/node": "^25.6.0",
     "@types/opencc-js": "^1.0.3",
     "@types/tampermonkey": "^5.0.5",
-    "@typescript-eslint/eslint-plugin": "^8.58.1",
-    "@typescript-eslint/parser": "^8.58.1",
-    "eslint": "^10.2.0",
+    "@typescript-eslint/eslint-plugin": "^8.58.2",
+    "@typescript-eslint/parser": "^8.58.2",
+    "eslint": "^10.2.1",
     "rollup-plugin-visualizer": "^7.0.1",
     "terser": "^5.46.1",
     "typescript": "^5.9.3",

@@ -65,7 +65,7 @@
             <input
               type="color"
               :value="r.color"
-              @input="updateRuleColor(r.id, $event.target.value)"
+              @input.debounce.100ms="updateRuleColor(r.id, $event.target.value)"
               class="debugger-color-picker"
               title="覆蓋層顏色"
             />

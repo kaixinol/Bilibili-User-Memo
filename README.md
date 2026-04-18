@@ -5,6 +5,14 @@
 原作者：[pxoxq](https://scriptcat.org/zh-CN/users/143794)
 
 本文档根据当前 UI 代码生成，面向使用者说明面板与调试窗口的功能和操作方式。
+<details>
+  <summary>兼容性说明</summary>
+  
+   - 不兼容的脚本：*一切*同时修改了备注的脚本
+   - 兼容的脚本：[Bilibili 账号已注销修正](https://greasyfork.org/zh-CN/scripts/528706-bilibili-%E8%B4%A6%E5%8F%B7%E5%B7%B2%E6%B3%A8%E9%94%80%E4%BF%AE%E6%AD%A3)
+     - 兼容方式：让 **Bilibili 账号已注销修正** 比此脚本先运行即可。
+     - 具体设置：`油猴菜单栏` -> `Edit` -> `Settings` -> `General` -> `Position`，设置为1
+</details>
 
 ## 界面介绍
 

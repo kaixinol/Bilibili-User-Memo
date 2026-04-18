@@ -21,23 +21,16 @@
   user-select: none;
 }
 
-.debugger-overlay-container {
-  position: fixed;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 100;
-}
-
-.debugger-overlay {
-  position: fixed;
-  border: 2px solid var(--overlay-color);
-  background-color: var(--overlay-bg);
-  box-sizing: border-box;
-  pointer-events: none;
-  transition: none;
+/* Native CSS Outline Highlight Styles */
+/* NOTE: This rule is mirrored in debugger.ts as a Constructable Stylesheet */
+/* for Shadow DOM support. Keep both definitions synchronized. */
+.debugger-highlight-active {
+  outline: 2px solid var(--overlay-color) !important;
+  outline-offset: -2px !important;
+  /* Use color-mix for semi-transparent background without extra nodes */
+  background-color: color-mix(in srgb, var(--overlay-color), transparent 90%) !important;
+  transition: outline 0.1s ease;
+  z-index: 9999; /* Try to display on top */
 }
 
 .debugger-header {

@@ -13,6 +13,24 @@ import "../../styles/debugger.css";
 import debuggerHtml from "./debugger.html?raw";
 import { logger } from "../../utils/logger";
 
+// --- Constructable Stylesheet for Shadow DOM support ---
+// NOTE: This stylesheet mirrors the .debugger-highlight-active rule in debugger.css
+// It's required because Shadow DOM cannot access main document stylesheets.
+// Both definitions must be kept in sync when updating highlight styles.
+const highlightSheet = new CSSStyleSheet();
+highlightSheet.replaceSync(`
+  .debugger-highlight-active {
+    outline: 2px solid var(--overlay-color) !important;
+    outline-offset: -2px !important;
+    background-color: color-mix(in srgb, var(--overlay-color), transparent 90%) !important;
+    transition: outline 0.1s ease;
+    z-index: 9999;
+  }
+`);
+
+// Track which ShadowRoots have already adopted the stylesheet to avoid duplicates
+const adoptedShadowRoots = new WeakSet<ShadowRoot>();
+
 // --- 類型定義 ---
 interface DebugRule {
   id: number;
@@ -33,16 +51,28 @@ interface DebugRule {
   dynamicWatch?: boolean;
 }
 
-interface OverlayPair {
-  target: HTMLElement;
-  box: HTMLElement;
-}
-
 interface PerfStats {
   fps: number;
   longTasks: number;
   memory: string;
 }
+
+// Non-reactive state stored outside Alpine
+interface DebuggerState {
+  observer: MutationObserver | null;
+  debounceTimer: number | null;
+  perfTimer: number | null;
+  perfObserver: PerformanceObserver | null;
+  perfRafId: number;
+}
+
+const state: DebuggerState = {
+  observer: null,
+  debounceTimer: null,
+  perfTimer: null,
+  perfObserver: null,
+  perfRafId: 0,
+};
 
 interface MonkeyApp {
   selector: string;
@@ -54,14 +84,7 @@ interface MonkeyApp {
   offsetY: number;
   rules: DebugRule[];
   nextId: number;
-  overlays: OverlayPair[];
-  overlayContainer: HTMLElement | null;
-  observer: MutationObserver | null;
-  debounceTimer: number | null;
   perf: PerfStats;
-  perfRafId: number;
-  perfTimer: number | null;
-  perfObserver: PerformanceObserver | null;
   expandedRuleId: number | null;
   init(): void;
   setupObservers(): void;
@@ -82,9 +105,8 @@ interface MonkeyApp {
   updateInjectMode(id: number, mode: InjectionMode): void;
   updateRuleColor(id: number, color: string): void;
   scan(): void;
-  updatePositions(): void;
-  ensureOverlayContainer(): void;
-  createOverlay(target: HTMLElement, color: string): HTMLElement;
+  adoptStylesToShadowRoot(element: HTMLElement): void;
+  clearAllHighlights(): void;
   onPointerDown(event: PointerEvent): void;
   onPointerMove(event: PointerEvent): void;
   onPointerUp(event: PointerEvent): void;
@@ -148,18 +170,12 @@ export function initDebugger() {
       offsetY: 0,
       rules: [],
       nextId: 1000,
-      overlays: [],
-      overlayContainer: null,
-      observer: null,
-      debounceTimer: null,
+      // Note: observer, perfTimer, etc. are now in non-reactive state object
       perf: {
         fps: 0,
         longTasks: 0,
         memory: "n/a",
       },
-      perfRafId: 0,
-      perfTimer: null,
-      perfObserver: null,
       expandedRuleId: null,
 
       init() {
@@ -178,27 +194,39 @@ export function initDebugger() {
       },
 
       setupObservers() {
-        const updatePos = () => this.updatePositions();
-        window.addEventListener("scroll", updatePos, {
-          capture: true,
-          passive: true,
-        });
-        window.addEventListener("resize", updatePos, { passive: true });
         const debouncedScan = () => {
-          if (this.debounceTimer) window.clearTimeout(this.debounceTimer);
-          this.debounceTimer = window.setTimeout(() => {
+          if (state.debounceTimer) window.clearTimeout(state.debounceTimer);
+          state.debounceTimer = window.setTimeout(() => {
             this.scan();
           }, 200);
         };
-        this.observer = new MutationObserver((mutations) => {
-          if (
-            this.overlayContainer &&
-            mutations.every((m) => this.overlayContainer?.contains(m.target))
-          )
+        
+        state.observer = new MutationObserver((mutations) => {
+          // Skip mutations that affect the debugger window itself
+          const hasDebuggerMutation = mutations.some((m) => {
+            if (m.target instanceof HTMLElement && m.target.closest('.debugger-window')) {
+              return true;
+            }
+            if (m.addedNodes.length > 0) {
+              for (const node of Array.from(m.addedNodes)) {
+                if (node instanceof HTMLElement && node.closest('.debugger-window')) {
+                  return true;
+                }
+              }
+            }
+            return false;
+          });
+          
+          if (hasDebuggerMutation) {
             return;
+          }
+          
           debouncedScan();
         });
-        this.observer.observe(document.body, {
+        
+        // Narrow observation scope to #app if it exists, otherwise fallback to body
+        const observeTarget = document.querySelector('#app') || document.body;
+        state.observer.observe(observeTarget, {
           childList: true,
           subtree: true,
         });
@@ -332,17 +360,60 @@ export function initDebugger() {
         }
       },
 
-      scan() {
-        if (this.overlays.length > 0) {
-          this.overlays.forEach((o) => o.box.remove());
-          this.overlays = [];
+      /**
+       * Adopt the highlight stylesheet to an element's ShadowRoot if needed
+       */
+      adoptStylesToShadowRoot(element: HTMLElement) {
+        const shadowRoot = element.getRootNode();
+        if (shadowRoot instanceof ShadowRoot && !adoptedShadowRoots.has(shadowRoot)) {
+          // Adopt the stylesheet to this ShadowRoot
+          shadowRoot.adoptedStyleSheets = [
+            ...shadowRoot.adoptedStyleSheets,
+            highlightSheet,
+          ];
+          adoptedShadowRoots.add(shadowRoot);
         }
+      },
+
+      /**
+       * Clear all highlights from the entire document including all Shadow DOMs
+       */
+      clearAllHighlights() {
+        // Clear highlights from main document
+        const highlightedElements = document.querySelectorAll('.debugger-highlight-active');
+        highlightedElements.forEach(el => {
+          if (el instanceof HTMLElement) {
+            el.classList.remove('debugger-highlight-active');
+            el.style.removeProperty('--overlay-color');
+          }
+        });
+
+        // Clear highlights from all Shadow DOMs using deep query
+        try {
+          const shadowHighlighted = querySelectorAllDeep('.debugger-highlight-active');
+          shadowHighlighted.forEach(el => {
+            if (el instanceof HTMLElement) {
+              el.classList.remove('debugger-highlight-active');
+              el.style.removeProperty('--overlay-color');
+            }
+          });
+        } catch (error) {
+          logger.warn('[Debugger] Failed to clear Shadow DOM highlights:', error);
+        }
+      },
+
+      scan() {
+        // Step 1: Clear all existing highlights from entire document (including Shadow DOM)
+        this.clearAllHighlights();
+        
+        // Step 2: Apply new highlights
         for (const rule of this.rules) {
           if (!rule.active) continue;
           const sel = rule.aSelector?.trim();
           if (!sel) continue;
           let elements: Element[];
           try {
+            // Use deep query to find elements in Shadow DOM
             elements = querySelectorAllDeep(sel);
           } catch {
             logger.warn(`[Debugger] Invalid selector: ${sel}`);
@@ -353,64 +424,17 @@ export function initDebugger() {
 
             const rect = el.getBoundingClientRect();
             if (rect.width <= 0 || rect.height <= 0) continue;
-            if (!document.getElementById("debug-style")) {
-              const style = document.createElement("style");
-              style.textContent = `.debug-style { display: flex !important; }`;
-              style.id = "debug-style";
-              document.body.appendChild(style);
-            }
-            el.classList.add("debug-style");
-
-            const box = this.createOverlay(el, rule.color);
-            this.overlays.push({ target: el, box });
+            
+            // Set CSS custom property for color
+            el.style.setProperty('--overlay-color', rule.color);
+            
+            // Add highlight class
+            el.classList.add('debugger-highlight-active');
+            
+            // Ensure styles work in Shadow DOM by adopting stylesheet
+            this.adoptStylesToShadowRoot(el);
           }
         }
-      },
-
-      updatePositions() {
-        this.ensureOverlayContainer();
-        this.overlays.forEach(({ target, box }) => {
-          if (!target.isConnected) {
-            box.style.display = "none";
-            return;
-          }
-          const rect = target.getBoundingClientRect();
-          if (rect.width <= 0 || rect.height <= 0) {
-            box.style.display = "none";
-          } else {
-            box.style.display = "block";
-            box.style.left = `${rect.left}px`;
-            box.style.top = `${rect.top}px`;
-            box.style.width = `${rect.width}px`;
-            box.style.height = `${rect.height}px`;
-          }
-        });
-      },
-
-      ensureOverlayContainer() {
-        if (
-          !this.overlayContainer ||
-          !document.body.contains(this.overlayContainer)
-        ) {
-          this.overlayContainer = document.createElement("div");
-          this.overlayContainer.className = "debugger-overlay-container";
-          document.body.appendChild(this.overlayContainer);
-        }
-      },
-
-      createOverlay(target: HTMLElement, color: string) {
-        this.ensureOverlayContainer();
-        const rect = target.getBoundingClientRect();
-        const box = document.createElement("div");
-        box.className = "debugger-overlay";
-        box.style.left = `${rect.left}px`;
-        box.style.top = `${rect.top}px`;
-        box.style.width = `${rect.width}px`;
-        box.style.height = `${rect.height}px`;
-        box.style.setProperty("--overlay-color", color);
-        box.style.setProperty("--overlay-bg", `${color}1a`);
-        this.overlayContainer!.appendChild(box);
-        return box;
       },
 
       onPointerDown(event: PointerEvent) {
@@ -466,21 +490,21 @@ export function initDebugger() {
             frames = 0;
             lastTime = time;
           }
-          this.perfRafId = window.requestAnimationFrame(tick);
+          state.perfRafId = window.requestAnimationFrame(tick);
         };
-        this.perfRafId = window.requestAnimationFrame(tick);
+        state.perfRafId = window.requestAnimationFrame(tick);
 
         let longTasks = 0;
         if ("PerformanceObserver" in window) {
           try {
-            this.perfObserver = new PerformanceObserver((list) => {
+            state.perfObserver = new PerformanceObserver((list) => {
               longTasks += list.getEntries().length;
             });
-            this.perfObserver.observe({ entryTypes: ["longtask"] });
+            state.perfObserver.observe({ entryTypes: ["longtask"] });
           } catch {}
         }
 
-        this.perfTimer = window.setInterval(() => {
+        state.perfTimer = window.setInterval(() => {
           this.perf.longTasks = longTasks;
           longTasks = 0;
           const memory = (

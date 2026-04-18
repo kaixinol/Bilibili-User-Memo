@@ -104,6 +104,7 @@ function renderEditable(
     });
 
     // 插入 DOM
+    if (!__IS_DEBUG__)
     el.style.display = "none"; // 隐藏原元素
     el.insertAdjacentElement("afterend", wrapper);
 

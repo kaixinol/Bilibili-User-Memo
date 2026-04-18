@@ -1,5 +1,5 @@
 import { logger } from "../../utils/logger";
-import { BiliUser } from "../types";
+import type { BiliUser } from "../types";
 import { getUserAvatar } from "../dom/dom-utils";
 import { GM_addValueChangeListener } from "$";
 import {

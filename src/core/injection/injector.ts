@@ -2,6 +2,8 @@ import { querySelectorAllDeep } from "query-selector-shadow-dom";
 import {
   config,
   InjectionMode,
+} from "../../configs/rules";
+import type {
   PageRule,
   StaticPageRule,
   DynamicPageRule,
@@ -12,8 +14,8 @@ import { extractUid } from "../dom/uid-extractor";
 import { getElementDisplayName } from "../dom/text-utils";
 import { refreshRenderedMemoNodes } from "../render/dom-refresh";
 import { injectMemoRenderer } from "../render/renderer";
-import { userStore, UserStoreChange } from "../store/store";
-import { BiliUser } from "../types";
+import { userStore, type UserStoreChange } from "../store/store";
+import type { BiliUser } from "../types";
 import { DynamicRuleWatcher, PollingRuleWatcher } from "./watchers";
 
 type ScanScope = HTMLElement | ShadowRoot | Document;

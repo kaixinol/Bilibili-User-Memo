@@ -1,15 +1,34 @@
 {
   "compilerOptions": {
+    /* 基础目标 */
     "target": "ESNext",
+    "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
+    "useDefineForClassFields": true, // 推荐：符合标准类的行为
+
+    /* 严谨性 */
     "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+
+    /* 构建优化 */
     "jsx": "preserve",
     "sourceMap": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
-    "lib": ["ESNext", "DOM", "DOM.Iterable"],
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "noEmit": true,                  // 交给 Vite 处理输出
+    "isolatedModules": true,         // Vite/esbuild 必须开启
+    "verbatimModuleSyntax": true,    // 更好的类型导入管理
+
+    /* 模块解析 */
+    "allowImportingTsExtensions": true,
+    "allowJs": true,
+    "checkJs": false
   },
-  "include": ["src", "vite.config.ts"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.vue", "vite.config.ts"],
+  "exclude": ["node_modules", "dist"]
 }

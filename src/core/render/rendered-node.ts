@@ -1,4 +1,4 @@
-import { BiliUser, ElementMeta } from "../types";
+import type { BiliUser, ElementMeta } from "../types";
 import { formatDisplayName } from "../dom/text-utils";
 
 interface RenderedNodeOptions {

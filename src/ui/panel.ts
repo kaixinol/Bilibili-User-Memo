@@ -4,11 +4,11 @@ import boxHtml from "./box.html?raw";
 import "../styles/panel.css";
 import "../styles/global.css";
 import "../styles/box.css";
-import { BiliUser } from "../core/types";
-import { createPanelPrefsStore, PanelPrefsStore } from "./panel-prefs";
+import type { BiliUser } from "../core/types";
+import { createPanelPrefsStore, type PanelPrefsStore } from "./panel-prefs";
 import {
   registerUserStore,
-  UserListStore,
+  type UserListStore,
   getPanelFuzzySearch,
   setPanelFuzzySearch,
 } from "./user-list-store";

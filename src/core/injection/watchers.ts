@@ -2,7 +2,7 @@ import {
   querySelectorAllDeep,
   querySelectorDeep,
 } from "query-selector-shadow-dom";
-import { DynamicPageRule, PollingPageRule } from "../../configs/rules";
+import type { DynamicPageRule, PollingPageRule } from "../../configs/rules";
 import { logger } from "../../utils/logger";
 import {
   hasExternalAddedNodes,

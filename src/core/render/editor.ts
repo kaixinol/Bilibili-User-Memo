@@ -1,5 +1,5 @@
 // src/core/editor.ts
-import { BiliUser } from "../types";
+import type { BiliUser } from "../types";
 import { userStore } from "../store/store";
 import { syncRenderedNodeState } from "./rendered-node";
 import { markOwnedElement } from "../dom/owned-node";

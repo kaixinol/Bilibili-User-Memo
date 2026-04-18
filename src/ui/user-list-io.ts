@@ -1,5 +1,5 @@
 import { validateEitherJSON } from "../configs/schema";
-import { BiliUser } from "../core/types";
+import type { BiliUser } from "../core/types";
 import { logger } from "../utils/logger";
 import { getUserInfo } from "../utils/sign";
 

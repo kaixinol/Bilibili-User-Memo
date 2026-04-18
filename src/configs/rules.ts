@@ -10,14 +10,16 @@ import {
 export {
   InjectionMode,
   StyleScope,
-  type DynamicPageRule,
-  type DynamicTriggerConfig,
-  type PageRule,
-  type PollingPageRule,
-  type PollingTriggerConfig,
-  type RuleConfigEntry,
-  type RuleTextSource,
-  type StaticPageRule,
+} from "./rule-types";
+export type {
+  DynamicPageRule,
+  DynamicTriggerConfig,
+  PageRule,
+  PollingPageRule,
+  PollingTriggerConfig,
+  RuleConfigEntry,
+  RuleTextSource,
+  StaticPageRule,
 } from "./rule-types";
 
 /**

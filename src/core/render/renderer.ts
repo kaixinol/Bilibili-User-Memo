@@ -1,6 +1,7 @@
 // src/core/renderer.ts
-import { BiliUser, ElementMeta } from "../types";
-import { PageRule, StyleScope } from "../../configs/rules";
+import type { BiliUser, ElementMeta } from "../types";
+import type { PageRule } from "../../configs/rules";
+import { StyleScope } from "../../configs/rules";
 import { resolveRuleTextTarget } from "../dom/text-utils";
 import { userStore } from "../store/store";
 import { enterEditMode } from "./editor";

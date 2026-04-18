@@ -1,5 +1,5 @@
-import { BiliUser } from "../types";
-import {
+import type { BiliUser } from "../types";
+import type {
   DynamicPageRule,
   PageRule,
   PollingPageRule,

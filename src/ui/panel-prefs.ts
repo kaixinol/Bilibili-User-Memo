@@ -1,7 +1,7 @@
 import Alpine from "alpinejs";
 import { GM_getValue, GM_setValue } from "vite-plugin-monkey/dist/client";
 import { setCustomMemoCss } from "../core/injection/injector";
-import { UserListStore } from "./user-list-store";
+import type { UserListStore } from "./user-list-store";
 
 const CUSTOM_FONT_COLOR_KEY = "customFontColor";
 const CUSTOM_MEMO_CSS_KEY = "customMemoCss";

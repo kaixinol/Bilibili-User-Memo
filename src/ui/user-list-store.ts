@@ -1,7 +1,7 @@
 import Alpine from "alpinejs";
 import { GM_getValue, GM_setValue } from "vite-plugin-monkey/dist/client";
 import { userStore } from "../core/store/store";
-import { BiliUser } from "../core/types";
+import type { BiliUser } from "../core/types";
 import {
   exportUsersAsJson,
   fetchLatestProfiles,

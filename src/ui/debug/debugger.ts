@@ -11,22 +11,13 @@ import {
 import "../../styles/global.css";
 import "../../styles/debugger.css";
 import debuggerHtml from "./debugger.html?raw";
+import highlightCss from "../../styles/debugger-highlight.css?raw";
 import { logger } from "../../utils/logger";
 
 // --- Constructable Stylesheet for Shadow DOM support ---
-// NOTE: This stylesheet mirrors the .debugger-highlight-active rule in debugger.css
-// It's required because Shadow DOM cannot access main document stylesheets.
-// Both definitions must be kept in sync when updating highlight styles.
+// Import shared highlight styles from standalone CSS file to maintain single source of truth
 const highlightSheet = new CSSStyleSheet();
-highlightSheet.replaceSync(`
-  .debugger-highlight-active {
-    outline: 2px solid var(--overlay-color) !important;
-    outline-offset: -2px !important;
-    background-color: color-mix(in srgb, var(--overlay-color), transparent 90%) !important;
-    transition: outline 0.1s ease;
-    z-index: 9999;
-  }
-`);
+highlightSheet.replaceSync(highlightCss);
 
 // Track which ShadowRoots have already adopted the stylesheet to avoid duplicates
 const adoptedShadowRoots = new WeakSet<ShadowRoot>();

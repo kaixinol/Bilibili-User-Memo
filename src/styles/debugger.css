@@ -1,4 +1,8 @@
-.debugger-window {
+/* Import shared highlight styles from standalone file */
+@import './debugger-highlight.css';
+
+/* Debugger Panel Styles */
+.debugger-panel {
   position: fixed;
   background: var(--bg-main);
   color: var(--text-main);
@@ -19,18 +23,6 @@
     -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   font-size: 13px;
   user-select: none;
-}
-
-/* Native CSS Outline Highlight Styles */
-/* NOTE: This rule is mirrored in debugger.ts as a Constructable Stylesheet */
-/* for Shadow DOM support. Keep both definitions synchronized. */
-.debugger-highlight-active {
-  outline: 2px solid var(--overlay-color) !important;
-  outline-offset: -2px !important;
-  /* Use color-mix for semi-transparent background without extra nodes */
-  background-color: color-mix(in srgb, var(--overlay-color), transparent 90%) !important;
-  transition: outline 0.1s ease;
-  z-index: 9999; /* Try to display on top */
 }
 
 .debugger-header {

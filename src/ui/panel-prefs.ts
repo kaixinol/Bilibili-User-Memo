@@ -1,5 +1,5 @@
 import Alpine from "alpinejs";
-import { GM_getValue, GM_setValue } from "vite-plugin-monkey/dist/client";
+import { GM_getValue, GM_setValue } from "$";
 import { setCustomMemoCss } from "../core/injection/injector";
 import type { UserListStore } from "./user-list-store";
 

@@ -280,6 +280,16 @@ const rawConfig = [
       aSelector: "div.opus-module-author__name",
     },
   },
+  {
+    urlPattern: /^https:\/\/space\.bilibili\.com\/\d+\/relation\/(follow|fans)(.+)?/,
+    rule: {
+      name: "空间关注/粉丝",
+      injectMode: InjectionMode.Dynamic,
+      styleScope: StyleScope.Editable,
+      aSelector: "a.relation-card-info__uname",
+      trigger: { watch: "main.space-main", interval: 1000 },
+    }
+  }
 ] as const;
 
 export const config: RuleConfigEntry[] = parse(RawConfigSchema, rawConfig).map(

@@ -6,7 +6,8 @@ import {
   GM_setValue,
   GM_getValue,
   GM_xmlhttpRequest,
-} from "vite-plugin-monkey/dist/client";
+  GM,
+} from "$";
 if (typeof GM === "undefined") {
   (window as any).GM = {
     xmlHttpRequest: GM_xmlhttpRequest,

@@ -2,7 +2,7 @@
 @import './debugger-highlight.css';
 
 /* Debugger Panel Styles */
-.debugger-panel {
+.debugger-window {
   position: fixed;
   background: var(--bg-main);
   color: var(--text-main);

@@ -1,10 +1,13 @@
 /* Debugger Highlight Styles */
+
 /* This file contains shared highlight styles used by both main document and Shadow DOM */
+
 /* It is imported by debugger.css and dynamically injected into Shadow DOM via Constructable Stylesheets */
 
 .debugger-highlight-active {
   outline: 2px solid var(--overlay-color) !important;
   outline-offset: -2px !important;
+
   /* Use color-mix for semi-transparent background without extra nodes */
   background-color: color-mix(in srgb, var(--overlay-color), transparent 90%) !important;
   transition: outline 0.1s ease;

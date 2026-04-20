@@ -9,7 +9,7 @@
   z-index: 9999;
   background: var(--bg-main);
   border-top: 2px solid var(--primary-color);
-  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 -4px 12px rgb(0 0 0 / 8%);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -59,6 +59,7 @@
   opacity: 1 !important; /* 鼠标悬停时强制不透明 */
   background: var(--primary-color);
 }
+
 /* Mode Selection Section - 增强层级感 */
 .panel-mode-section {
   display: flex;
@@ -189,6 +190,7 @@
   border: none;
   border-radius: 4px;
 }
+
 /* 关键：将主题按钮推向最右侧 */
 .panel-theme-toggle {
   cursor: pointer;
@@ -200,6 +202,7 @@
   transition: all 0.2s ease;
   color: var(--text-sub); /* 默认图标颜色 */
 }
+
 /* 统一处理悬停效果 */
 .panel-theme-toggle:hover {
   color: var(--primary-color); /* 强制悬停变粉 */
@@ -211,6 +214,7 @@
 .memo-container-dark-theme .panel-theme-toggle:hover {
   background: var(--glass);
 }
+
 /* 如果是黑夜模式，可以给个不一样的悬停色 */
 [x-cloak] {
   display: none !important;
@@ -263,6 +267,16 @@
   background: var(--primary-color);
   color: var(--text-inverse);
 }
+
+.panel-btn:disabled,
+.panel-btn.btn-disabled {
+  background-color: var(--border-main);
+  color: var(--text-sub);
+  cursor: not-allowed;
+  opacity: 0.8;
+  transform: none; /* 移除点击缩放效果 */
+}
+
 .panel-btn.btn-active {
   background: var(--primary-color);
   color: var(--text-inverse);
@@ -289,6 +303,15 @@
   background: var(--primary-color);
   color: var(--text-inverse);
 }
+
+.panel-icon-btn:disabled {
+  background-color: var(--border-main);
+  color: var(--text-sub);
+  cursor: not-allowed;
+  opacity: 0.8;
+  transform: none;
+}
+
 .panel-icon-text {
   font-size: 12px;
 }
@@ -396,7 +419,7 @@
 .memo-container-dark-theme .panel-container {
   background: var(--bg-main);
   border-top-color: var(--primary-color);
-  box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 -6px 16px rgb(0 0 0 / 50%);
   color-scheme: dark;
 }
 
@@ -451,22 +474,6 @@
 }
 .memo-container-dark-theme .panel-title {
   color: var(--text-inverse);
-}
-/* 禁用状态的按钮样式 */
-.panel-btn:disabled,
-.panel-btn.btn-disabled {
-  background-color: var(--border-main);
-  color: var(--text-sub);
-  cursor: not-allowed;
-  opacity: 0.8;
-  transform: none; /* 移除点击缩放效果 */
-}
-.panel-icon-btn:disabled {
-  background-color: var(--border-main);
-  color: var(--text-sub);
-  cursor: not-allowed;
-  opacity: 0.8;
-  transform: none;
 }
 
 .loading-spinner {

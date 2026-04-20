@@ -1,6 +1,7 @@
 /* --- 用户列表容器：改为一行三列 --- */
 .panel-users-list {
   display: grid;
+
   /* 默认为三列布局，利用率更高 */
   grid-template-columns: repeat(3, 1fr);
   gap: 10px; /* 间距缩小，更紧凑 */
@@ -78,6 +79,13 @@
   background: var(--bg-main);
   box-shadow: var(--shadow-elevated);
 }
+
+.memo-container-dark-theme .user-select-mark {
+  background: var(--bg-sub);
+  border-color: var(--text-sub);
+  box-shadow: var(--shadow-dark);
+}
+
 .user-select input:checked + .user-select-mark {
   border-color: var(--primary-color);
   background: var(--primary-color);
@@ -116,6 +124,7 @@
   flex-direction: column;
   position: relative; /* 为绝对定位提供基准 */
 }
+
 /* 昵称部分：缩小间距，不再盲目扩张 */
 .user-nickname-section {
   /* 设置一个合理的宽度或让它自适应，这里给 flex: 1.5 让它比 ID 稍微宽一点 */
@@ -169,7 +178,9 @@
   width: fit-content;
   z-index: 100;
   background-color: var(--bg-main);
+
   /* 关键点 1：使用透明边框作为“鼠标粘滞区” */
+
   /* 这样即使鼠标稍微偏离文字，只要在边框范围内，就不会缩回去 */
   border: 10px solid transparent;
   margin: -10px; /* 用负外边距抵消边框位置，保持文字原地不动 */
@@ -178,6 +189,7 @@
   border-radius: 4px;
   box-shadow: var(--shadow-elevated);
 }
+
 /* 默认样式 */
 .user-note-input {
   border: none;
@@ -203,17 +215,18 @@
   background: var(--primary-alpha); /* 淡淡的底色提示正在输入 */
   border-bottom: 2px solid var(--primary-color);
 }
+
 /* --- 响应式断点优化 --- */
 
 /* 屏幕不够宽时，切换为一行两列 */
-@media (max-width: 1200px) {
+@media (width <= 1200px) {
   .panel-users-list {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
 /* 屏幕比较窄时，切换为一行一列 */
-@media (max-width: 768px) {
+@media (width <= 768px) {
   .panel-users-list {
     grid-template-columns: 1fr;
   }
@@ -256,11 +269,6 @@
 
 .memo-container-dark-theme .user-note-input.editing {
   background: var(--primary-alpha);
-}
-.memo-container-dark-theme .user-select-mark {
-  background: var(--bg-sub);
-  border-color: var(--text-sub);
-  box-shadow: var(--shadow-dark);
 }
 .memo-container-dark-theme .user-select input:checked + .user-select-mark {
   border-color: var(--primary-color);

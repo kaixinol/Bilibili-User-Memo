@@ -1,5 +1,5 @@
 /* Import shared highlight styles from standalone file */
-@import './debugger-highlight.css';
+@import url('./debugger-highlight.css');
 
 /* Debugger Panel Styles */
 .debugger-window {
@@ -104,10 +104,6 @@
   margin-bottom: 12px;
 }
 
-.debugger-controls .debugger-input {
-  flex: 1;
-}
-
 .debugger-input {
   background: var(--bg-main);
   border: 1px solid var(--border-main);
@@ -121,6 +117,10 @@
     border-color 0.2s,
     box-shadow 0.2s;
   min-width: 0;
+}
+
+.debugger-controls .debugger-input {
+  flex: 1;
 }
 
 .debugger-input:focus {
@@ -369,6 +369,7 @@
 .debugger-color-picker:hover {
   border-color: var(--focus-color);
 }
+
 /* 适配夜间主题 */
 .memo-container-dark-theme .debugger-window {
   background: var(--bg-sub);

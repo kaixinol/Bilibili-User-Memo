@@ -16,46 +16,45 @@ input {
 /* Color Variables */
 :root {
   --custom-font-size: 14px;
+
   /* Brand */
   --primary-color: #fb7299;
-  --primary-alpha: rgba(251, 114, 153, 0.15);
+  --primary-alpha: rgb(251 114 153 / 15%);
   --link-color: #00aeec;
 
   /* Surfaces */
-  --bg-main: #ffffff;
+  --bg-main: #fff;
   --bg-sub: #f6f8fa;
 
   /* Text */
-  --text-main: #333333;
-  --text-sub: #666666;
-  --text-inverse: #ffffff;
+  --text-main: #333;
+  --text-sub: #666;
+  --text-inverse: #fff;
 
   /* Borders */
   --border-main: #d1d1d1;
 
   /* Shadows */
-  --shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.15);
-  --shadow-dark: 0 8px 24px rgba(0, 0, 0, 0.4);
+  --shadow-elevated: 0 4px 12px rgb(0 0 0 / 15%);
+  --shadow-dark: 0 8px 24px rgb(0 0 0 / 40%);
 
   /* Overlays */
-  --overlay: rgba(0, 0, 0, 0.15);
-  --glass: rgba(255, 255, 255, 0.35);
+  --overlay: rgb(0 0 0 / 15%);
+  --glass: rgb(255 255 255 / 35%);
 
   /* Focus */
   --focus-color: #0366d6;
-  --focus-ring: rgba(3, 102, 214, 0.2);
+  --focus-ring: rgb(3 102 214 / 20%);
 
   /* Danger */
   --danger-color: #d73a49;
-  --danger-alpha: rgba(215, 58, 73, 0.1);
+  --danger-alpha: rgb(215 58 73 / 10%);
 }
 
 .memo-container-dark-theme {
   --bg-main: #18181b;
   --bg-sub: #202024;
-
   --border-main: #2f2f33;
-
   --text-main: #e5e7eb;
   --text-sub: #a1a1aa;
   --link-color: #7dd3fc;

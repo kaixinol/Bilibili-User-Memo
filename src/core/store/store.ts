@@ -13,6 +13,7 @@ import {
   saveDisplayModeToStorage,
   saveUsersToStorage,
 } from "./user-storage";
+import { findUniqueUserByName } from "./name-match";
 
 type ChangeReason =
   | "refresh"
@@ -274,8 +275,7 @@ class UserStore {
    * 通过名称查找已存在的用户 (用于无 UID 场景的回退查找)
    */
   public findUserByName(name: string): BiliUser | undefined {
-    if (!name) return undefined;
-    return this.users.find((u) => u.nickname === name.trim());
+    return findUniqueUserByName(this.users, name).user;
   }
 
   /**

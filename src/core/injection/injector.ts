@@ -15,6 +15,7 @@ import { getElementDisplayName } from "../dom/text-utils";
 import { refreshRenderedMemoNodes } from "../render/dom-refresh";
 import { injectMemoRenderer } from "../render/renderer";
 import { userStore, type UserStoreChange } from "../store/store";
+import { findUniqueUserByName } from "../store/name-match";
 import type { BiliUser } from "../types";
 import { DynamicRuleWatcher, PollingRuleWatcher } from "./watchers";
 import { unsafeWindow } from "$";
@@ -418,7 +419,13 @@ export class PageInjector {
     }
 
     if (rule.matchByName && originalName) {
-      return userStore.findUserByName(originalName)?.id || null;
+      const match = findUniqueUserByName(userStore.getUsers(), originalName);
+      if (match.reason === "ambiguous") {
+        logger.warn(`⚠️ matchByName 遇到重名，已跳过匹配: [${rule.name}]`, {
+          originalName,
+        });
+      }
+      return match.user?.id || null;
     }
     return null;
   }

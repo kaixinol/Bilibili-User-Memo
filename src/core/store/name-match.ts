@@ -1,8 +1,10 @@
 import type { BiliUser } from "../types";
 
+const MATCH_BY_NAME_IGNORED_NAMES = new Set(["账号已注销"]);
+
 export interface UniqueNameMatchResult {
   user?: BiliUser;
-  reason: "empty" | "none" | "ambiguous" | "unique";
+  reason: "none" | "ignored" | "ambiguous" | "unique";
 }
 
 export function findUniqueUserByName(
@@ -11,7 +13,11 @@ export function findUniqueUserByName(
 ): UniqueNameMatchResult {
   const trimmedName = name.trim();
   if (!trimmedName) {
-    return { reason: "empty" };
+    return { reason: "none" };
+  }
+
+  if (MATCH_BY_NAME_IGNORED_NAMES.has(trimmedName)) {
+    return { reason: "ignored" };
   }
 
   let matchedUser: BiliUser | undefined;

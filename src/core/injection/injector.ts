@@ -420,6 +420,11 @@ export class PageInjector {
 
     if (rule.matchByName && originalName) {
       const match = findUniqueUserByName(userStore.getUsers(), originalName);
+      if (match.reason === "ignored") {
+        logger.warn(`⚠️ matchByName 遇到已忽略昵称，已跳过匹配: [${rule.name}]`, {
+          originalName,
+        });
+      }
       if (match.reason === "ambiguous") {
         logger.warn(`⚠️ matchByName 遇到重名，已跳过匹配: [${rule.name}]`, {
           originalName,

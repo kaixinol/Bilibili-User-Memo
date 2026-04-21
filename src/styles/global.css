@@ -5,10 +5,7 @@
 }
 
 /* Reset default styles */
-button {
-  font-family: inherit;
-}
-
+button,
 input {
   font-family: inherit;
 }
@@ -49,6 +46,13 @@ input {
   /* Danger */
   --danger-color: #d73a49;
   --danger-alpha: rgb(215 58 73 / 10%);
+
+  /* Memo Theme */
+  --memo-tag-color: var(--custom-font-color, black);
+  --memo-textarea-color: var(--custom-font-color, black);
+  --memo-textarea-bg: var(--glass);
+  --memo-textarea-border-color: var(--overlay);
+  --memo-input-color: initial;
 }
 
 .memo-container-dark-theme {
@@ -58,4 +62,9 @@ input {
   --text-main: #e5e7eb;
   --text-sub: #a1a1aa;
   --link-color: #7dd3fc;
+  --memo-tag-color: var(--custom-font-color, white);
+  --memo-textarea-color: var(--custom-font-color, white);
+  --memo-textarea-bg: var(--overlay);
+  --memo-textarea-border-color: var(--glass);
+  --memo-input-color: var(--text-main);
 }

@@ -3,7 +3,9 @@ export default {
   extends: [
     "stylelint-config-standard",
   ],
-
+  plugins: [
+    "stylelint-no-unsupported-browser-features",
+  ],
   rules: {
     // 允许现代伪类
     "selector-pseudo-class-no-unknown": [true, {
@@ -40,8 +42,21 @@ export default {
         "composes", // CSS Modules
       ],
     }],
+    "selector-pseudo-class-disallowed-list": [
+      "host-context",
+    ],
 
-    // 关闭一些过于严格的规则（更贴近实际开发）
+    "plugin/no-unsupported-browser-features": [
+      true,
+      {
+        ignore: [
+          "css-nesting",
+          "intrinsic-width",
+          "extended-system-fonts",
+        ],
+      },
+    ],
+    "selector-no-vendor-prefix": true,
     "declaration-empty-line-before": null,
     "rule-empty-line-before": null,
     "property-no-deprecated": true,

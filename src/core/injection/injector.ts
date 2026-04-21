@@ -17,7 +17,7 @@ import { injectMemoRenderer } from "../render/renderer";
 import { userStore, type UserStoreChange } from "../store/store";
 import type { BiliUser } from "../types";
 import { DynamicRuleWatcher, PollingRuleWatcher } from "./watchers";
-
+import { unsafeWindow } from "$";
 type ScanScope = HTMLElement | ShadowRoot | Document;
 
 interface RuleGroups {

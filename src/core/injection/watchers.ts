@@ -1,44 +1,18 @@
+import type { DynamicPageRule, PollingPageRule } from "@/core/rules/rules";
+import { logger } from "@/utils/logger";
 import {
-  querySelectorAllDeep,
-  querySelectorDeep,
-} from "query-selector-shadow-dom";
-import type { DynamicPageRule, PollingPageRule } from "../../configs/rules";
-import { logger } from "../../utils/logger";
-import {
-  hasExternalAddedNodes,
-  hasExternalRemovedNodes,
-} from "../dom/owned-node";
-
-type WatchScope = HTMLElement | ShadowRoot | Document;
-type DiscoveryScope = Document | ShadowRoot;
+  getWatchTarget,
+  getWatchTargets,
+  isNodeInsideScope,
+  resolveWatchScope,
+  shouldHandleDiscoveryMutations,
+  type DiscoveryScope,
+} from "./watch-runtime";
+import type { ScanScope } from "./scan-scope";
 
 interface InstanceObserverRecord {
   observer: MutationObserver;
-  scope: WatchScope;
-}
-
-function resolveWatchScope(target: HTMLElement): WatchScope {
-  return target.shadowRoot || target;
-}
-
-function isNodeInsideScope(node: Node, scope: WatchScope): boolean {
-  // 文档作用域默认兜底全局
-  if (scope === document) {
-    return node.isConnected;
-  }
-
-  // 通过 composed tree 向上回溯（跨 ShadowRoot 跳转到 host）
-  let current: Node | null = node;
-  while (current) {
-    if (current === scope) return true;
-
-    if (current instanceof ShadowRoot) {
-      current = current.host;
-      continue;
-    }
-    current = current.parentNode;
-  }
-  return false;
+  scope: ScanScope;
 }
 
 export class DynamicRuleWatcher {
@@ -62,7 +36,7 @@ export class DynamicRuleWatcher {
 
   constructor(
     public readonly rule: DynamicPageRule, // 公开 rule 以便 Map 索引比对
-    private onTrigger: (rule: DynamicPageRule, root: WatchScope) => void,
+    private onTrigger: (rule: DynamicPageRule, root: ScanScope) => void,
   ) {}
 
   public start() {
@@ -145,10 +119,10 @@ export class DynamicRuleWatcher {
     if (this.discoveryObservers.has(scope)) return;
 
     const observer = new MutationObserver((mutations) => {
-      const needScan = hasExternalAddedNodes(mutations);
-      const nodesRemoved = hasExternalRemovedNodes(mutations);
+      const { hasAddedNodes, hasRemovedNodes } =
+        shouldHandleDiscoveryMutations(mutations);
 
-      if (needScan) {
+      if (hasAddedNodes) {
         mutations.forEach((mutation) => {
           mutation.addedNodes.forEach((node) =>
             this.discoverShadowScopesFromNode(node),
@@ -158,7 +132,7 @@ export class DynamicRuleWatcher {
         this.bridgeShadowMutationsToWatchScopes(scope);
       }
 
-      if (nodesRemoved) {
+      if (hasRemovedNodes) {
         this.cleanupDetachedTargets();
         this.cleanupDetachedDiscoveryScopes();
       }
@@ -194,7 +168,7 @@ export class DynamicRuleWatcher {
 
   private scanAndAttachNewTargets() {
     // 查找所有符合 watch 选择器的元素
-    const targets = querySelectorAllDeep(this.rule.trigger.watch);
+    const targets = getWatchTargets(this.rule.trigger.watch);
 
     targets.forEach((target) => {
       const scope = resolveWatchScope(target); // 优先监听 ShadowRoot
@@ -220,9 +194,9 @@ export class DynamicRuleWatcher {
     });
   }
 
-  private createScopeObserver(scope: WatchScope): MutationObserver {
+  private createScopeObserver(scope: ScanScope): MutationObserver {
     const observer = new MutationObserver((mutations) => {
-      if (!hasExternalAddedNodes(mutations)) return;
+      if (!shouldHandleDiscoveryMutations(mutations).hasAddedNodes) return;
       this.onTrigger(this.rule, scope);
     });
     observer.observe(scope, { childList: true, subtree: true });
@@ -237,7 +211,7 @@ export class DynamicRuleWatcher {
     if (!(scope instanceof ShadowRoot)) return;
     if (this.instanceObservers.size === 0) return;
 
-    const touchedScopes = new Set<WatchScope>();
+    const touchedScopes = new Set<ScanScope>();
     for (const { scope: watchScope } of this.instanceObservers.values()) {
       // watchScope 本身就是该 ShadowRoot 的情况，实例观察器已经覆盖，无需桥接
       if (watchScope instanceof ShadowRoot && watchScope === scope) {
@@ -253,7 +227,7 @@ export class DynamicRuleWatcher {
     touchedScopes.forEach((watchScope) => this.onTrigger(this.rule, watchScope));
   }
 
-  private attachInstanceWatcher(keyNode: HTMLElement, scope: WatchScope) {
+  private attachInstanceWatcher(keyNode: HTMLElement, scope: ScanScope) {
     const observer = this.createScopeObserver(scope);
     this.instanceObservers.set(keyNode, { observer, scope });
 
@@ -306,7 +280,7 @@ export class DynamicRuleWatcher {
   }
 
   private attachLegacy(): boolean {
-    const watchTarget = querySelectorDeep(this.rule.trigger.watch);
+    const watchTarget = getWatchTarget(this.rule.trigger.watch);
     if (!watchTarget) return false;
 
     const scope = resolveWatchScope(watchTarget);
@@ -323,7 +297,7 @@ export class PollingRuleWatcher {
 
   constructor(
     public readonly rule: PollingPageRule,
-    private onTrigger: (rule: PollingPageRule, root: WatchScope) => void,
+    private onTrigger: (rule: PollingPageRule, root: ScanScope) => void,
   ) {}
 
   public start() {
@@ -346,7 +320,7 @@ export class PollingRuleWatcher {
   }
 
   private tick() {
-    const watchTarget = querySelectorDeep(this.rule.trigger.watch);
+    const watchTarget = getWatchTarget(this.rule.trigger.watch);
     if (!watchTarget) return;
     const scope = resolveWatchScope(watchTarget);
     this.onTrigger(this.rule, scope);

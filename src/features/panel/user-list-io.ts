@@ -1,7 +1,8 @@
-import { validateEitherJSON } from "../configs/schema";
-import type { BiliUser } from "../core/types";
-import { logger } from "../utils/logger";
-import { getUserInfo } from "../utils/sign";
+import { validateEitherJSON } from "@/core/rules/schema";
+import type { BiliUser } from "@/core/types";
+import { normalizeUserCollection } from "@/core/store/user-normalization";
+import { logger } from "@/utils/logger";
+import { getUserInfo } from "@/utils/sign";
 
 interface UserProfile {
   id: string;
@@ -34,28 +35,6 @@ function pickJsonFile(): Promise<File | null> {
   });
 }
 
-function normalizeImportedUsers(parsedData: unknown): BiliUser[] {
-  if (Array.isArray(parsedData)) {
-    return parsedData.map((user: any) => ({
-      id: user.id || user.bid,
-      nickname: user.nickname || "",
-      avatar: user.avatar || "",
-      memo: user.memo || "",
-    }));
-  }
-
-  if (parsedData && typeof parsedData === "object") {
-    return Object.values(parsedData as Record<string, any>).map((user: any) => ({
-      id: user.id || user.bid,
-      nickname: user.nickname || "",
-      avatar: user.avatar || "",
-      memo: user.memo || "",
-    }));
-  }
-
-  return [];
-}
-
 export async function readImportUsersFromDialog(): Promise<ImportReadResult> {
   const file = await pickJsonFile();
   if (!file) return { status: "cancelled" };
@@ -67,9 +46,9 @@ export async function readImportUsersFromDialog(): Promise<ImportReadResult> {
       return { status: "error", message: `导入失败：${validation.error}` };
     }
 
-    const importedUsers = normalizeImportedUsers(parsedData).filter(
-      (user) => user.id && user.nickname,
-    );
+    const importedUsers = normalizeUserCollection(parsedData, {
+      requireNickname: true,
+    });
     if (importedUsers.length === 0) {
       return { status: "error", message: "导入失败：没有有效的用户数据" };
     }

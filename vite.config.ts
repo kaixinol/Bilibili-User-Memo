@@ -3,6 +3,7 @@ import { visualizer } from "rollup-plugin-visualizer";
 import monkey, { cdn } from "vite-plugin-monkey";
 import { browserslistToTargets } from 'lightningcss';
 import browserslist from 'browserslist';
+import { fileURLToPath, URL } from "node:url";
 export default defineConfig(({ mode }) => {
   const isDebug = mode === "debug";
 
@@ -47,6 +48,11 @@ export default defineConfig(({ mode }) => {
     define: {
       "process.env.NODE_ENV": JSON.stringify(mode),
       __IS_DEBUG__: JSON.stringify(isDebug),
+    },
+    resolve: {
+      alias: {
+        "@": fileURLToPath(new URL("./src", import.meta.url)),
+      },
     },
     build: {
       minify: isDebug ? false : "terser",

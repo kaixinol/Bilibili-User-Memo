@@ -3,11 +3,14 @@ import GM_fetch from "@trim21/gm-fetch";
 import { logger } from "./logger";
 import { withLimit } from "./limiter";
 import {
-  GM_setValue,
-  GM_getValue,
   GM_xmlhttpRequest,
   GM,
 } from "$";
+import {
+  getFreshGmCache,
+  setTimestampedGmCache,
+  withMemoryCache,
+} from "./cache";
 if (typeof GM === "undefined") {
   (window as any).GM = {
     xmlHttpRequest: GM_xmlhttpRequest,
@@ -116,11 +119,8 @@ const getMixinKey = (orig: string) =>
  * 获取最新的 img_key 和 sub_key (带缓存逻辑)
  */
 async function getWbiKeys(): Promise<{ img_key: string; sub_key: string }> {
-  const now = Date.now();
-  const cache = GM_getValue(CACHE_KEY, null) as WbiCache | null;
-
-  // 检查缓存是否存在且未过期
-  if (cache && now - cache.timestamp < CACHE_TTL) {
+  const cache = getFreshGmCache<WbiCache>(CACHE_KEY, CACHE_TTL);
+  if (cache) {
     return { img_key: cache.img_key, sub_key: cache.sub_key };
   }
 
@@ -143,7 +143,7 @@ async function getWbiKeys(): Promise<{ img_key: string; sub_key: string }> {
     };
 
     // 写入缓存
-    GM_setValue(CACHE_KEY, { ...keys, timestamp: now });
+    setTimestampedGmCache(CACHE_KEY, keys);
     return keys;
   } catch (err) {
     logger.error("Failed to fetch WBI keys", err);
@@ -225,26 +225,10 @@ async function _getUserInfo(mid: string): Promise<UserInfo> {
   }
 }
 
-const cache = new Map<string, { data: any; time: number }>();
-
-function withSmartCache<T extends (...args: any[]) => Promise<any>>(fn: T): T {
-  return (async (...args: any[]) => {
-    const key = JSON.stringify(args);
-    const now = Date.now();
-
-    // 5分钟内如果查过同一个 ID，直接给缓存，不发请求
-    if (cache.has(key) && now - cache.get(key)!.time < 300000) {
-      return cache.get(key)!.data;
-    }
-
-    const result = await fn(...args);
-    cache.set(key, { data: result, time: now });
-    return result;
-  }) as T;
-}
-
 /**
  * 获取用户信息
  * @param mid 用户UID
  */
-export const getUserInfo = withSmartCache(withLimit(_getUserInfo));
+export const getUserInfo = withMemoryCache(withLimit(_getUserInfo), {
+  ttlMs: 300000,
+});

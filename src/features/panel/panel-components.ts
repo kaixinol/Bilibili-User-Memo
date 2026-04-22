@@ -1,22 +1,18 @@
 import Alpine from "alpinejs";
-import panelHtml from "./panel.html?raw";
-import boxHtml from "./box.html?raw";
-import "../styles/panel.css";
-import "../styles/global.css";
-import "../styles/box.css";
-import type { BiliUser } from "../core/types";
-import { createPanelPrefsStore, type PanelPrefsStore } from "./panel-prefs";
-import {
-  registerUserStore,
-  type UserListStore,
-  getPanelFuzzySearch,
-  setPanelFuzzySearch,
-} from "./user-list-store";
-import { markOwnedElement } from "../core/dom/owned-node";
+import type { BiliUser } from "@/core/types";
+import type { PanelPrefsStore } from "./panel-prefs";
+import type { UserListStore } from "./user-list-store";
+import { confirmDialog } from "./dialogs";
 
 interface DisplayModeOption {
   value: number;
   label: string;
+}
+
+interface AlpineMagicContext {
+  $el?: HTMLElement;
+  $nextTick?: (callback: () => void) => void;
+  $refs?: Record<string, Element | undefined>;
 }
 
 const DISPLAY_MODE_OPTIONS: DisplayModeOption[] = [
@@ -26,15 +22,27 @@ const DISPLAY_MODE_OPTIONS: DisplayModeOption[] = [
   { value: 3, label: "备注" },
 ];
 
-let panelComponentsRegistered = false;
 let panelBindingsRegistered = false;
+let panelComponentsRegistered = false;
 
-function useUserListStore(): UserListStore {
+function getUserListStore(): UserListStore {
   return Alpine.store("userList") as UserListStore;
 }
 
-function usePanelPrefsStore(): PanelPrefsStore {
+function getPanelPrefsStore(): PanelPrefsStore {
   return Alpine.store("panelPrefs") as PanelPrefsStore;
+}
+
+function runOnNextTick(context: object, callback: () => void) {
+  (context as AlpineMagicContext).$nextTick?.(callback);
+}
+
+function getRef<T extends Element>(context: object, key: string): T | undefined {
+  return (context as AlpineMagicContext).$refs?.[key] as T | undefined;
+}
+
+function getCurrentElement(context: object): HTMLElement | undefined {
+  return (context as AlpineMagicContext).$el;
 }
 
 function registerPanelBindings() {
@@ -78,23 +86,23 @@ function registerPanelBindings() {
   }));
 }
 
-function registerPanelComponents() {
+export function registerPanelComponents() {
   if (panelComponentsRegistered) return;
   panelComponentsRegistered = true;
   registerPanelBindings();
 
   Alpine.data("panelShell", () => ({
     init() {
-      usePanelPrefsStore().init();
+      getPanelPrefsStore().init();
     },
     get isOpen(): boolean {
-      return useUserListStore().isOpen;
+      return getUserListStore().isOpen;
     },
     set isOpen(next: boolean) {
-      useUserListStore().setOpen(next);
+      getUserListStore().setOpen(next);
     },
     handleSelectAll(event: KeyboardEvent) {
-      const userList = useUserListStore();
+      const userList = getUserListStore();
       if (!userList.isMultiSelect) return;
       if (!(event.ctrlKey || event.metaKey)) return;
       if (event.key.toLowerCase() !== "a") return;
@@ -106,13 +114,13 @@ function registerPanelComponents() {
 
   Alpine.data("panelToggleBtn", () => ({
     get prefs(): PanelPrefsStore {
-      return usePanelPrefsStore();
+      return getPanelPrefsStore();
     },
     get isOpen(): boolean {
-      return useUserListStore().isOpen;
+      return getUserListStore().isOpen;
     },
     set isOpen(next: boolean) {
-      useUserListStore().setOpen(next);
+      getUserListStore().setOpen(next);
     },
     get openText(): string {
       return this.prefs.openText;
@@ -131,10 +139,10 @@ function registerPanelComponents() {
   Alpine.data("panelSettings", () => ({
     displayModes: DISPLAY_MODE_OPTIONS,
     get userList(): UserListStore {
-      return useUserListStore();
+      return getUserListStore();
     },
     get prefs(): PanelPrefsStore {
-      return usePanelPrefsStore();
+      return getPanelPrefsStore();
     },
     get displayModeProxy(): number {
       return this.userList.displayMode;
@@ -177,11 +185,8 @@ function registerPanelComponents() {
       this.prefs.showAdvancedCss = !this.prefs.showAdvancedCss;
       if (!this.prefs.showAdvancedCss) return;
 
-      (this as any).$nextTick(() => {
-        const input = (this as any).$refs.memoCssInput as
-          | HTMLTextAreaElement
-          | undefined;
-        input?.focus();
+      runOnNextTick(this, () => {
+        getRef<HTMLTextAreaElement>(this, "memoCssInput")?.focus();
       });
     },
     handleColorSettingMouseDown(event: MouseEvent) {
@@ -196,27 +201,22 @@ function registerPanelComponents() {
 
   Alpine.data("panelActions", () => ({
     get userList(): UserListStore {
-      return useUserListStore();
+      return getUserListStore();
     },
     get fuzzySearchEnabled(): boolean {
-      return getPanelFuzzySearch();
+      return this.userList.fuzzySearchEnabled;
     },
     clearSearch() {
       this.userList.searchQuery = "";
     },
     toggleFuzzySearch(event: Event) {
       const checked = (event.target as HTMLInputElement).checked;
-      setPanelFuzzySearch(checked);
-      console.log(`[Panel Debug] Fuzzy search toggled to: ${checked}`);
-      // Force re-computation of filteredUsers by triggering a reactive update
-      const currentQuery = this.userList.searchQuery;
-      this.userList.searchQuery = "";
-      this.userList.searchQuery = currentQuery;
+      this.userList.setFuzzySearchEnabled(checked);
     },
     confirmRemoveSelected() {
       const count = this.userList.selectedIds.length;
       if (count === 0) return;
-      if (confirm(`确定要删除所选 ${count} 个用户吗？`)) {
+      if (confirmDialog(`确定要删除所选 ${count} 个用户吗？`)) {
         this.userList.removeSelected();
       }
     },
@@ -225,7 +225,7 @@ function registerPanelComponents() {
   Alpine.data("userCard", (userId: string) => ({
     userId,
     get userList(): UserListStore {
-      return useUserListStore();
+      return getUserListStore();
     },
     get currentUser(): BiliUser | undefined {
       return this.userList.getUserById(this.userId);
@@ -252,14 +252,13 @@ function registerPanelComponents() {
       if (!this.isMultiSelect) return;
 
       const target = event.target as HTMLElement | null;
-      if (!target) return;
-      if (target.closest(".user-select")) return;
+      if (!target || target.closest(".user-select")) return;
 
       event.preventDefault();
       this.toggleSelected();
     },
     confirmRemove() {
-      if (confirm("确定要删除吗？")) {
+      if (confirmDialog("确定要删除吗？")) {
         this.userList.removeUser(this.userId);
       }
     },
@@ -269,27 +268,27 @@ function registerPanelComponents() {
     uid,
     copied: false,
     get isMultiSelect(): boolean {
-      return useUserListStore().isMultiSelect;
+      return getUserListStore().isMultiSelect;
     },
     init() {
       this.refreshOverflow();
     },
     refreshOverflow() {
-      (this as any).$nextTick(() => {
-        const el = (this as any).$el as HTMLElement;
-        el.classList.toggle("can-expand", el.scrollWidth > el.clientWidth);
+      runOnNextTick(this, () => {
+        const element = getCurrentElement(this);
+        if (!element) return;
+        element.classList.toggle("can-expand", element.scrollWidth > element.clientWidth);
       });
     },
     handleMouseEnter() {
       this.refreshOverflow();
     },
     handleMouseLeave() {
-      const el = (this as any).$el as HTMLElement;
-      el.classList.remove("can-expand");
+      getCurrentElement(this)?.classList.remove("can-expand");
     },
     copy() {
       if (this.isMultiSelect) return;
-      navigator.clipboard.writeText(`UID:${this.uid}`);
+      void navigator.clipboard.writeText(`UID:${this.uid}`);
       this.copied = true;
       window.setTimeout(() => {
         this.copied = false;
@@ -306,7 +305,7 @@ function registerPanelComponents() {
     isEditing: false,
     memoDraft: String(initialMemo ?? ""),
     get userList(): UserListStore {
-      return useUserListStore();
+      return getUserListStore();
     },
     get isMultiSelect(): boolean {
       return this.userList.isMultiSelect;
@@ -322,11 +321,8 @@ function registerPanelComponents() {
     startEdit() {
       if (this.isMultiSelect) return;
       this.isEditing = true;
-      (this as any).$nextTick(() => {
-        const input = (this as any).$refs.memoInput as
-          | HTMLInputElement
-          | undefined;
-        input?.focus();
+      runOnNextTick(this, () => {
+        getRef<HTMLInputElement>(this, "memoInput")?.focus();
       });
     },
     commit() {
@@ -342,32 +338,7 @@ function registerPanelComponents() {
       this.isEditing = false;
     },
     blurInput() {
-      const input = (this as any).$refs.memoInput as
-        | HTMLInputElement
-        | undefined;
-      input?.blur();
+      getRef<HTMLInputElement>(this, "memoInput")?.blur();
     },
   }));
-}
-
-export function initMainPanel() {
-  if (document.getElementById("bili-memo-container")) return;
-
-  registerUserStore();
-  if (!Alpine.store("panelPrefs")) {
-    Alpine.store(
-      "panelPrefs",
-      createPanelPrefsStore({ getUserListStore: useUserListStore }),
-    );
-  }
-  registerPanelComponents();
-
-  const finalHtml = panelHtml
-    .replace("${appName}", "备注管理")
-    .replace("${boxTemplate}", boxHtml);
-
-  const container = markOwnedElement(document.createElement("div"));
-  container.id = "bili-memo-container";
-  container.innerHTML = finalHtml;
-  document.body.appendChild(container);
 }

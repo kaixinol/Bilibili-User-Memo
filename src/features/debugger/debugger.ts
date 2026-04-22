@@ -1,18 +1,18 @@
 import Alpine from "alpinejs";
 import { querySelectorAllDeep } from "query-selector-shadow-dom";
-import { config as defaultRules } from "../../configs/rules";
+import { config as defaultRules } from "@/core/rules/rules";
 import {
   InjectionMode,
   StyleScope,
   type DynamicTriggerConfig,
   type PollingTriggerConfig,
   type RuleConfigEntry,
-} from "../../configs/rule-types";
-import "../../styles/global.css";
-import "../../styles/debugger.css";
+} from "@/core/rules/rule-types";
+import "@/styles/global.css";
+import "@/styles/debugger.css";
 import debuggerHtml from "./debugger.html?raw";
-import highlightCss from "../../styles/debugger-highlight.css?raw";
-import { logger } from "../../utils/logger";
+import highlightCss from "@/styles/debugger-highlight.css?raw";
+import { logger } from "@/utils/logger";
 
 // --- Constructable Stylesheet for Shadow DOM support ---
 // Import shared highlight styles from standalone CSS file to maintain single source of truth
@@ -51,7 +51,6 @@ interface PerfStats {
 // Non-reactive state stored outside Alpine
 interface DebuggerState {
   observer: MutationObserver | null;
-  debounceTimer: number | null;
   perfTimer: number | null;
   perfObserver: PerformanceObserver | null;
   perfRafId: number;
@@ -59,7 +58,6 @@ interface DebuggerState {
 
 const state: DebuggerState = {
   observer: null,
-  debounceTimer: null,
   perfTimer: null,
   perfObserver: null,
   perfRafId: 0,
@@ -149,6 +147,24 @@ function cloneEntryAsDebugRule(
 }
 
 export function initDebugger() {
+  const debounce =
+    (Alpine as typeof Alpine & {
+      debounce?: <T extends (...args: never[]) => void>(
+        callback: T,
+        wait: number,
+      ) => T;
+    }).debounce ??
+    ((callback: () => void, wait: number) => {
+      let timerId: number | null = null;
+      return () => {
+        if (timerId) window.clearTimeout(timerId);
+        timerId = window.setTimeout(() => {
+          timerId = null;
+          callback();
+        }, wait);
+      };
+    });
+
   Alpine.data(
     "monkeyApp",
     (): MonkeyApp => ({
@@ -185,12 +201,7 @@ export function initDebugger() {
       },
 
       setupObservers() {
-        const debouncedScan = () => {
-          if (state.debounceTimer) window.clearTimeout(state.debounceTimer);
-          state.debounceTimer = window.setTimeout(() => {
-            this.scan();
-          }, 200);
-        };
+        const debouncedScan = debounce(() => this.scan(), 200);
         
         state.observer = new MutationObserver((mutations) => {
           // Skip mutations that affect the debugger window itself

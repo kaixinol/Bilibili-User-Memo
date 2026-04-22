@@ -1,15 +1,10 @@
 import { querySelectorAllDeep } from "query-selector-shadow-dom";
-import {
-  config,
-  InjectionMode,
-} from "../../configs/rules";
 import type {
   PageRule,
-  StaticPageRule,
   DynamicPageRule,
   PollingPageRule,
-} from "../../configs/rules";
-import { logger } from "../../utils/logger";
+} from "@/core/rules/rules";
+import { logger } from "@/utils/logger";
 import { extractUid } from "../dom/uid-extractor";
 import { getElementDisplayName } from "../dom/text-utils";
 import { refreshRenderedMemoNodes } from "../render/dom-refresh";
@@ -19,29 +14,31 @@ import { findUniqueUserByName } from "../store/name-match";
 import type { BiliUser } from "../types";
 import { DynamicRuleWatcher, PollingRuleWatcher } from "./watchers";
 import { unsafeWindow } from "$";
-type ScanScope = HTMLElement | ShadowRoot | Document;
-
-interface RuleGroups {
-  staticRules: StaticPageRule[];
-  dynamicRules: DynamicPageRule[];
-  pollingRules: PollingPageRule[];
-}
+import type { ScanScope } from "./scan-scope";
+import {
+  buildRuleSelector,
+  getMatchByNameRules,
+  getMatchedRules,
+  groupRulesByMode,
+  logRuleScanResult,
+  type RuleGroups,
+} from "./rule-runtime";
+import { RemoteChangeBuffer } from "./remote-change-buffer";
+import { RuleScanScheduler } from "./scan-scheduler";
+import { delay, waitUntil } from "@/utils/scheduler";
+import { isNodeInsideScope } from "./watch-runtime";
 
 export class PageInjector {
   private domReady = false;
   private lastUrl = "";
-  private staticRetryTimers: number[] = [];
-  private staticRetryToken = 0;
-  private pendingRemoteChangedIds = new Set<string>();
-  private pendingRemoteRescanMatchByName = false;
-  private pendingRemoteNeedsFullRefresh = false;
-  private pendingRemoteDisplayModeChanged = false;
+  private readonly pendingRemoteChanges = new RemoteChangeBuffer();
+  private readonly scanScheduler = new RuleScanScheduler(
+    (rule, scope) => this.scanAndInjectRule(rule, scope),
+    () => this.domReady,
+  );
 
   private activeWatchers = new Map<DynamicPageRule, DynamicRuleWatcher>();
   private activePollingWatchers = new Map<PollingPageRule, PollingRuleWatcher>();
-
-  // rule + scope 双键防抖，避免不同容器互相覆盖定时器
-  private ruleDebounceTimers = new Map<DynamicPageRule, Map<ScanScope, number>>();
 
   constructor() {
     logger.info("🚀 PageInjector 正在启动...");
@@ -54,7 +51,7 @@ export class PageInjector {
     this.startUrlMonitor();
     this.onDomReady(async () => {
       await this.waitForBiliEnvironment();
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await delay(100);
       this.domReady = true;
       this.handleUrlChange();
     });
@@ -100,23 +97,7 @@ export class PageInjector {
   }
 
   private queuePendingRemoteChange(change: UserStoreChange) {
-    if (change.type === "displayMode") {
-      this.pendingRemoteDisplayModeChanged = true;
-      return;
-    }
-
-    if (change.type !== "users") return;
-
-    this.pendingRemoteRescanMatchByName ||= Boolean(change.rescanMatchByName);
-
-    if (!change.changedIds || change.changedIds.length === 0) {
-      this.pendingRemoteNeedsFullRefresh = true;
-      return;
-    }
-
-    change.changedIds.forEach((id) => {
-      if (id) this.pendingRemoteChangedIds.add(id);
-    });
+    this.pendingRemoteChanges.queue(change);
   }
 
   private handleVisibilityChange() {
@@ -126,14 +107,8 @@ export class PageInjector {
   }
 
   private flushPendingRemoteChanges() {
-    if (
-      !this.pendingRemoteNeedsFullRefresh &&
-      this.pendingRemoteChangedIds.size === 0 &&
-      !this.pendingRemoteRescanMatchByName &&
-      !this.pendingRemoteDisplayModeChanged
-    ) {
-      return;
-    }
+    const pendingState = this.pendingRemoteChanges.consume();
+    if (!pendingState) return;
 
     const currentUrl = unsafeWindow.location.href;
     if (currentUrl !== this.lastUrl) {
@@ -145,8 +120,8 @@ export class PageInjector {
     const users = userStore.getUsers();
     const displayMode = userStore.displayMode;
     const needsFullRefresh =
-      this.pendingRemoteNeedsFullRefresh || this.pendingRemoteDisplayModeChanged;
-    const changedIds = Array.from(this.pendingRemoteChangedIds);
+      pendingState.needsFullRefresh || pendingState.displayModeChanged;
+    const changedIds = pendingState.changedIds;
 
     if (needsFullRefresh) {
       this.refreshRenderedNodes(users, displayMode);
@@ -154,14 +129,9 @@ export class PageInjector {
       this.refreshRenderedNodes(users, displayMode, changedIds);
     }
 
-    if (this.pendingRemoteRescanMatchByName) {
+    if (pendingState.rescanMatchByName) {
       this.scanMatchByNameRules(document);
     }
-
-    this.pendingRemoteChangedIds.clear();
-    this.pendingRemoteRescanMatchByName = false;
-    this.pendingRemoteNeedsFullRefresh = false;
-    this.pendingRemoteDisplayModeChanged = false;
   }
 
   private refreshRenderedNodes(
@@ -178,7 +148,7 @@ export class PageInjector {
       ...this.activePollingWatchers.keys(),
     ];
     if (activeRules.length === 0) return;
-    this.scanSpecificRules(activeRules, scope);
+    this.scanScheduler.scanRules(activeRules, scope);
   }
 
   private startUrlMonitor() {
@@ -195,7 +165,7 @@ export class PageInjector {
   private handleUrlChange() {
     if (!this.domReady) return;
 
-    const matchedRules = this.getMatchedRules();
+    const matchedRules = getMatchedRules();
     const groups = this.groupRulesByMode(matchedRules);
     this.applyStaticRules(groups.staticRules, document);
     this.reconcileWatchers(groups.dynamicRules);
@@ -203,48 +173,33 @@ export class PageInjector {
   }
 
   private groupRulesByMode(rules: PageRule[]): RuleGroups {
-    const groups: RuleGroups = {
-      staticRules: [],
-      dynamicRules: [],
-      pollingRules: [],
-    };
-
-    rules.forEach((rule) => {
-      if (rule.injectMode === InjectionMode.Static) {
-        groups.staticRules.push(rule);
-        return;
-      }
-      if (rule.injectMode === InjectionMode.Dynamic) {
-        groups.dynamicRules.push(rule);
-        return;
-      }
-      groups.pollingRules.push(rule);
-    });
-
-    return groups;
+    return groupRulesByMode(rules);
   }
 
-  private applyStaticRules(staticRules: StaticPageRule[], scope: ScanScope) {
+  private applyStaticRules(
+    staticRules: ReturnType<typeof groupRulesByMode>["staticRules"],
+    scope: ScanScope,
+  ) {
     if (staticRules.length === 0) {
-      this.clearStaticRetryTimers();
+      this.scanScheduler.clearStaticRuleRetries();
       return;
     }
-    this.scanSpecificRules(staticRules, scope);
-    this.scheduleStaticRuleRetries(staticRules, scope);
+    this.scanScheduler.scanRules(staticRules, scope);
+    this.scanScheduler.scheduleStaticRuleRetries(staticRules, scope);
   }
 
   private reconcileWatchers(nextRules: DynamicPageRule[]) {
     for (const [rule, watcher] of this.activeWatchers) {
       if (nextRules.includes(rule)) continue;
       watcher.stop();
-      this.clearRuleDebounceTimers(rule);
+      this.scanScheduler.clearRuleDebounceTimers(rule);
       this.activeWatchers.delete(rule);
     }
 
     nextRules.forEach((rule) => {
       if (this.activeWatchers.has(rule)) return;
       const watcher = new DynamicRuleWatcher(rule, (r, scope) => {
-        this.scheduleRuleScan(r, r.trigger.debounceMs, scope);
+        this.scanScheduler.scheduleDynamicRuleScan(r, r.trigger.debounceMs, scope);
       });
       this.activeWatchers.set(rule, watcher);
       watcher.start();
@@ -261,7 +216,7 @@ export class PageInjector {
     nextRules.forEach((rule) => {
       if (this.activePollingWatchers.has(rule)) return;
       const watcher = new PollingRuleWatcher(rule, (r, scope) => {
-        this.scanSpecificRules([r], scope);
+        this.scanScheduler.scanRules([r], scope);
       });
       this.activePollingWatchers.set(rule, watcher);
       watcher.start();
@@ -269,123 +224,30 @@ export class PageInjector {
   }
 
   private scanMatchByNameRules(scope: ScanScope) {
-    const rules = [
+    const rules = getMatchByNameRules([
       ...this.activeWatchers.keys(),
       ...this.activePollingWatchers.keys(),
-    ].filter((rule) => Boolean(rule.matchByName));
+    ]);
     if (rules.length === 0) return;
-    this.scanSpecificRules(rules, scope);
-  }
-
-  private clearStaticRetryTimers() {
-    this.staticRetryToken++;
-    this.staticRetryTimers.forEach((timerId) => clearTimeout(timerId));
-    this.staticRetryTimers = [];
-  }
-
-  private scheduleStaticRuleRetries(
-    staticRules: StaticPageRule[],
-    scope: ScanScope,
-  ) {
-    this.clearStaticRetryTimers();
-    const token = this.staticRetryToken;
-    const retryDelays = [350, 900];
-
-    retryDelays.forEach((delay) => {
-      const timerId = window.setTimeout(() => {
-        if (!this.domReady || token !== this.staticRetryToken) return;
-        this.scanSpecificRules(staticRules, scope);
-      }, delay);
-      this.staticRetryTimers.push(timerId);
-    });
-  }
-
-  private scheduleRuleScan(rule: DynamicPageRule, delay: number, scope: ScanScope) {
-    let scopeTimers = this.ruleDebounceTimers.get(rule);
-    if (!scopeTimers) {
-      scopeTimers = new Map<ScanScope, number>();
-      this.ruleDebounceTimers.set(rule, scopeTimers);
-    }
-
-    const existingTimer = scopeTimers.get(scope);
-    if (existingTimer) clearTimeout(existingTimer);
-
-    const timerId = window.setTimeout(() => {
-      const activeScopeTimers = this.ruleDebounceTimers.get(rule);
-      activeScopeTimers?.delete(scope);
-      if (activeScopeTimers && activeScopeTimers.size === 0) {
-        this.ruleDebounceTimers.delete(rule);
-      }
-      this.scanSpecificRules([rule], scope);
-    }, delay);
-
-    scopeTimers.set(scope, timerId);
-  }
-
-  private clearRuleDebounceTimers(rule: DynamicPageRule) {
-    const scopeTimers = this.ruleDebounceTimers.get(rule);
-    if (!scopeTimers) return;
-    scopeTimers.forEach((timerId) => clearTimeout(timerId));
-    this.ruleDebounceTimers.delete(rule);
-  }
-
-  private scanSpecificRules(rules: PageRule[], scope: ScanScope) {
-    if (rules.length === 0) return;
-
-    const queue = [...rules];
-    const runChunk = (deadline: IdleDeadline) => {
-      const processNext = async () => {
-        while (queue.length > 0 && deadline.timeRemaining() > 1) {
-          const rule = queue.shift()!;
-          await this.scanAndInjectRule(rule, scope);
-        }
-        if (queue.length > 0) {
-          this.requestIdle(runChunk);
-        }
-      };
-      void processNext();
-    };
-
-    this.requestIdle(runChunk);
-  }
-
-  private requestIdle(cb: (deadline: IdleDeadline) => void) {
-    const ric =
-      (window as any).requestIdleCallback ||
-      ((fn: any) => setTimeout(() => fn({ timeRemaining: () => 16 }), 16));
-    ric(cb, { timeout: 1000 });
+    this.scanScheduler.scanRules(rules, scope);
   }
 
   private async scanAndInjectRule(rule: PageRule, scope: ScanScope) {
-    const selector = this.buildRuleSelector(rule);
+    const selector = buildRuleSelector(rule);
     if (!selector) return;
 
-    const elements = querySelectorAllDeep(selector, scope);
-    this.logRuleScanResult(rule, selector, elements.length);
+    const elements =
+      scope instanceof ShadowRoot
+        ? querySelectorAllDeep(selector).filter((element) =>
+            isNodeInsideScope(element, scope),
+          )
+        : querySelectorAllDeep(selector, scope);
+    logRuleScanResult(rule, selector, elements.length);
     if (elements.length === 0) return;
 
     elements.forEach((el) => {
       void this.applyRuleToElement(el, rule);
     });
-  }
-
-  private buildRuleSelector(rule: PageRule): string | null {
-    const baseSelector = rule.aSelector || rule.textSelector;
-    if (!baseSelector) return null;
-    if (rule.ignoreProcessed) return baseSelector;
-    return `${baseSelector}:not([data-bili-processed])`;
-  }
-
-  private logRuleScanResult(rule: PageRule, selector: string, count: number) {
-    if (count === 0) return;
-
-    if (rule.injectMode === InjectionMode.Static) {
-      logger.debug(`💉 静态注入: 找到 ${count} 个目标元素 [${selector}]`);
-      return;
-    }
-    if (rule.injectMode === InjectionMode.Polling) {
-      logger.debug(`🔁 轮询注入 [${rule.name}]: 找到 ${count} 个目标元素`);
-    }
   }
 
   private async applyRuleToElement(el: HTMLElement, rule: PageRule) {
@@ -446,13 +308,6 @@ export class PageInjector {
     );
   }
 
-  private getMatchedRules(): PageRule[] {
-    const currentUrl = unsafeWindow.location.href;
-    return config
-      .filter((entry) => entry.urlPattern.test(currentUrl))
-      .map((entry) => entry.rule);
-  }
-
   private onDomReady(callback: () => void) {
     if (
       document.readyState === "complete" ||
@@ -467,14 +322,7 @@ export class PageInjector {
   }
 
   private async waitForBiliEnvironment(): Promise<void> {
-    return new Promise((resolve) => {
-      const check = () => {
-        const win = unsafeWindow as any;
-        if (win.__VUE__) resolve();
-        else setTimeout(check, 50);
-      };
-      check();
-    });
+    await waitUntil(() => Boolean((unsafeWindow as any).__VUE__));
   }
 }
 

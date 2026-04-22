@@ -13,18 +13,20 @@
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true,
     "noImplicitReturns": true,
-
     /* 构建优化 */
     "jsx": "preserve",
     "sourceMap": true,
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "noEmit": true,                  // 交给 Vite 处理输出
-    "isolatedModules": true,         // Vite/esbuild 必须开启
-    "verbatimModuleSyntax": true,    // 更好的类型导入管理
+    "noEmit": true, // 交给 Vite 处理输出
+    "isolatedModules": true, // Vite/esbuild 必须开启
+    "verbatimModuleSyntax": true, // 更好的类型导入管理
 
     /* 模块解析 */
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "allowImportingTsExtensions": true,
     "allowJs": true,
     "checkJs": false

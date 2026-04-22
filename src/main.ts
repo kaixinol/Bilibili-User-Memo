@@ -1,18 +1,19 @@
 import Alpine from "alpinejs";
 import persist from "@alpinejs/persist";
-import { initMainPanel } from "./ui/panel";
-import { initPageInjection } from "./core/injection/injector";
+import { initMainPanel } from "@/features/panel/panel";
+import { initPageInjection } from "@/core/injection/injector";
 import { unsafeWindow, GM_registerMenuCommand } from "$";
 import {
   getPanelPreloadAllCards,
   setPanelPreloadAllCards,
-} from "./ui/user-list-store";
+} from "@/features/panel/user-list-store";
 import {
   disablePageScope,
   enablePageScope,
   getCurrentPageScopePattern,
   isCurrentPageDisabled,
-} from "./core/store/page-disable-storage";
+} from "@/core/store/page-disable-storage";
+import { showAlert } from "@/features/panel/dialogs";
 
 (async () => {
   Alpine.plugin(persist);
@@ -60,7 +61,7 @@ import {
 
       userList?.setPreloadAllCards?.(next);
 
-      alert(
+      showAlert(
         next
           ? "已开启默认预注入全部卡片。当前页面会尽量立即生效。"
           : "已关闭默认预注入全部卡片。未打开面板前将延后加载列表。",
@@ -76,7 +77,7 @@ import {
   // 👉 先注册 debugger（关键修复点）
   if (__IS_DEBUG__) {
     console.debug("调试模式已启用");
-    const mod = await import("./ui/debug/debugger");
+    const mod = await import("@/features/debugger/debugger");
     mod.initDebugger(); // 这里会 Alpine.data("monkeyApp")
   }
 

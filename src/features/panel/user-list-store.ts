@@ -1,19 +1,22 @@
 import Alpine from "alpinejs";
-import { GM_getValue, GM_setValue } from "$";
-import { userStore } from "../core/store/store";
-import type { BiliUser } from "../core/types";
+import { userStore } from "@/core/store/store";
+import type { BiliUser } from "@/core/types";
 import {
   exportUsersAsJson,
   fetchLatestProfiles,
   readImportUsersFromDialog,
 } from "./user-list-io";
-import { getSearchForms, matchesChineseSearch } from "../utils/chinese-search";
+import { getSearchForms, matchesChineseSearch } from "@/utils/chinese-search";
+import { getGmValue, setGmValue } from "@/utils/gm-storage";
+import { afterFramesAndIdle, delay } from "@/utils/scheduler";
+import { showAlert } from "./dialogs";
 
 export interface UserListStore {
   isOpen: boolean;
   users: BiliUser[];
   readonly filteredUsers: BiliUser[];
   isDark: boolean;
+  fuzzySearchEnabled: boolean;
   preloadAllCards: boolean;
   isUsersLoading: boolean;
   hasLoadedUsers: boolean;
@@ -32,6 +35,7 @@ export interface UserListStore {
   invertSelection(ids: string[]): void;
   removeSelected(): void;
   setDisplayMode(mode: number): void;
+  setFuzzySearchEnabled(next: boolean): void;
   setOpen(next: boolean): void;
   setPreloadAllCards(next: boolean): void;
   ensureUsersLoaded(): Promise<void>;
@@ -43,27 +47,62 @@ export interface UserListStore {
 interface InternalUserListStore extends UserListStore {
   _usersMap: Map<string, BiliUser>;
   _usersList: BiliUser[];
-  replaceUsersSnapshot(users: BiliUser[]): void;
-  clearUsersSnapshot(): void;
+  syncUsersSnapshot(users: BiliUser[]): void;
+  resetUsersSnapshot(): void;
 }
 
 const PRELOAD_ALL_CARDS_KEY = "panelPreloadAllCards";
 const FUZZY_SEARCH_KEY = "panelFuzzySearch";
 
 export function getPanelPreloadAllCards(): boolean {
-  return GM_getValue<boolean>(PRELOAD_ALL_CARDS_KEY, true);
+  return getGmValue<boolean>(PRELOAD_ALL_CARDS_KEY, true);
 }
 
 export function setPanelPreloadAllCards(value: boolean) {
-  GM_setValue(PRELOAD_ALL_CARDS_KEY, value);
+  setGmValue(PRELOAD_ALL_CARDS_KEY, value);
 }
 
 export function getPanelFuzzySearch(): boolean {
-  return GM_getValue<boolean>(FUZZY_SEARCH_KEY, false);
+  return getGmValue<boolean>(FUZZY_SEARCH_KEY, false);
 }
 
 export function setPanelFuzzySearch(value: boolean) {
-  GM_setValue(FUZZY_SEARCH_KEY, value);
+  setGmValue(FUZZY_SEARCH_KEY, value);
+}
+
+function syncUsersSnapshot(store: InternalUserListStore, users: BiliUser[]) {
+  const nextIds = new Set(users.map((user) => user.id));
+
+  for (const id of Array.from(store._usersMap.keys())) {
+    if (!nextIds.has(id)) {
+      store._usersMap.delete(id);
+    }
+  }
+
+  const nextList: BiliUser[] = [];
+  users.forEach((user) => {
+    const existing = store._usersMap.get(user.id);
+    if (existing) {
+      existing.nickname = user.nickname;
+      existing.avatar = user.avatar;
+      existing.memo = user.memo;
+      nextList.push(existing);
+      return;
+    }
+
+    const reactiveUser = Alpine.reactive({ ...user });
+    store._usersMap.set(reactiveUser.id, reactiveUser);
+    nextList.push(reactiveUser);
+  });
+
+  store._usersList.splice(0, store._usersList.length, ...nextList);
+
+  if (store.selectedIds.length === 0) return;
+  store.selectedIds = store.selectedIds.filter((id) => nextIds.has(id));
+}
+
+async function waitForUsersSnapshotIdle() {
+  await afterFramesAndIdle(2, 300);
 }
 
 export function registerUserStore() {
@@ -83,22 +122,18 @@ export function registerUserStore() {
     getUserById(id: string) {
       return this._usersMap.get(id);
     },
-    replaceUsersSnapshot(users: BiliUser[]) {
-      this.clearUsersSnapshot();
-      users.forEach((user) => {
-        const reactiveUser = Alpine.reactive({ ...user });
-        this._usersMap.set(reactiveUser.id, reactiveUser);
-        this._usersList.push(reactiveUser);
-      });
+    syncUsersSnapshot(users: BiliUser[]) {
+      syncUsersSnapshot(this, users);
     },
-    clearUsersSnapshot() {
+    resetUsersSnapshot() {
       this._usersMap.clear();
       this._usersList.length = 0;
     },
     removeUser(userId: string) {
       userStore.removeUser(userId);
     },
-    isDark: GM_getValue<boolean>("isDark", false),
+    isDark: getGmValue<boolean>("isDark", false),
+    fuzzySearchEnabled: getPanelFuzzySearch(),
     preloadAllCards,
     isUsersLoading: false,
     hasLoadedUsers: shouldPreloadImmediately,
@@ -111,19 +146,23 @@ export function registerUserStore() {
     selectedIds: [],
 
     get filteredUsers() {
-      if (!this.searchQuery || !this.searchQuery.trim()) {
+      const query = this.searchQuery.trim();
+      if (!query) {
         return this._usersList;
       }
 
-      const queryForms = getSearchForms(this.searchQuery);
+      const queryForms = getSearchForms(query);
       if (!queryForms.raw) return this._usersList;
 
-      const enableFuzzy = getPanelFuzzySearch();
       return this._usersList.filter((user) => {
         return (
-          String(user.id || "").includes(this.searchQuery) ||
-          matchesChineseSearch(user.nickname, queryForms, enableFuzzy) ||
-          matchesChineseSearch(user.memo, queryForms, enableFuzzy)
+          String(user.id || "").includes(query) ||
+          matchesChineseSearch(
+            user.nickname,
+            queryForms,
+            this.fuzzySearchEnabled,
+          ) ||
+          matchesChineseSearch(user.memo, queryForms, this.fuzzySearchEnabled)
         );
       });
     },
@@ -165,6 +204,12 @@ export function registerUserStore() {
     setDisplayMode(mode: number) {
       userStore.setDisplayMode(mode);
     },
+    setFuzzySearchEnabled(next: boolean) {
+      const shouldEnable = Boolean(next);
+      if (shouldEnable === this.fuzzySearchEnabled) return;
+      this.fuzzySearchEnabled = shouldEnable;
+      setPanelFuzzySearch(shouldEnable);
+    },
 
     setOpen(next: boolean) {
       const shouldOpen = Boolean(next);
@@ -181,14 +226,14 @@ export function registerUserStore() {
 
       if (shouldPreload) {
         if (this.hasLoadedUsers) return;
-        this.replaceUsersSnapshot(userStore.getUsers());
+        this.syncUsersSnapshot(userStore.getUsers());
         this.hasLoadedUsers = true;
         this.isUsersLoading = false;
         return;
       }
 
       if (this.isOpen) return;
-      this.clearUsersSnapshot();
+      this.resetUsersSnapshot();
       this.hasLoadedUsers = false;
       this.isUsersLoading = false;
     },
@@ -197,34 +242,12 @@ export function registerUserStore() {
       if (this.hasLoadedUsers || this.isUsersLoading) return;
       this.isUsersLoading = true;
 
-      await new Promise<void>((resolve) => {
-        window.requestAnimationFrame(() => resolve());
-      });
-      await new Promise<void>((resolve) => {
-        window.requestAnimationFrame(() => resolve());
-      });
-      await new Promise<void>((resolve) => {
-        const ric =
-          (window as Window & {
-            requestIdleCallback?: (
-              callback: () => void,
-              options?: { timeout: number },
-            ) => number;
-          }).requestIdleCallback;
-        if (!ric) {
-          window.setTimeout(resolve, 0);
-          return;
-        }
-        ric(() => resolve(), { timeout: 300 });
-      });
+      await waitForUsersSnapshotIdle();
 
       const latestUsers = userStore.getUsers();
-      this.replaceUsersSnapshot(latestUsers);
+      this.syncUsersSnapshot(latestUsers);
       this.hasLoadedUsers = true;
       this.isUsersLoading = false;
-      if (this.selectedIds.length === 0) return;
-      const userIds = new Set(latestUsers.map((u) => u.id));
-      this.selectedIds = this.selectedIds.filter((id) => userIds.has(id));
     },
 
     async refreshData() {
@@ -233,34 +256,38 @@ export function registerUserStore() {
       this.refreshCurrent = 0;
       this.refreshTotal = this._usersList.length;
 
-      const profiles = await fetchLatestProfiles(this.users, () => {
-        this.refreshCurrent++;
-      });
-      userStore.updateUserProfiles(profiles);
-      setTimeout(() => {
+      try {
+        const profiles = await fetchLatestProfiles(this.users, () => {
+          this.refreshCurrent++;
+        });
+        userStore.updateUserProfiles(profiles);
+      } finally {
+        await delay(1000);
         this.isRefreshing = false;
-      }, 1000);
+      }
     },
 
     exportData() {
       exportUsersAsJson(this.users);
-      alert(`导出成功！\n已导出 ${this._usersList.length} 个用户的数据`);
+      showAlert(`导出成功！\n已导出 ${this._usersList.length} 个用户的数据`);
     },
 
     async importData() {
       const readResult = await readImportUsersFromDialog();
       if (readResult.status === "cancelled") return;
       if (readResult.status === "error") {
-        alert(readResult.message);
+        showAlert(readResult.message);
         return;
       }
 
       const result = userStore.upsertImportedUsers(readResult.users);
       if (result.added === 0 && result.updated === 0) {
-        alert("导入完成，但没有可应用的变更");
+        showAlert("导入完成，但没有可应用的变更");
         return;
       }
-      alert(`导入成功！\n新增：${result.added} 个用户\n更新：${result.updated} 个用户`);
+      showAlert(
+        `导入成功！\n新增：${result.added} 个用户\n更新：${result.updated} 个用户`,
+      );
     },
   };
 
@@ -269,12 +296,12 @@ export function registerUserStore() {
   const reactiveStore = Alpine.store("userList") as InternalUserListStore;
 
   if (shouldPreloadImmediately) {
-    reactiveStore.replaceUsersSnapshot(userStore.getUsers());
+    reactiveStore.syncUsersSnapshot(userStore.getUsers());
   }
 
   const syncUsers = (users: BiliUser[]) => {
     if (!reactiveStore.hasLoadedUsers) return;
-    reactiveStore.replaceUsersSnapshot(users);
+    reactiveStore.syncUsersSnapshot(users);
   };
 
   userStore.subscribe((change) => {

@@ -3,7 +3,7 @@ import type {
   DynamicPageRule,
   PageRule,
   PollingPageRule,
-} from "../../configs/rules";
+} from "@/core/rules/rules";
 import { querySelectorAllDeep } from "query-selector-shadow-dom";
 
 function readPreferredText(node: HTMLElement | null): string | null {

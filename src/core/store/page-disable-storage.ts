@@ -1,4 +1,4 @@
-import { GM_getValue, GM_setValue } from "$";
+import { getGmValue, setGmValue } from "../../utils/gm-storage";
 
 const DISABLED_PAGE_SCOPES_KEY = "disabledPageScopes";
 
@@ -21,7 +21,7 @@ function normalizeTargetUrl(rawUrl: string): string {
 }
 
 function loadDisabledPageScopes(): string[] {
-  const raw = GM_getValue<unknown>(DISABLED_PAGE_SCOPES_KEY, []);
+  const raw = getGmValue<unknown>(DISABLED_PAGE_SCOPES_KEY, []);
   if (!Array.isArray(raw)) return [];
 
   const seen = new Set<string>();
@@ -39,7 +39,7 @@ function loadDisabledPageScopes(): string[] {
 }
 
 function saveDisabledPageScopes(patterns: string[]) {
-  GM_setValue(DISABLED_PAGE_SCOPES_KEY, patterns);
+  setGmValue(DISABLED_PAGE_SCOPES_KEY, patterns);
 }
 
 export function getCurrentPageScopePattern(rawUrl = window.location.href): string {

@@ -1,6 +1,8 @@
 import { defineConfig } from "vite";
 import { visualizer } from "rollup-plugin-visualizer";
 import monkey, { cdn } from "vite-plugin-monkey";
+import { browserslistToTargets } from 'lightningcss';
+import browserslist from 'browserslist';
 export default defineConfig(({ mode }) => {
   const isDebug = mode === "debug";
 
@@ -59,42 +61,54 @@ export default defineConfig(({ mode }) => {
 
       terserOptions: isDebug
         ? {
-            compress: false,
-            mangle: false,
-            format: {
-              beautify: true,
-              comments: "all",
-            },
-          }
+          compress: false,
+          mangle: false,
+          format: {
+            beautify: true,
+            comments: "all",
+          },
+        }
         : {
-            compress: {
-              // 基础清理
-              unused: true,
-              dead_code: true,
-              drop_debugger: true,
-              passes: 2,
+          compress: {
+            // 基础清理
+            unused: true,
+            dead_code: true,
+            drop_debugger: true,
+            passes: 2,
 
-              // 安全结构优化
-              hoist_funs: true, // 函数提升
-              hoist_vars: false, // 避免影响可读性
-              collapse_vars: true,
-              reduce_vars: true,
-              evaluate: true,
-              booleans: true,
-              conditionals: true,
-              sequences: false, // ❗ 保持语句可读
-              inline: 1, // 仅简单内联
-            },
-
-            mangle: false, // GF 友好：保留变量名
-
-            format: {
-              beautify: false,
-              comments: /^\s*(@|==UserScript==|==\/UserScript==)/,
-            },
+            // 安全结构优化
+            hoist_funs: true, // 函数提升
+            hoist_vars: false, // 避免影响可读性
+            collapse_vars: true,
+            reduce_vars: true,
+            evaluate: true,
+            booleans: true,
+            conditionals: true,
+            sequences: false, // ❗ 保持语句可读
+            inline: 1, // 仅简单内联
           },
 
-      cssMinify: !isDebug,
+          mangle: false, // GF 友好：保留变量名
+
+          format: {
+            beautify: false,
+            comments: /^\s*(@|==UserScript==|==\/UserScript==)/,
+          },
+        },
+
+      cssMinify: isDebug ? false : "lightningcss",
     },
+    css: {
+      transformer: 'lightningcss',
+      lightningcss: {
+        targets: browserslistToTargets(browserslist()),
+        drafts: {
+          customMedia: true
+        },
+        unusedSymbols: [],
+      }
+    }
   };
 });
+const targets = browserslistToTargets(browserslist());
+console.log('LightningCSS Targets:', targets);

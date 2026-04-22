@@ -36,12 +36,18 @@ importers:
       '@types/alpinejs':
         specifier: ^3.13.11
         version: 3.13.11
+      '@types/alpinejs__persist':
+        specifier: ^3.13.4
+        version: 3.13.4
       '@types/node':
         specifier: ^25.6.0
         version: 25.6.0
       '@types/opencc-js':
         specifier: ^1.0.3
         version: 1.0.3
+      '@types/query-selector-shadow-dom':
+        specifier: ^1.0.4
+        version: 1.0.4
       '@types/tampermonkey':
         specifier: ^5.0.5
         version: 5.0.5
@@ -51,12 +57,18 @@ importers:
       '@typescript-eslint/parser':
         specifier: ^8.59.0
         version: 8.59.0(eslint@10.2.1(jiti@2.6.1))(typescript@5.9.3)
+      browserslist:
+        specifier: ^4.28.2
+        version: 4.28.2
       eslint:
         specifier: ^10.2.1
         version: 10.2.1(jiti@2.6.1)
       eslint-plugin-compat:
         specifier: ^7.0.1
         version: 7.0.1(eslint@10.2.1(jiti@2.6.1))
+      lightningcss:
+        specifier: ^1.32.0
+        version: 1.32.0
       rollup-plugin-visualizer:
         specifier: ^7.0.1
         version: 7.0.1(rolldown@1.0.0-rc.16)(rollup@4.59.0)
@@ -644,6 +656,9 @@ packages:
   '@types/alpinejs@3.13.11':
     resolution: {integrity: sha512-3KhGkDixCPiLdL3Z/ok1GxHwLxEWqQOKJccgaQL01wc0EVM2tCTaqlC3NIedmxAXkVzt/V6VTM8qPgnOHKJ1MA==}
 
+  '@types/alpinejs__persist@3.13.4':
+    resolution: {integrity: sha512-H+cW7294EV5fGmIGD3BCJme54//KyWxZcP4uI9pk6W7fECR5hEwdO7j7wogz0o4vapS/kXiXiAjuqC9F+W0Vpw==}
+
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
 
@@ -667,6 +682,9 @@ packages:
 
   '@types/opencc-js@1.0.3':
     resolution: {integrity: sha512-TENp7YkI2hNlc4dplhivSHj0hU4DORCK56VY7rniaSfA5f87uD3uv+kPIRuH9h64TGv976iVFi4gEHZZtS2y8Q==}
+
+  '@types/query-selector-shadow-dom@1.0.4':
+    resolution: {integrity: sha512-8jfGPD0wCMCdyBvrvOrWVn8bHL1UEjkPVJKsqNZpEXp+a7mIIvvGpJMd6n6dlNl7IkG2ryxIVqFI516RPE0uhQ==}
 
   '@types/tampermonkey@5.0.5':
     resolution: {integrity: sha512-ZWitwJH4T/jcQiynhc3I5DNiwlsDzVTKPXg6A8ltTw3SDuf0b00bNRSV0Z/yldnhhBi9e8g8vY/X3LVSQcaCKQ==}
@@ -2376,6 +2394,10 @@ snapshots:
 
   '@types/alpinejs@3.13.11': {}
 
+  '@types/alpinejs__persist@3.13.4':
+    dependencies:
+      '@types/alpinejs': 3.13.11
+
   '@types/chai@5.2.3':
     dependencies:
       '@types/deep-eql': 4.0.2
@@ -2396,6 +2418,8 @@ snapshots:
       undici-types: 7.19.2
 
   '@types/opencc-js@1.0.3': {}
+
+  '@types/query-selector-shadow-dom@1.0.4': {}
 
   '@types/tampermonkey@5.0.5': {}
 
@@ -2712,8 +2736,7 @@ snapshots:
 
   define-lazy-prop@3.0.0: {}
 
-  detect-libc@2.1.2:
-    optional: true
+  detect-libc@2.1.2: {}
 
   doiuse@6.0.6:
     dependencies:
@@ -3135,7 +3158,6 @@ snapshots:
       lightningcss-linux-x64-musl: 1.32.0
       lightningcss-win32-arm64-msvc: 1.32.0
       lightningcss-win32-x64-msvc: 1.32.0
-    optional: true
 
   lines-and-columns@1.2.4: {}
 

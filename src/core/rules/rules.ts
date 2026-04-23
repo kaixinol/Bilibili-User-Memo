@@ -159,7 +159,6 @@ const rawConfig = [
       injectMode: InjectionMode.Static,
       styleScope: StyleScope.Editable,
       aSelector: ".nickname",
-      fontSize: "24px",
     },
   },
   {

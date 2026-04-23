@@ -9,6 +9,7 @@ import { ensureStylesForElement } from "../style/style-manager";
 import { logger } from "@/utils/logger";
 import { syncElementMeta, syncRenderedNodeState } from "./rendered-node";
 import { markOwnedElement } from "../dom/owned-node";
+import { fontSizeCache } from "@/utils/cache";
 
 // ✅ 核心优化：使用 WeakMap 建立 "B站原元素" -> "我们注入的元素" 的映射
 // 这样可以避免重复创建 DOM，也能防止内存泄漏（当 B 站元素被回收时，我们的记录也会自动回收）
@@ -118,8 +119,14 @@ function renderEditable(
     isEditableWrapper: true,
   });
 
+  // 3. 设置字体大小（优先级：规则配置 > 自动检测 > CSS 默认值）
   if (rule.fontSize) {
     wrapper.style.setProperty("--custom-font-size", rule.fontSize);
+  } else if (!wrapper.dataset.autoDetectedFontSize) {
+    // 仅在规则未指定且尚未检测时，使用缓存检测
+    const detectedSize = fontSizeCache.getOrDetect(el);
+    wrapper.style.setProperty("--auto-detected-font-size", detectedSize);
+    wrapper.dataset.autoDetectedFontSize = "true";
   }
 
   syncElementMeta(wrapper, meta);

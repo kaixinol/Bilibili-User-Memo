@@ -24,9 +24,10 @@
   opacity: 0.85;
 }
 
-/* hover 状态 */
+/* hover 状态 - 使用 color-mix 动态提亮背景色，适配所有主题 */
 .editable-textarea:hover {
-  background: var(--glass);
+  opacity: 1;
+  background: color-mix(in srgb, var(--memo-textarea-bg), white 20%);
 }
 
 .bili-memo-tag {

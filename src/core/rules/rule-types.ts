@@ -46,7 +46,6 @@ type SelectorShape =
 type RuleBase = SelectorShape & {
   name: string;
   styleScope: StyleScope;
-  fontSize?: string;
   textSource: RuleTextSource;
   ignoreProcessed: boolean;
   matchByName: boolean;
@@ -112,7 +111,6 @@ const StaticRuleSchema = pipe(
     injectMode: literal(InjectionMode.Static),
     ...selectorEntries,
     textSource: optional(literal("self")),
-    fontSize: optional(string()),
   }),
   check(
     (rule) => Boolean(rule.aSelector || rule.textSelector),
@@ -127,7 +125,6 @@ const DynamicRuleSchema = pipe(
     injectMode: literal(InjectionMode.Dynamic),
     ...selectorEntries,
     textSource: optional(union([literal("self"), literal("watch")])),
-    fontSize: optional(string()),
     trigger: triggerSchema,
     dynamicWatch: optional(boolean()),
     matchByName: optional(boolean()),
@@ -149,7 +146,6 @@ const PollingRuleSchema = pipe(
     injectMode: literal(InjectionMode.Polling),
     ...selectorEntries,
     textSource: optional(union([literal("self"), literal("watch")])),
-    fontSize: optional(string()),
     trigger: triggerSchema,
     ignoreProcessed: optional(boolean()),
     matchByName: optional(boolean()),
@@ -183,7 +179,6 @@ type RawRuleBase = Omit<RawRule, "injectMode" | "trigger">;
 type NormalizedRuleBase = {
   name: string;
   styleScope: StyleScope;
-  fontSize?: string;
 } & SelectorShape;
 
 function normalizeSelectors(
@@ -210,7 +205,6 @@ function normalizeRuleBase(rawRule: RawRuleBase): NormalizedRuleBase {
     name: rawRule.name,
     styleScope: rawRule.styleScope,
     ...normalizeSelectors(rawRule),
-    ...(rawRule.fontSize !== undefined ? { fontSize: rawRule.fontSize } : {}),
   };
 }
 

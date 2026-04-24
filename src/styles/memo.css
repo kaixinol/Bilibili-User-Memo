@@ -1,6 +1,5 @@
 .editable-textarea {
-  /* 优先级：规则配置 > 自动检测 > 兜底默认值 */
-  font-size: var(--custom-font-size, var(--auto-detected-font-size, 13px));
+  font-size: var(--auto-detected-font-size, 13px);
   min-width: 2ch;
   color: var(--memo-textarea-color);
   margin-right: 8px;
@@ -35,23 +34,22 @@
   display: inline;
   vertical-align: middle;
   color: var(--memo-tag-color);
-  font-size: var(--custom-font-size, inherit);
+  font-size: inherit;
 }
 
 .bili-memo-input {
   background: var(--bg-main);
   border: 1px solid var(--primary-color);
 
-  /* 优先级：规则配置 > 自动检测 > 兜底默认值 */
-  font-size: var(--custom-font-size, var(--auto-detected-font-size, 13px));
+  font-size: var(--auto-detected-font-size, 13px);
   padding: 0 4px;
   margin-left: 4px;
   border-radius: 4px;
   outline: none;
   width: var(--memo-input-width, 60px);
   display: inline-block;
-  height: calc(var(--custom-font-size, var(--auto-detected-font-size, 14px)) + 6px);
-  line-height: calc(var(--custom-font-size, var(--auto-detected-font-size, 14px)) + 6px);
+  height: calc(var(--auto-detected-font-size, 14px) + 6px);
+  line-height: calc(var(--auto-detected-font-size, 14px) + 6px);
   vertical-align: middle;
   color: var(--memo-input-color);
 }

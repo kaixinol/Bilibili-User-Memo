@@ -32,7 +32,6 @@ interface DebugRule {
   styleScope: StyleScope;
   aSelector?: string;
   textSelector?: string;
-  fontSize?: string;
   textSource: "self" | "watch";
   ignoreProcessed: boolean;
   matchByName: boolean;
@@ -85,7 +84,6 @@ interface MonkeyApp {
   updateASelector(id: number, selector: string): void;
   updateTextSelector(id: number, selector: string): void;
   updateStyleScope(id: number, styleScope: number): void;
-  updateFontSize(id: number, fontSize: string): void;
   updateTriggerWatch(id: number, watch: string): void;
   updateTriggerInterval(id: number, interval: number): void;
   updateDynamicWatch(id: number, checked: boolean): void;
@@ -131,7 +129,6 @@ function cloneEntryAsDebugRule(
     styleScope: rule.styleScope,
     aSelector: rule.aSelector,
     textSelector: rule.textSelector,
-    fontSize: rule.fontSize,
     textSource: rule.textSource,
     ignoreProcessed: rule.ignoreProcessed,
     matchByName: rule.matchByName,
@@ -287,10 +284,6 @@ export function initDebugger() {
       updateStyleScope(id, styleScope) {
         const r = this.rules.find((x) => x.id === id);
         if (r) r.styleScope = styleScope;
-      },
-      updateFontSize(id, fontSize) {
-        const r = this.rules.find((x) => x.id === id);
-        if (r) r.fontSize = fontSize || undefined;
       },
       updateTriggerWatch(id, watch) {
         const r = this.rules.find((x) => x.id === id);

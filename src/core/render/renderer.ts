@@ -119,14 +119,10 @@ function renderEditable(
     isEditableWrapper: true,
   });
 
-  // 3. 设置字体大小（优先级：规则配置 > 自动检测 > CSS 默认值）
-  if (rule.fontSize) {
-    wrapper.style.setProperty("--custom-font-size", rule.fontSize);
-  } else if (!wrapper.dataset.autoDetectedFontSize) {
-    // 仅在规则未指定且尚未检测时，使用缓存检测
-    const detectedSize = fontSizeCache.getOrDetect(el);
+  // 3. 设置字体大小（使用自动检测，缓存高效）
+  const detectedSize = fontSizeCache.getOrDetect(el, rule);
+  if (detectedSize) {
     wrapper.style.setProperty("--auto-detected-font-size", detectedSize);
-    wrapper.dataset.autoDetectedFontSize = "true";
   }
 
   syncElementMeta(wrapper, meta);

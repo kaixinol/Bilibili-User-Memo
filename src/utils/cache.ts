@@ -1,4 +1,5 @@
 import { getGmValue, setGmValue } from "./gm-storage";
+import { logger } from "./logger";
 
 interface TimestampedRecord {
   timestamp: number;
@@ -53,21 +54,48 @@ export function withMemoryCache<Args extends unknown[], Result>(
 
 /**
  * 字体大小检测缓存
- * 使用元素的类名/ID组合作为缓存键，避免重复调用 getComputedStyle
+ * 使用规则的 aSelector + textSelector 组合作为缓存键，避免重复调用 getComputedStyle
  */
 class FontSizeCache {
   private cache = new Map<string, string>();
 
   /**
-   * 生成缓存键：基于元素的类名和ID
-   * 例如: "user-name.sub-name" 或 "#unique-id.class1.class2"
+   * 生成缓存键：基于规则的 aSelector 和 textSelector
+   * 
+   * 策略（按优先级）：
+   * 1. 优先使用 aSelector（锚点选择器，最稳定）
+   * 2. 其次使用 textSelector（文本选择器）
+   * 3. 最后使用元素的类名+ID组合作为后备
+   * 
+   * 示例：
+   * - aSelector=".user-name", textSelector=".nickname" → "a:.user-name|t:.nickname"
+   * - aSelector=".up-name" → "a:.up-name"
+   * - 无规则信息时 → "class:user.name" 或 "id:main.class:container"
    */
-  private generateCacheKey(element: HTMLElement): string {
-    const parts: string[] = [];
+  private generateCacheKey(element: HTMLElement, rule?: any): string {
+    // 如果提供了规则信息，优先使用规则的选择器
+    if (rule) {
+      const parts: string[] = [];
+      
+      if (rule.aSelector) {
+        parts.push(`a:${rule.aSelector}`);
+      }
+      
+      if (rule.textSelector) {
+        parts.push(`t:${rule.textSelector}`);
+      }
+      
+      if (parts.length > 0) {
+        return parts.join('|');
+      }
+    }
+    
+    // 回退方案：使用元素的类名和ID组合
+    const fallbackParts: string[] = [];
     
     // 添加 ID（如果存在）
     if (element.id) {
-      parts.push(`#${element.id}`);
+      fallbackParts.push(`id:${element.id}`);
     }
     
     // 添加类名（按字母排序以保证一致性）
@@ -77,29 +105,39 @@ class FontSizeCache {
         .filter(Boolean)
         .sort();
       if (classes.length > 0) {
-        parts.push(classes.join('.'));
+        fallbackParts.push(`class:${classes.join('.')}`);
       }
     }
     
-    // 如果既没有ID也没有类名，使用标签名作为后备
-    if (parts.length === 0) {
-      parts.push(element.tagName.toLowerCase());
+    // 如果既没有ID也没有类名，不再使用标签名，返回空字符串表示无法缓存
+    if (fallbackParts.length === 0) {
+      logger.debug('[FontCache]', element.tagName, '→', '(no cache key)');
+      return '';
     }
     
-    return parts.join('');
+    return fallbackParts.join('.');
   }
 
   /**
    * 获取或检测字体大小
    * @param element 目标元素
-   * @returns 计算后的字体大小（如 "14px"）
+   * @param rule 可选的规则对象，用于提取 aSelector/textSelector
+   * @returns 计算后的字体大小（如 "14px"），如果无法生成缓存键则返回 null
    */
-  getOrDetect(element: HTMLElement): string {
-    const cacheKey = this.generateCacheKey(element);
+  getOrDetect(element: HTMLElement, rule?: any): string | null {
+    const cacheKey = this.generateCacheKey(element, rule);
+    
+    // 如果无法生成有效的缓存键，直接检测但不缓存
+    if (!cacheKey) {
+      const computedStyle = getComputedStyle(element);
+      const fontSize = computedStyle.fontSize;
+      return fontSize;
+    }
     
     // 尝试从缓存读取
     const cached = this.cache.get(cacheKey);
     if (cached) {
+      logger.debug('[FontCache] ✓', cacheKey, '=', cached);
       return cached;
     }
     
@@ -109,25 +147,9 @@ class FontSizeCache {
     
     // 写入缓存
     this.cache.set(cacheKey, fontSize);
+    logger.debug('[FontCache] ✗', cacheKey, '→', fontSize);
     
     return fontSize;
-  }
-
-  /**
-   * 清除缓存（用于调试或强制刷新）
-   */
-  clear(): void {
-    this.cache.clear();
-  }
-
-  /**
-   * 获取缓存统计信息
-   */
-  getStats(): { size: number; keys: string[] } {
-    return {
-      size: this.cache.size,
-      keys: Array.from(this.cache.keys()),
-    };
   }
 }
 

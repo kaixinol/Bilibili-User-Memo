@@ -41,8 +41,7 @@ export function enterEditMode(targetElement: HTMLElement, user: BiliUser) {
   // 为了不破坏布局，我们隐藏目标元素，在同级插入 input
   const parent = targetElement.parentElement;
   if (!parent) return;
-  if (!__IS_DEBUG__)
-    targetElement.style.display = "none";
+  targetElement.style.display = "none";
   parent.insertBefore(input, targetElement.nextSibling);
   input.focus();
 

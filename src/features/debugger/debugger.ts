@@ -414,11 +414,17 @@ export function initDebugger() {
             logger.warn(`[Debugger] Invalid selector: ${sel}`);
             continue;
           }
+          
+          logger.debug(`[Debugger] Rule "${rule.name}" (${sel}): found ${elements.length} elements`);
+          
           for (const el of elements) {
             if (!(el instanceof HTMLElement)) continue;
 
             const rect = el.getBoundingClientRect();
-            if (rect.width <= 0 || rect.height <= 0) continue;
+            if (rect.width <= 0 || rect.height <= 0) {
+              logger.debug(`[Debugger] Skipping element with zero size:`, el.tagName, el.className, rect);
+              continue;
+            }
             
             // Set CSS custom property for color
             el.style.setProperty('--overlay-color', rule.color);

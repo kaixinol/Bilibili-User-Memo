@@ -59,17 +59,34 @@ import { UserType, createUser } from './utils'
 
 ```
 src/
-├── configs/      # 配置文件
 ├── core/         # 核心业务逻辑
-│   ├── dom/     # DOM 工具
-│   ├── injection/ # 注入逻辑
-│   ├── render/  # 渲染引擎
-│   ├── store/   # 数据存储
-│   └── style/   # 样式管理
-├── styles/       # CSS 样式
-├── ui/           # 用户界面
+│   ├── dom/      # DOM 操作工具（节点管理、文本处理、UID提取）
+│   ├── injection/ # 注入引擎（规则运行时、扫描调度、监听器）
+│   ├── render/   # 渲染引擎（DOM刷新、编辑器、渲染节点管理）
+│   ├── rules/    # 规则系统（规则类型定义、规则集合、Schema验证）
+│   ├── store/    # 数据存储（用户数据持久化、页面禁用状态、名称匹配）
+│   ├── style/    # 样式管理器（Constructable Stylesheets）
+│   └── types.ts  # 核心类型定义
+├── features/     # 功能模块
+│   ├── debugger/ # 调试器界面与逻辑
+│   └── panel/    # 控制面板（用户列表管理、自定义CSS、对话框）
+├── styles/       # CSS 样式文件
+│   ├── box.css           # 用户卡片样式
+│   ├── debugger.css      # 调试器界面样式
+│   ├── debugger-highlight.css # 调试高亮样式
+│   ├── global.css        # 全局样式与主题变量
+│   ├── memo.css          # 备注编辑器样式
+│   └── panel.css         # 控制面板样式
 ├── utils/        # 工具函数
-└── main.ts       # 入口文件
+│   ├── cache.ts          # 内存缓存管理
+│   ├── chinese-search.ts # 中文搜索优化
+│   ├── gm-storage.ts     # GM_* API 存储封装
+│   ├── limiter.ts        # 频率限制器
+│   ├── logger.ts         # 日志工具
+│   ├── scheduler.ts      # 任务调度器
+│   └── sign.ts           # 签名验证工具
+├── main.ts       # 入口文件（初始化与生命周期管理）
+└── vite-env.d.ts # Vite 类型声明
 ```
 
 ## 📋 提交规范

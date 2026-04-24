@@ -44,9 +44,13 @@
             title="左键自定义颜色&#10;右键自定义样式&#10;中键清除自定义样式"
             >自定义备注颜色</span
           >
-          <div class="color-preview"></div>
+          <div 
+            class="color-preview"
+            @click.stop="$refs.panelColorInput?.click()"
+          ></div>
 
           <input
+            x-ref="panelColorInput"
             type="color"
             class="ghost-color-picker"
             x-model="customFontColor"

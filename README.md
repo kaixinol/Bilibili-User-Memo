@@ -4,6 +4,8 @@
 
 原作者：[pxoxq](https://scriptcat.org/zh-CN/users/143794)
 
+代码仓库：<https://github.com/kaixinol/Bilibili-User-Memo>
+
 本文档根据当前 UI 代码生成，面向使用者说明面板与调试窗口的功能和操作方式。
 <details>
   <summary>兼容性说明</summary>

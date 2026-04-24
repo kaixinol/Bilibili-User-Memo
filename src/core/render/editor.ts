@@ -23,6 +23,12 @@ export function enterEditMode(targetElement: HTMLElement, user: BiliUser) {
   input.className = "bili-memo-input";
   input.placeholder = "输入备注...";
 
+  // 2. 继承字体大小：直接从 style 对象读取已设置的内联 CSS 变量（零开销）
+  const detectedFontSize = targetElement.style.getPropertyValue('--auto-detected-font-size');
+  if (detectedFontSize) {
+    input.style.setProperty('--auto-detected-font-size', detectedFontSize);
+  }
+
   // 动态宽度：最小 60px，每个字符约 14px
   const updateWidth = () => {
     const len = (input.value || "").replace(/[^\x00-\xff]/g, "xx").length; // 中文算2个宽
@@ -35,8 +41,8 @@ export function enterEditMode(targetElement: HTMLElement, user: BiliUser) {
   // 为了不破坏布局，我们隐藏目标元素，在同级插入 input
   const parent = targetElement.parentElement;
   if (!parent) return;
-  if(!__IS_DEBUG__)
-  targetElement.style.display = "none";
+  if (!__IS_DEBUG__)
+    targetElement.style.display = "none";
   parent.insertBefore(input, targetElement.nextSibling);
   input.focus();
 

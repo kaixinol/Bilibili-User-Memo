@@ -7,9 +7,8 @@ import allStyle from "@/styles/memo.css?inline";
 const GLOBAL_STYLE_SHEET = new CSSStyleSheet();
 GLOBAL_STYLE_SHEET.replaceSync(allStyle);
 
-// 用户自定义样式表
-const CUSTOM_MEMO_STYLE_SHEET = new CSSStyleSheet();
-CUSTOM_MEMO_STYLE_SHEET.replaceSync("");
+// 用户自定义样式表（初始为空）
+let CUSTOM_MEMO_STYLE_SHEET: CSSStyleSheet | null = null;
 
 const MEMO_STYLE_TARGET_SELECTOR =
   ".bili-memo-tag, .editable-textarea, .bili-memo-input";
@@ -21,13 +20,20 @@ const MEMO_STYLE_TARGET_SELECTOR =
 export function ensureMemoStyleSheets(root: Document | ShadowRoot) {
   const sheets = root.adoptedStyleSheets;
   const hasGlobal = sheets.includes(GLOBAL_STYLE_SHEET);
-  const hasCustom = sheets.includes(CUSTOM_MEMO_STYLE_SHEET);
+  
+  // 只有在有自定义 CSS 时才检查/插入自定义样式表
+  const hasCustom = CUSTOM_MEMO_STYLE_SHEET 
+    ? sheets.includes(CUSTOM_MEMO_STYLE_SHEET)
+    : true; // 如果没有自定义样式表，视为已满足
+  
   if (hasGlobal && hasCustom) return;
 
   // 使用 slice 创建副本以避免副作用，然后推入缺失的样式表
   const next = sheets.slice();
   if (!hasGlobal) next.push(GLOBAL_STYLE_SHEET);
-  if (!hasCustom) next.push(CUSTOM_MEMO_STYLE_SHEET);
+  if (!hasCustom && CUSTOM_MEMO_STYLE_SHEET) {
+    next.push(CUSTOM_MEMO_STYLE_SHEET);
+  }
   root.adoptedStyleSheets = next;
 }
 
@@ -52,7 +58,18 @@ export function setCustomMemoCss(css: string): {
   ruleCount: number;
 } {
   const nextCss = css ?? "";
+  
+  // 如果 CSS 为空且之前没有创建过样式表，直接返回
+  if (!nextCss.trim() && !CUSTOM_MEMO_STYLE_SHEET) {
+    return { ok: true, ruleCount: 0 };
+  }
+  
   try {
+    // 如果还没有创建样式表，先创建
+    if (!CUSTOM_MEMO_STYLE_SHEET) {
+      CUSTOM_MEMO_STYLE_SHEET = new CSSStyleSheet();
+    }
+    
     CUSTOM_MEMO_STYLE_SHEET.replaceSync(nextCss);
   } catch (error) {
     const message =
@@ -61,7 +78,7 @@ export function setCustomMemoCss(css: string): {
     return {
       ok: false,
       error: message,
-      ruleCount: CUSTOM_MEMO_STYLE_SHEET.cssRules.length,
+      ruleCount: CUSTOM_MEMO_STYLE_SHEET?.cssRules.length ?? 0,
     };
   }
 

@@ -53,6 +53,11 @@ interface DebuggerState {
   perfTimer: number | null;
   perfObserver: PerformanceObserver | null;
   perfRafId: number;
+  // Drag optimization state
+  dragRafId: number | null;
+  pendingLeft: number;
+  pendingTop: number;
+  containerElement: HTMLElement | null;
 }
 
 const state: DebuggerState = {
@@ -60,6 +65,10 @@ const state: DebuggerState = {
   perfTimer: null,
   perfObserver: null,
   perfRafId: 0,
+  dragRafId: null,
+  pendingLeft: 0,
+  pendingTop: 0,
+  containerElement: null,
 };
 
 interface MonkeyApp {
@@ -195,6 +204,13 @@ export function initDebugger() {
         this.setupObservers();
         this.scan();
         this.startPerformanceMonitor();
+        
+        // Cache container element reference and set initial position
+        state.containerElement = document.querySelector(".debugger-window") as HTMLElement | null;
+        if (state.containerElement) {
+          state.containerElement.style.left = `${this.left}px`;
+          state.containerElement.style.top = `${this.top}px`;
+        }
       },
 
       setupObservers() {
@@ -415,16 +431,11 @@ export function initDebugger() {
             continue;
           }
           
-          logger.debug(`[Debugger] Rule "${rule.name}" (${sel}): found ${elements.length} elements`);
-          
           for (const el of elements) {
             if (!(el instanceof HTMLElement)) continue;
 
             const rect = el.getBoundingClientRect();
-            if (rect.width <= 0 || rect.height <= 0) {
-              logger.debug(`[Debugger] Skipping element with zero size:`, el.tagName, el.className, rect);
-              continue;
-            }
+            if (rect.width <= 0 || rect.height <= 0) continue;
             
             // Set CSS custom property for color
             el.style.setProperty('--overlay-color', rule.color);
@@ -451,26 +462,45 @@ export function initDebugger() {
           this.dragging = true;
           this.offsetX = event.clientX - this.left;
           this.offsetY = event.clientY - this.top;
+          
+          // Cache container element for performance
+          state.containerElement = container;
         }
       },
 
       onPointerMove(event: PointerEvent) {
-        if (!this.dragging) return;
-        const container = document.querySelector(
-          ".debugger-window",
-        ) as HTMLElement | null;
-        const width = container?.offsetWidth ?? 340;
+        if (!this.dragging || !state.containerElement) return;
+        
+        // Throttle DOM updates using requestAnimationFrame
+        if (state.dragRafId !== null) return;
+        
+        const width = state.containerElement.offsetWidth;
         let newLeft = event.clientX - this.offsetX;
         let newTop = event.clientY - this.offsetY;
         const minLeft = 40 - width;
         const maxLeft = window.innerWidth - 40;
-        this.left = Math.max(minLeft, Math.min(maxLeft, newLeft));
-        this.top = Math.max(0, Math.min(window.innerHeight - 40, newTop));
+        
+        state.pendingLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
+        state.pendingTop = Math.max(0, Math.min(window.innerHeight - 40, newTop));
+        
+        state.dragRafId = window.requestAnimationFrame(() => {
+          // Directly manipulate DOM, bypassing Alpine.js reactivity
+          state.containerElement!.style.left = `${state.pendingLeft}px`;
+          state.containerElement!.style.top = `${state.pendingTop}px`;
+          state.dragRafId = null;
+        });
       },
 
       onPointerUp(event: PointerEvent) {
         this.dragging = false;
-        const container = document.querySelector(
+        
+        // Cancel pending animation frame
+        if (state.dragRafId !== null) {
+          window.cancelAnimationFrame(state.dragRafId);
+          state.dragRafId = null;
+        }
+        
+        const container = state.containerElement || document.querySelector(
           ".debugger-window",
         ) as HTMLElement;
         if (container && event.pointerId) {

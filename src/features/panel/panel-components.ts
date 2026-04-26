@@ -3,7 +3,8 @@ import type { BiliUser } from "@/core/types";
 import type { PanelPrefsStore } from "./panel-prefs";
 import type { UserListStore } from "./user-list-store";
 import { confirmDialog } from "./dialogs";
-
+import { logger } from "@/utils/logger";
+import { biliFixAPIReady } from "@/utils/compatibility";
 interface DisplayModeOption {
   value: number;
   label: string;
@@ -339,6 +340,21 @@ export function registerPanelComponents() {
     },
     blurInput() {
       getRef<HTMLInputElement>(this, "memoInput")?.blur();
+    },
+  }));
+
+  Alpine.data("uidFixLink", (uid: string) => ({
+    uid,
+    async init() {
+      let aElement = this.$el as HTMLAnchorElement;
+      const api = await biliFixAPIReady();
+      if (!api || !aElement.text.includes("账号已注销")) {
+        logger.debug(!api ? "未找到BiliFixAPI，UID链接功能将无法使用" : "此非账号已注销");
+        return;
+      }
+      const shortId = api.uidToShortId(this.uid);
+      aElement.href = `https://bilibili.com/list/${this.uid}`;
+      aElement.textContent = `账号已注销${shortId}`;
     },
   }));
 }

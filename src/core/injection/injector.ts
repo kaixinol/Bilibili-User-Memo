@@ -42,7 +42,7 @@ export class PageInjector {
 
   constructor() {
     logger.info("🚀 PageInjector 正在启动...");
-    userStore.refreshData();
+    // userStore.refreshData();
     userStore.subscribe((change) => this.handleStoreChange(change));
     document.addEventListener("visibilitychange", () =>
       this.handleVisibilityChange(),

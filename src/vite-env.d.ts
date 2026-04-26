@@ -20,4 +20,7 @@ declare global {
   interface Window {
     Alpine: typeof Alpine;
   }
+  interface WindowEventMap {
+    "biliFix:request-api": CustomEvent<(api: BiliFixAPI) => void>;
+  }
 }

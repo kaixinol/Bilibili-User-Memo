@@ -39,6 +39,8 @@
       target="_blank"
       class="user-nickname-link"
       x-text="currentUser?.nickname || user.id"
+      x-data="uidFixLink(user.id)"
+      x-init="init()"
     ></a>
   </div>
   <div class="user-note-section" x-data="memoEditor(user.id, currentUser?.memo || '')" x-effect="syncDraft()">

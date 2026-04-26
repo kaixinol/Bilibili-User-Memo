@@ -53,11 +53,21 @@ interface DebuggerState {
   perfTimer: number | null;
   perfObserver: PerformanceObserver | null;
   perfRafId: number;
-  // Drag optimization state
-  dragRafId: number | null;
-  pendingLeft: number;
-  pendingTop: number;
   containerElement: HTMLElement | null;
+  // Dynamic rule observers - map of watch selector to observer
+  dynamicObservers: Map<string, MutationObserver>;
+  // Polling timers - map of rule id to timer
+  pollingTimers: Map<number, number>;
+  // Pause scanning during drag
+  isDragging: boolean;
+  // Drag state for high-performance dragging
+  dragStartX: number;
+  dragStartY: number;
+  currentTranslateX: number;
+  currentTranslateY: number;
+  rafId: number | null;
+  // Cached container dimensions to avoid layout reads during drag
+  containerWidth: number;
 }
 
 const state: DebuggerState = {
@@ -65,26 +75,30 @@ const state: DebuggerState = {
   perfTimer: null,
   perfObserver: null,
   perfRafId: 0,
-  dragRafId: null,
-  pendingLeft: 0,
-  pendingTop: 0,
   containerElement: null,
+  dynamicObservers: new Map(),
+  pollingTimers: new Map(),
+  isDragging: false,
+  dragStartX: 0,
+  dragStartY: 0,
+  currentTranslateX: 0,
+  currentTranslateY: 0,
+  rafId: null,
+  containerWidth: 360,
 };
 
 interface MonkeyApp {
   selector: string;
   color: string;
-  left: number;
-  top: number;
-  dragging: boolean;
-  offsetX: number;
-  offsetY: number;
   rules: DebugRule[];
   nextId: number;
   perf: PerfStats;
   expandedRuleId: number | null;
   init(): void;
   setupObservers(): void;
+  setupDynamicObservers(): void;
+  setupPollingTimers(): void;
+  clearDynamicObservers(): void;
   addRule(): void;
   removeRule(id: number): void;
   toggleRule(id: number): void;
@@ -102,7 +116,6 @@ interface MonkeyApp {
   updateRuleColor(id: number, color: string): void;
   scan(): void;
   adoptStylesToShadowRoot(element: HTMLElement): void;
-  clearAllHighlights(): void;
   onPointerDown(event: PointerEvent): void;
   onPointerMove(event: PointerEvent): void;
   onPointerUp(event: PointerEvent): void;
@@ -176,14 +189,8 @@ export function initDebugger() {
     (): MonkeyApp => ({
       selector: "",
       color: "#1976d2",
-      left: window.innerWidth - 360,
-      top: 20,
-      dragging: false,
-      offsetX: 0,
-      offsetY: 0,
       rules: [],
       nextId: 1000,
-      // Note: observer, perfTimer, etc. are now in non-reactive state object
       perf: {
         fps: 0,
         longTasks: 0,
@@ -195,28 +202,40 @@ export function initDebugger() {
         for (let i = 0; i < defaultRules.length; i++) {
           this.rules.push(cloneEntryAsDebugRule(defaultRules[i], i));
         }
+
         window.addEventListener("pointerup", (e) => {
-          if (this.dragging) this.onPointerUp(e);
+          if (state.isDragging) this.onPointerUp(e);
         });
         window.addEventListener("pointermove", (e) => {
-          if (this.dragging) this.onPointerMove(e);
+          if (state.isDragging) this.onPointerMove(e);
         });
         this.setupObservers();
+        this.setupDynamicObservers();
+        this.setupPollingTimers();
         this.scan();
         this.startPerformanceMonitor();
-        
-        // Cache container element reference and set initial position
-        state.containerElement = document.querySelector(".debugger-window") as HTMLElement | null;
-        if (state.containerElement) {
-          state.containerElement.style.left = `${this.left}px`;
-          state.containerElement.style.top = `${this.top}px`;
-        }
+
+        // Set initial position after DOM is ready
+        requestAnimationFrame(() => {
+          state.containerElement = document.querySelector(".debugger-window") as HTMLElement | null;
+          if (state.containerElement) {
+            state.containerWidth = state.containerElement.offsetWidth || 360;
+            state.currentTranslateX = window.innerWidth - state.containerWidth - 40;
+            state.currentTranslateY = 20;
+            state.containerElement.style.transform = `translate(${state.currentTranslateX}px, ${state.currentTranslateY}px)`;
+          }
+        });
       },
 
       setupObservers() {
-        const debouncedScan = debounce(() => this.scan(), 200);
-        
+        const debouncedScan = debounce(() => {
+          if (state.isDragging) return;
+          this.scan();
+        }, 200);
+
         state.observer = new MutationObserver((mutations) => {
+          if (state.isDragging) return;
+
           // Skip mutations that affect the debugger window itself
           const hasDebuggerMutation = mutations.some((m) => {
             if (m.target instanceof HTMLElement && m.target.closest('.debugger-window')) {
@@ -231,11 +250,9 @@ export function initDebugger() {
             }
             return false;
           });
-          
-          if (hasDebuggerMutation) {
-            return;
-          }
-          
+
+          if (hasDebuggerMutation) return;
+
           debouncedScan();
         });
         
@@ -245,6 +262,97 @@ export function initDebugger() {
           childList: true,
           subtree: true,
         });
+      },
+
+      /**
+       * Setup dynamic observers for rules with Dynamic injection mode
+       */
+      setupDynamicObservers() {
+        // Clear existing dynamic observers
+        state.dynamicObservers.forEach(observer => observer.disconnect());
+        state.dynamicObservers.clear();
+
+        // Group dynamic rules by watch selector to avoid duplicate observers
+        const watchSelectors = new Set<string>();
+        this.rules.forEach(rule => {
+          if (rule.active && this.isDynamic(rule) && rule.trigger) {
+            watchSelectors.add(rule.trigger.watch);
+          }
+        });
+
+        // Create observers for each unique watch selector
+        watchSelectors.forEach(watchSelector => {
+          const debouncedScan = debounce(() => {
+            if (state.isDragging) return;
+            this.scan();
+          }, 200);
+
+          const observer = new MutationObserver((mutations) => {
+            if (state.isDragging) return;
+
+            // Skip mutations that affect the debugger window itself
+            const hasDebuggerMutation = mutations.some((m) => {
+              if (m.target instanceof HTMLElement && m.target.closest('.debugger-window')) {
+                return true;
+              }
+              if (m.addedNodes.length > 0) {
+                for (const node of Array.from(m.addedNodes)) {
+                  if (node instanceof HTMLElement && node.closest('.debugger-window')) {
+                    return true;
+                  }
+                }
+              }
+              return false;
+            });
+
+            if (hasDebuggerMutation) return;
+
+            debouncedScan();
+          });
+
+          const watchTarget = querySelectorAllDeep(watchSelector);
+          watchTarget.forEach(target => {
+            if (target instanceof HTMLElement) {
+              observer.observe(target, {
+                childList: true,
+                subtree: true,
+              });
+            }
+          });
+
+          state.dynamicObservers.set(watchSelector, observer);
+        });
+      },
+
+      /**
+       * Setup polling timers for rules with Polling injection mode
+       */
+      setupPollingTimers() {
+        // Clear existing polling timers
+        state.pollingTimers.forEach(timerId => clearInterval(timerId));
+        state.pollingTimers.clear();
+        
+        // Create timers for each active polling rule
+        this.rules.forEach(rule => {
+          if (rule.active && this.isPolling(rule) && rule.trigger) {
+            const intervalMs = (rule.trigger as PollingTriggerConfig).intervalMs;
+            const timerId = window.setInterval(() => {
+              if (state.isDragging) return;
+              this.scan();
+            }, intervalMs);
+            state.pollingTimers.set(rule.id, timerId);
+          }
+        });
+      },
+
+      /**
+       * Clear all dynamic observers and polling timers
+       */
+      clearDynamicObservers() {
+        state.dynamicObservers.forEach(observer => observer.disconnect());
+        state.dynamicObservers.clear();
+        state.pollingTimers.forEach(timerId => clearInterval(timerId));
+        state.pollingTimers.clear();
       },
 
       addRule() {
@@ -263,16 +371,22 @@ export function initDebugger() {
           active: true,
         });
         this.selector = "";
+        this.setupDynamicObservers();
+        this.setupPollingTimers();
         this.scan();
       },
       removeRule(id) {
         this.rules = this.rules.filter((r) => r.id !== id);
+        this.setupDynamicObservers();
+        this.setupPollingTimers();
         this.scan();
       },
       toggleRule(id) {
         const r = this.rules.find((x) => x.id === id);
         if (r) {
           r.active = !r.active;
+          this.setupDynamicObservers();
+          this.setupPollingTimers();
           this.scan();
         }
       },
@@ -303,7 +417,10 @@ export function initDebugger() {
       },
       updateTriggerWatch(id, watch) {
         const r = this.rules.find((x) => x.id === id);
-        if (r && r.trigger) r.trigger.watch = watch;
+        if (r && r.trigger) {
+          r.trigger.watch = watch;
+          this.setupDynamicObservers();
+        }
       },
       updateTriggerInterval(id, interval) {
         const r = this.rules.find((x) => x.id === id);
@@ -312,6 +429,8 @@ export function initDebugger() {
             (r.trigger as DynamicTriggerConfig).debounceMs = interval;
           } else {
             (r.trigger as PollingTriggerConfig).intervalMs = interval;
+            // Restart polling timer with new interval
+            this.setupPollingTimers();
           }
         }
       },
@@ -361,6 +480,8 @@ export function initDebugger() {
           delete r.dynamicWatch;
         }
 
+        this.setupDynamicObservers();
+        this.setupPollingTimers();
         this.scan();
       },
       updateRuleColor(id, color) {
@@ -377,7 +498,6 @@ export function initDebugger() {
       adoptStylesToShadowRoot(element: HTMLElement) {
         const shadowRoot = element.getRootNode();
         if (shadowRoot instanceof ShadowRoot && !adoptedShadowRoots.has(shadowRoot)) {
-          // Adopt the stylesheet to this ShadowRoot
           shadowRoot.adoptedStyleSheets = [
             ...shadowRoot.adoptedStyleSheets,
             highlightSheet,
@@ -386,38 +506,14 @@ export function initDebugger() {
         }
       },
 
-      /**
-       * Clear all highlights from the entire document including all Shadow DOMs
-       */
-      clearAllHighlights() {
-        // Clear highlights from main document
-        const highlightedElements = document.querySelectorAll('.debugger-highlight-active');
-        highlightedElements.forEach(el => {
-          if (el instanceof HTMLElement) {
-            el.classList.remove('debugger-highlight-active');
-            el.style.removeProperty('--overlay-color');
-          }
-        });
-
-        // Clear highlights from all Shadow DOMs using deep query
-        try {
-          const shadowHighlighted = querySelectorAllDeep('.debugger-highlight-active');
-          shadowHighlighted.forEach(el => {
-            if (el instanceof HTMLElement) {
-              el.classList.remove('debugger-highlight-active');
-              el.style.removeProperty('--overlay-color');
-            }
-          });
-        } catch (error) {
-          logger.warn('[Debugger] Failed to clear Shadow DOM highlights:', error);
-        }
-      },
-
       scan() {
-        // Step 1: Clear all existing highlights from entire document (including Shadow DOM)
-        this.clearAllHighlights();
-        
-        // Step 2: Apply new highlights
+        // Skip scanning while dragging to prevent performance issues
+        if (state.isDragging) return;
+
+        // Build a set of elements that should be highlighted
+        const shouldBeHighlighted = new Set<HTMLElement>();
+        const elementColorMap = new Map<HTMLElement, string>();
+
         for (const rule of this.rules) {
           if (!rule.active) continue;
           const sel = rule.aSelector?.trim();
@@ -430,23 +526,51 @@ export function initDebugger() {
             logger.warn(`[Debugger] Invalid selector: ${sel}`);
             continue;
           }
-          
+
           for (const el of elements) {
             if (!(el instanceof HTMLElement)) continue;
 
             const rect = el.getBoundingClientRect();
             if (rect.width <= 0 || rect.height <= 0) continue;
-            
-            // Set CSS custom property for color
-            el.style.setProperty('--overlay-color', rule.color);
-            
-            // Add highlight class
-            el.classList.add('debugger-highlight-active');
-            
+
+            shouldBeHighlighted.add(el);
+            elementColorMap.set(el, rule.color);
+
             // Ensure styles work in Shadow DOM by adopting stylesheet
             this.adoptStylesToShadowRoot(el);
           }
         }
+
+        // Remove highlight from elements that no longer need it
+        const currentlyHighlighted = document.querySelectorAll('.debugger-highlight-active');
+        currentlyHighlighted.forEach(el => {
+          if (el instanceof HTMLElement && !shouldBeHighlighted.has(el)) {
+            el.classList.remove('debugger-highlight-active');
+            el.style.removeProperty('--overlay-color');
+          }
+        });
+
+        // Also check Shadow DOM
+        try {
+          const shadowHighlighted = querySelectorAllDeep('.debugger-highlight-active');
+          shadowHighlighted.forEach(el => {
+            if (el instanceof HTMLElement && !shouldBeHighlighted.has(el)) {
+              el.classList.remove('debugger-highlight-active');
+              el.style.removeProperty('--overlay-color');
+            }
+          });
+        } catch (error) {
+          logger.warn('[Debugger] Failed to check Shadow DOM highlights:', error);
+        }
+
+        // Add/update highlight for elements that need it
+        shouldBeHighlighted.forEach(el => {
+          const color = elementColorMap.get(el);
+          if (color) {
+            el.style.setProperty('--overlay-color', color);
+            el.classList.add('debugger-highlight-active');
+          }
+        });
       },
 
       onPointerDown(event: PointerEvent) {
@@ -454,60 +578,66 @@ export function initDebugger() {
         if (target.closest("input, button, select, textarea")) return;
         const dragRegion = target.closest("[data-drag-region]");
         if (!dragRegion) return;
-        const container = document.querySelector(
-          ".debugger-window",
-        ) as HTMLElement;
-        if (container) {
-          container.setPointerCapture(event.pointerId);
-          this.dragging = true;
-          this.offsetX = event.clientX - this.left;
-          this.offsetY = event.clientY - this.top;
-          
-          // Cache container element for performance
-          state.containerElement = container;
-        }
+
+        const container = state.containerElement || document.querySelector(".debugger-window") as HTMLElement | null;
+        if (!container) return;
+
+        event.preventDefault();
+        container.setPointerCapture(event.pointerId);
+        state.isDragging = true;
+
+        // Record offset from current transform position
+        state.dragStartX = event.clientX - state.currentTranslateX;
+        state.dragStartY = event.clientY - state.currentTranslateY;
+
+        container.style.boxShadow = 'none';
       },
 
       onPointerMove(event: PointerEvent) {
-        if (!this.dragging || !state.containerElement) return;
-        
-        // Throttle DOM updates using requestAnimationFrame
-        if (state.dragRafId !== null) return;
-        
-        const width = state.containerElement.offsetWidth;
-        let newLeft = event.clientX - this.offsetX;
-        let newTop = event.clientY - this.offsetY;
-        const minLeft = 40 - width;
-        const maxLeft = window.innerWidth - 40;
-        
-        state.pendingLeft = Math.max(minLeft, Math.min(maxLeft, newLeft));
-        state.pendingTop = Math.max(0, Math.min(window.innerHeight - 40, newTop));
-        
-        state.dragRafId = window.requestAnimationFrame(() => {
-          // Directly manipulate DOM, bypassing Alpine.js reactivity
-          state.containerElement!.style.left = `${state.pendingLeft}px`;
-          state.containerElement!.style.top = `${state.pendingTop}px`;
-          state.dragRafId = null;
-        });
+        if (!state.isDragging || !state.containerElement) return;
+
+        let newX = event.clientX - state.dragStartX;
+        let newY = event.clientY - state.dragStartY;
+
+        // Boundary constraints (using cached width, no layout read)
+        const minX = 40 - state.containerWidth;
+        const maxX = window.innerWidth - 40;
+        const minY = 0;
+        const maxY = window.innerHeight - 40;
+
+        newX = Math.max(minX, Math.min(maxX, newX));
+        newY = Math.max(minY, Math.min(maxY, newY));
+
+        state.currentTranslateX = newX;
+        state.currentTranslateY = newY;
+
+        // Throttle with requestAnimationFrame
+        if (state.rafId === null) {
+          state.rafId = window.requestAnimationFrame(() => {
+            if (state.containerElement) {
+              state.containerElement.style.transform = `translate(${state.currentTranslateX}px, ${state.currentTranslateY}px)`;
+            }
+            state.rafId = null;
+          });
+        }
       },
 
       onPointerUp(event: PointerEvent) {
-        this.dragging = false;
-        
-        // Cancel pending animation frame
-        if (state.dragRafId !== null) {
-          window.cancelAnimationFrame(state.dragRafId);
-          state.dragRafId = null;
+        if (!state.containerElement) return;
+
+        if (state.rafId !== null) {
+          window.cancelAnimationFrame(state.rafId);
+          state.rafId = null;
         }
-        
-        const container = state.containerElement || document.querySelector(
-          ".debugger-window",
-        ) as HTMLElement;
-        if (container && event.pointerId) {
-          try {
-            container.releasePointerCapture(event.pointerId);
-          } catch {}
-        }
+
+        state.containerElement.style.transform = `translate(${state.currentTranslateX}px, ${state.currentTranslateY}px)`;
+        state.containerElement.style.boxShadow = '';
+
+        try {
+          state.containerElement.releasePointerCapture(event.pointerId);
+        } catch {}
+
+        state.isDragging = false;
       },
 
       startPerformanceMonitor() {

@@ -23,6 +23,13 @@
     -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   font-size: 13px;
   user-select: none;
+
+  /* Fallback position if JS fails */
+  left: 0;
+  top: 20px;
+
+  /* GPU acceleration for dragging */
+  will-change: transform;
 }
 
 .debugger-header {

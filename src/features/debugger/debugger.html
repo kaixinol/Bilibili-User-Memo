@@ -118,16 +118,6 @@
                 <span class="rule-detail-hint" x-text="styleScopeLabel(r.styleScope)"></span>
               </div>
               <div class="rule-detail-row">
-                <label>Font Size</label>
-                <input
-                  type="text"
-                  :value="r.fontSize || ''"
-                  @input="updateFontSize(r.id, $event.target.value)"
-                  class="debugger-input debugger-input-small"
-                  placeholder="如 16px"
-                />
-              </div>
-              <div class="rule-detail-row">
                 <label>Inject Mode</label>
                 <select
                   :value="r.injectMode"

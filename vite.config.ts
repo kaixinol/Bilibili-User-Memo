@@ -22,7 +22,7 @@ export default defineConfig(({ mode }) => {
           grant: [
             "GM_setValue",
             "GM_getValue",
-            "GM_xmlhttpRequest",
+            "GM.xmlHttpRequest",
             "GM_addValueChangeListener",
             "unsafeWindow",
             "GM_registerMenuCommand",

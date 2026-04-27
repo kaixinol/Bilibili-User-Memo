@@ -8,6 +8,7 @@ export interface BiliUser {
   nickname: string; // 抓取到的原始昵称
   avatar: string; // 头像 URL
   memo: string; // 用户备注
+  isDeleted?: boolean; // 账号是否已注销
 }
 
 /**

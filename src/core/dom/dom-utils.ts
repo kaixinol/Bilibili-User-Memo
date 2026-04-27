@@ -1,6 +1,6 @@
 import { querySelectorDeep } from "query-selector-shadow-dom";
 
-const DEFAULT_AVATAR_URL =
+export const DEFAULT_AVATAR_URL =
   "https://i0.hdslb.com/bfs/face/member/noface.jpg@96w_96h_1c_1s.avif";
 
 /**

@@ -1,4 +1,5 @@
 import type { BiliUser } from "../types";
+import { DEFAULT_AVATAR_URL } from "../dom/dom-utils";
 
 type RawUserRecord = Partial<BiliUser> & { bid?: unknown };
 
@@ -42,8 +43,9 @@ export function normalizeUserRecord(
   return {
     id,
     nickname,
-    avatar: String(record.avatar ?? ""),
+    avatar: String(record.avatar || DEFAULT_AVATAR_URL),
     memo,
+    isDeleted: record.isDeleted === true ? true : undefined,
   };
 }
 
@@ -61,3 +63,9 @@ export function normalizeUserCollection(
 
   return Array.from(users.values());
 }
+
+
+
+
+
+

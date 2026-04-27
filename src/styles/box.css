@@ -144,6 +144,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.user-nickname-link.is-deleted {
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  text-decoration: line-through;
+  opacity: 0.7;
+}
 
 /* 备注部分：靠近昵称 */
 .user-note-section {

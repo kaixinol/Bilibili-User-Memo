@@ -38,9 +38,11 @@
       :href="'https://space.bilibili.com/' + user.id"
       target="_blank"
       class="user-nickname-link"
+      :class="{ 'is-deleted': currentUser?.isDeleted }"
       x-text="currentUser?.nickname || user.id"
-      x-data="uidFixLink(user.id)"
+      x-data="uidFixLink(user.id, currentUser?.isDeleted)"
       x-init="!$el.dataset.biliFixApiProcessed && init()"
+      :title="currentUser?.isDeleted ? '该用户已标注为已注销' : (currentUser?.nickname || user.id)"
     ></a>
   </div>
   <div class="user-note-section" x-data="memoEditor(user.id, currentUser?.memo || '')" x-effect="syncDraft()">

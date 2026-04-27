@@ -3,11 +3,13 @@ import type { BiliUser } from "@/core/types";
 import { normalizeUserCollection } from "@/core/store/user-normalization";
 import { logger } from "@/utils/logger";
 import { getUserInfo } from "@/utils/sign";
+import { DEFAULT_AVATAR_URL } from "@/core/dom/dom-utils";
 
 interface UserProfile {
   id: string;
   nickname: string;
   avatar: string;
+  isDeleted?: boolean;
 }
 
 type ImportReadResult =
@@ -60,12 +62,25 @@ export async function readImportUsersFromDialog(): Promise<ImportReadResult> {
 }
 
 export function exportUsersAsJson(users: BiliUser[]) {
-  const exportData = users.map((user) => ({
-    id: user.id,
-    nickname: user.nickname,
-    avatar: user.avatar || "",
-    memo: user.memo || "",
-  }));
+  const exportData = users.map((user) => {
+    const data: Record<string, unknown> = {
+      id: user.id,
+      nickname: user.nickname,
+      memo: user.memo || "",
+    };
+    
+    // Only include avatar if it's not the default noface avatar
+    if (user.avatar && user.avatar !== DEFAULT_AVATAR_URL) {
+      data.avatar = user.avatar;
+    }
+    
+    // Only include isDeleted if it's true (deleted account)
+    if (user.isDeleted === true) {
+      data.isDeleted = true;
+    }
+    
+    return data;
+  });
   const jsonContent = JSON.stringify(exportData, null, 2);
   const blob = new Blob([jsonContent], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -89,6 +104,7 @@ export async function fetchLatestProfiles(
         id: user.id,
         nickname: newData.nickname,
         avatar: newData.avatar,
+        isDeleted: newData.isDeleted,
       });
     } catch (error) {
       logger.error(`刷新用户 [${user.id}] 失败:`, error);
@@ -99,3 +115,11 @@ export async function fetchLatestProfiles(
   await Promise.allSettled(tasks);
   return profiles;
 }
+
+
+
+
+
+
+
+

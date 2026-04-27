@@ -2,7 +2,7 @@
 import GM_fetch from "@trim21/gm-fetch";
 import { logger } from "./logger";
 import { withLimit } from "./limiter";
-
+import {DEFAULT_AVATAR_URL} from "@/core/dom/dom-utils";
 import {
   getFreshGmCache,
   setTimestampedGmCache,
@@ -95,6 +95,7 @@ interface WbiCache {
 interface UserInfo {
   readonly avatar: string;
   readonly nickname: string;
+  readonly isDeleted?: boolean;
 }
 
 // --- 工具函数 ---
@@ -204,7 +205,9 @@ async function _getUserInfo(mid: string): Promise<UserInfo> {
     const res = await response.json();
 
     if (res.code !== 0) {
-      throw new Error(`Bilibili API error: ${res.message}`);
+      logger.debug("getUserInfo failed", res, response);
+      if (res.code === -404) return {
+        nickname: "账号已注销", avatar: DEFAULT_AVATAR_URL, isDeleted: true };
     }
 
     return {

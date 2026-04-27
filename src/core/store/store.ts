@@ -1,6 +1,6 @@
 import { logger } from "../../utils/logger";
 import type { BiliUser } from "../types";
-import { getUserAvatar } from "../dom/dom-utils";
+import { getUserAvatar, DEFAULT_AVATAR_URL } from "../dom/dom-utils";
 import { GM_addValueChangeListener } from "$";
 import {
   DEFAULT_DISPLAY_MODE,
@@ -411,17 +411,30 @@ class UserStore {
         return;
       }
 
+      // Protect existing custom avatar from being overwritten by default avatar
+      let finalAvatar = incoming.avatar;
+      if (
+        incoming.avatar === DEFAULT_AVATAR_URL &&
+        existing.avatar !== DEFAULT_AVATAR_URL
+      ) {
+        finalAvatar = existing.avatar;
+      }
+
       if (
         existing.nickname === incoming.nickname &&
-        existing.avatar === incoming.avatar &&
-        existing.memo === incoming.memo
+        existing.avatar === finalAvatar &&
+        existing.memo === incoming.memo &&
+        existing.isDeleted === incoming.isDeleted
       ) {
         return;
       }
 
       existing.nickname = incoming.nickname;
-      existing.avatar = incoming.avatar;
+      existing.avatar = finalAvatar;
       existing.memo = incoming.memo;
+      if (incoming.isDeleted !== undefined) {
+        existing.isDeleted = incoming.isDeleted;
+      }
       updated++;
       changedIds.push(incoming.id);
     });
@@ -434,7 +447,7 @@ class UserStore {
   }
 
   public updateUserProfiles(
-    profiles: Array<{ id: string; nickname: string; avatar: string }>,
+    profiles: Array<{ id: string; nickname: string; avatar: string; isDeleted?: boolean }>,
   ): number {
     if (profiles.length === 0) return 0;
 
@@ -445,14 +458,29 @@ class UserStore {
     profiles.forEach((profile) => {
       const target = userMap.get(profile.id);
       if (!target) return;
+      
+      // Protect existing custom avatar from being overwritten by default avatar
+      let finalAvatar = profile.avatar;
+      if (
+        profile.avatar === DEFAULT_AVATAR_URL &&
+        target.avatar !== DEFAULT_AVATAR_URL
+      ) {
+        finalAvatar = target.avatar;
+      }
+      
       if (
         target.nickname === profile.nickname &&
-        target.avatar === profile.avatar
+        target.avatar === finalAvatar &&
+        target.isDeleted === profile.isDeleted
       ) {
         return;
       }
+      
       target.nickname = profile.nickname || target.nickname;
-      target.avatar = profile.avatar || target.avatar;
+      target.avatar = finalAvatar;
+      if (profile.isDeleted !== undefined) {
+        target.isDeleted = profile.isDeleted;
+      }
       updatedCount++;
       changedIds.push(profile.id);
     });

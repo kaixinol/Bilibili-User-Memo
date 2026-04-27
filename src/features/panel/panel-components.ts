@@ -350,8 +350,9 @@ export function registerPanelComponents() {
     }
   }));
 
-  Alpine.data("uidFixLink", (uid: string) => ({
+  Alpine.data("uidFixLink", (uid: string, isDeleted?: boolean) => ({
     uid,
+    isDeleted,
     async init() {
       const el = this.$el;
 
@@ -360,7 +361,7 @@ export function registerPanelComponents() {
 
       const api = await biliFixAPIReady();
 
-      if (!api || !el.textContent?.includes("账号已注销")) return;
+      if (!api || !this.isDeleted === true) return;
 
       api.annotateElements([el]);
     },

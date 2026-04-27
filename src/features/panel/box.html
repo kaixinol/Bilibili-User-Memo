@@ -55,6 +55,8 @@
       @blur="commit()"
       @keydown.enter.prevent="blurInput()"
       @keydown.escape.prevent="cancel(); blurInput()"
+      maxlength="24"
+      @input="handleInput($el)"
     />
   </div>
   <svg

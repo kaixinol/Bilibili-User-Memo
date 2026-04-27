@@ -21,22 +21,12 @@ export function enterEditMode(targetElement: HTMLElement, user: BiliUser) {
   input.type = "text";
   input.value = currentMemo;
   input.className = "bili-memo-input";
-  input.placeholder = "输入备注...";
-
-  // 2. 继承字体大小：直接从 style 对象读取已设置的内联 CSS 变量（零开销）
+  input.translate = false;
+  input.maxLength = 24;
   const detectedFontSize = targetElement.style.getPropertyValue('--auto-detected-font-size');
   if (detectedFontSize) {
     input.style.setProperty('--auto-detected-font-size', detectedFontSize);
   }
-
-  // 动态宽度：最小 60px，每个字符约 14px
-  const updateWidth = () => {
-    const len = (input.value || "").replace(/[^\x00-\xff]/g, "xx").length; // 中文算2个宽
-    input.style.width = `${Math.max(len * 8 + 20, 80)}px`;
-  };
-  updateWidth();
-  input.addEventListener("input", updateWidth);
-
   // 2. 挂载
   // 为了不破坏布局，我们隐藏目标元素，在同级插入 input
   const parent = targetElement.parentElement;
@@ -86,5 +76,19 @@ export function enterEditMode(targetElement: HTMLElement, user: BiliUser) {
 
   input.addEventListener("keydown", handleKeyDown);
   input.addEventListener("blur", () => saveAndExit(true)); // 失去焦点自动保存
-  input.addEventListener("click", (e) => e.stopPropagation()); // 防止冒泡触发跳转
+  input.addEventListener("click", (e) => e.stopPropagation());
+  function autoResize(input: HTMLInputElement) {
+    input.style.width = "0px";
+    input.style.width = input.scrollWidth + 1 + "px";
+  }
+
+  input.addEventListener("input", () => {
+    if (input.value.length >= input.maxLength) {
+      input.setCustomValidity("已达到最大长度：24 字符");
+      input.reportValidity();
+    } else {
+      input.setCustomValidity("");
+    } autoResize(input);
+  });
+  autoResize(input);
 }

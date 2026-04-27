@@ -341,6 +341,14 @@ export function registerPanelComponents() {
     blurInput() {
       getRef<HTMLInputElement>(this, "memoInput")?.blur();
     },
+    handleInput(input: HTMLInputElement) {
+      if (input.value.length >= input.maxLength) {
+        input.setCustomValidity("已达到最大长度：24 字符");
+        input.reportValidity();
+      } else {
+        input.setCustomValidity("");
+      }
+    }
   }));
 
   Alpine.data("uidFixLink", (uid: string) => ({

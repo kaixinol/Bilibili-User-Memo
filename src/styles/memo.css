@@ -40,14 +40,11 @@
 .bili-memo-input {
   background: var(--bg-main);
   border: 1px solid var(--primary-color);
-
   font-size: var(--auto-detected-font-size, 13px);
   padding: 0 4px;
   margin-left: 4px;
   border-radius: 4px;
   outline: none;
-  width: var(--memo-input-width, 60px);
-  display: inline-block;
   height: calc(var(--auto-detected-font-size, 14px) + 6px);
   line-height: calc(var(--auto-detected-font-size, 14px) + 6px);
   vertical-align: middle;

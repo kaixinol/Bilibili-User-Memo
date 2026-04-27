@@ -1,6 +1,3 @@
-/* Import shared highlight styles from standalone file */
-@import url('./debugger-highlight.css');
-
 /* Debugger Panel Styles */
 .debugger-window {
   position: fixed;
@@ -24,9 +21,9 @@
   font-size: 13px;
   user-select: none;
 
-  /* Fallback position if JS fails */
+  /* Position controlled entirely by JS transform */
   left: 0;
-  top: 20px;
+  top: 0;
 
   /* GPU acceleration for dragging */
   will-change: transform;

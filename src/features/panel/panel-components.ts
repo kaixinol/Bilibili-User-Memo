@@ -3,7 +3,6 @@ import type { BiliUser } from "@/core/types";
 import type { PanelPrefsStore } from "./panel-prefs";
 import type { UserListStore } from "./user-list-store";
 import { confirmDialog } from "./dialogs";
-import { logger } from "@/utils/logger";
 import { biliFixAPIReady } from "@/utils/compatibility";
 interface DisplayModeOption {
   value: number;
@@ -25,7 +24,7 @@ const DISPLAY_MODE_OPTIONS: DisplayModeOption[] = [
 
 let panelBindingsRegistered = false;
 let panelComponentsRegistered = false;
-
+const processedUID = new WeakSet<Element>();
 function getUserListStore(): UserListStore {
   return Alpine.store("userList") as UserListStore;
 }
@@ -354,15 +353,16 @@ export function registerPanelComponents() {
   Alpine.data("uidFixLink", (uid: string) => ({
     uid,
     async init() {
-      let aElement = this.$el as HTMLAnchorElement;
+      const el = this.$el;
+
+      if (processedUID.has(el)) return;
+      processedUID.add(el);
+
       const api = await biliFixAPIReady();
-      if (!api || !aElement.text.includes("账号已注销")) {
-        logger.debug(!api ? "未找到BiliFixAPI，UID链接功能将无法使用" : "此非账号已注销");
-        return;
-      }
-      const shortId = api.uidToShortId(this.uid);
-      aElement.href = `https://bilibili.com/list/${this.uid}`;
-      aElement.textContent = `账号已注销${shortId}`;
+
+      if (!api || !el.textContent?.includes("账号已注销")) return;
+
+      api.annotateElements([el]);
     },
   }));
 }

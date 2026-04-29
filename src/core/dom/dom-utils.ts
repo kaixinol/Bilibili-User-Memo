@@ -14,7 +14,7 @@ type AvatarRule = {
   attr: string;
 };
 export function getUserAvatarFromDOM(userID: string): string {
-  logger.debug(`Getting avatar for user ${userID}, called from: ${getCaller()}`); // FIXME: 为啥一直被误调用？
+  logger.debug(`Getting avatar for user ${userID}, called from: ${getCaller()}`);
 
   const rules: AvatarRule[] = [
     {

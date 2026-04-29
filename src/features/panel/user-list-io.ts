@@ -68,17 +68,17 @@ export function exportUsersAsJson(users: BiliUser[]) {
       nickname: user.nickname,
       memo: user.memo || "",
     };
-    
+
     // Only include avatar if it's not the default noface avatar
     if (user.avatar && user.avatar !== DEFAULT_AVATAR_URL) {
       data.avatar = user.avatar;
     }
-    
+
     // Only include isDeleted if it's true (deleted account)
-    if (user.isDeleted === true) {
+    if (user.isDeleted === true) { // QUESTION: isDeleted = True时，会不会忽略自定义头像
       data.isDeleted = true;
     }
-    
+
     return data;
   });
   const jsonContent = JSON.stringify(exportData, null, 2);

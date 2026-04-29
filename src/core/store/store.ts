@@ -250,7 +250,7 @@ class UserStore {
   /**
    * 获取用户记录；不存在时返回临时对象（不入库）
    */
-  public ensureUser(uid: string, originalName: string): BiliUser { // TODO: 这个是干嘛的？为啥一直调用 getUserAvatarFromDOM？
+  public ensureUser(uid: string, originalName: string): BiliUser {
     const existing = this.users.find((u) => u.id === uid);
     if (existing) {
       // 历史数据可能因选择器异常被写成 UID，这里在拿到真实名字时回填
@@ -265,7 +265,7 @@ class UserStore {
     return {
       id: uid,
       nickname,
-      avatar: getUserAvatarFromDOM(uid),
+      avatar: DEFAULT_AVATAR_URL,
       memo: "",
     };
   }

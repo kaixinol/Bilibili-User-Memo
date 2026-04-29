@@ -272,7 +272,7 @@ export function registerUserStore() {
       showAlert(`导出成功！\n已导出 ${this._usersList.length} 个用户的数据`);
     },
 
-    async importData() { // QUESTION: isDeleted = True时，会不会忽略自定义头像
+    async importData() {
       const readResult = await readImportUsersFromDialog();
       if (readResult.status === "cancelled") return;
       if (readResult.status === "error") {

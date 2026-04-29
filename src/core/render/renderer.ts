@@ -91,7 +91,10 @@ function renderEditable(
     wrapper.classList.add("editable-textarea");
     // 防止被后续选择器当成未处理节点再次注入
     wrapper.setAttribute("data-bili-processed", "true");
-
+    if(__IS_DEBUG__){
+      wrapper.style.position = "relative";
+      wrapper.style.zIndex = "10000";
+    }
     // 绑定点击事件 (只绑一次)
     wrapper.addEventListener("click", (e) => {
       e.stopPropagation();
@@ -107,7 +110,7 @@ function renderEditable(
 
     // 插入 DOM
     if (!__IS_DEBUG__)
-    el.style.display = "none"; // 隐藏原元素
+      el.style.display = "none"; // 隐藏原元素
     el.insertAdjacentElement("afterend", wrapper);
 
     // 存入缓存

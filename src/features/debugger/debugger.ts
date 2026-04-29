@@ -1,5 +1,4 @@
 // TODO: 修复debugger面板的大量死代码，逻辑冲突的代码，冗余代码
-// FIXME: dev模式下，有时点不了editable-area
 // FIXME: 面板的注入样式显示不一致
 
 import Alpine from 'alpinejs'

@@ -75,7 +75,7 @@ export function exportUsersAsJson(users: BiliUser[]) {
     }
 
     // Only include isDeleted if it's true (deleted account)
-    if (user.isDeleted === true) { // QUESTION: isDeleted = True时，会不会忽略自定义头像
+    if (user.isDeleted === true) {
       data.isDeleted = true;
     }
 

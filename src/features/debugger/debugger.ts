@@ -1,4 +1,8 @@
-import Alpine from "alpinejs";
+// TODO: 修复debugger面板的大量死代码，逻辑冲突的代码，冗余代码
+// FIXME: dev模式下，有时点不了editable-area
+// FIXME: 面板的注入样式显示不一致
+
+import Alpine from 'alpinejs'
 import { querySelectorAllDeep } from "query-selector-shadow-dom";
 import { config as defaultRules } from "@/core/rules/rules";
 import {
@@ -141,7 +145,10 @@ interface MonkeyApp {
   injectModeLabel(mode: InjectionMode): string;
   styleScopeLabel(scope: StyleScope): string;
 }
-
+export function getCaller() {
+  const stack = new Error().stack?.split("\n");
+  return stack?.[3]?.trim(); // 0是Error，1是当前函数，2是中间层，3通常是调用者
+}
 // 這裡糅合了原本 panel.ts 的模版渲染邏輯
 function renderDebuggerUI(appName: string) {
   const div = document.createElement("div");

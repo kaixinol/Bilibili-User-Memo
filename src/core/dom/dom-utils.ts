@@ -1,3 +1,5 @@
+import { getCaller } from "@/features/debugger/debugger";
+import { logger } from "@/utils/logger";
 import { querySelectorDeep } from "query-selector-shadow-dom";
 
 export const DEFAULT_AVATAR_URL =
@@ -7,19 +9,50 @@ export const DEFAULT_AVATAR_URL =
  * 获取用户头像 URL
  * 尝试从 DOM 中查找现有的头像元素，找不到则使用默认图
  */
-export function getUserAvatar(userID: string): string {
-  // 尝试找 avif
-  const sourceSrc = querySelectorDeep(
-    `#user-avatar[data-user-profile-id="${userID}"] bili-avatar source , div.avatar source`,
-  )?.getAttribute("srcset");
-  if (sourceSrc) return sourceSrc;
+type AvatarRule = {
+  selector: string;
+  attr: string;
+};
+export function getUserAvatarFromDOM(userID: string): string {
+  logger.debug(`Getting avatar for user ${userID}, called from: ${getCaller()}`); // FIXME: 为啥一直被误调用？
 
-  // 尝试找 img
-  const imgSrc = querySelectorDeep(
-    `up-avatar-wrap a[href*="${userID}"] img.bili-avatar-img`,
-  )?.getAttribute("data-src");
-  if (imgSrc) return imgSrc;
+  const rules: AvatarRule[] = [
+    {
+      selector: `#user-avatar[data-user-profile-id="${userID}"] bili-avatar source`, // 评论区
+      attr: "srcset",
+    },
+    {
+      selector: `div.avatar source`,
+      attr: "srcset", // 个人空间顶部
+    },
+    {
+      selector: `up-avatar-wrap a[href*="${userID}"] img.bili-avatar-img`,
+      attr: "data-src", // 忘了是啥
+    },
+  ];
 
-  // 默认头像
+  for (const { selector, attr } of rules) {
+    const el = querySelectorDeep(selector);
+    const val = el?.getAttribute(attr);
+    if (val) return val;
+  }
+
   return DEFAULT_AVATAR_URL;
 }
+
+// function findAvatarAncestor(el: HTMLElement): HTMLElement | null {
+//   let depth = 0;
+//   let cur: HTMLElement | null = el.parentElement;
+
+//   while (cur) {
+//     depth++;
+
+//     if (depth >= 3 && cur.classList.contains("avatar")) {
+//       return cur;
+//     }
+
+//     cur = cur.parentElement;
+//   }
+
+//   return null;
+// }

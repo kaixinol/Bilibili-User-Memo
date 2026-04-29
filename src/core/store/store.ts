@@ -1,6 +1,6 @@
 import { logger } from "../../utils/logger";
 import type { BiliUser } from "../types";
-import { getUserAvatar, DEFAULT_AVATAR_URL } from "../dom/dom-utils";
+import { getUserAvatarFromDOM, DEFAULT_AVATAR_URL } from "../dom/dom-utils";
 import { GM_addValueChangeListener } from "$";
 import {
   DEFAULT_DISPLAY_MODE,
@@ -247,11 +247,10 @@ class UserStore {
     });
     this.emitDisplayMode("update");
   }
-
   /**
    * 获取用户记录；不存在时返回临时对象（不入库）
    */
-  public ensureUser(uid: string, originalName: string): BiliUser {
+  public ensureUser(uid: string, originalName: string): BiliUser { // TODO: 这个是干嘛的？为啥一直调用 getUserAvatarFromDOM？
     const existing = this.users.find((u) => u.id === uid);
     if (existing) {
       // 历史数据可能因选择器异常被写成 UID，这里在拿到真实名字时回填
@@ -266,7 +265,7 @@ class UserStore {
     return {
       id: uid,
       nickname,
-      avatar: getUserAvatar(uid),
+      avatar: getUserAvatarFromDOM(uid),
       memo: "",
     };
   }
@@ -351,7 +350,7 @@ class UserStore {
     this.users.push({
       id: uid,
       nickname: (updates.nickname || fallbackName || uid).trim(),
-      avatar: updates.avatar ?? getUserAvatar(uid),
+      avatar: updates.avatar ?? getUserAvatarFromDOM(uid),
       memo: nextMemo,
     });
     this.commitUsers("update", [uid]);
@@ -458,7 +457,7 @@ class UserStore {
     profiles.forEach((profile) => {
       const target = userMap.get(profile.id);
       if (!target) return;
-      
+
       // Protect existing custom avatar from being overwritten by default avatar
       let finalAvatar = profile.avatar;
       if (
@@ -467,7 +466,7 @@ class UserStore {
       ) {
         finalAvatar = target.avatar;
       }
-      
+
       if (
         target.nickname === profile.nickname &&
         target.avatar === finalAvatar &&
@@ -475,7 +474,7 @@ class UserStore {
       ) {
         return;
       }
-      
+
       target.nickname = profile.nickname || target.nickname;
       target.avatar = finalAvatar;
       if (profile.isDeleted !== undefined) {

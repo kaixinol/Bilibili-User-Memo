@@ -1,7 +1,4 @@
-import {
-  querySelectorAllDeep,
-  querySelectorDeep,
-} from "query-selector-shadow-dom";
+import { querySelectorAllDeep, querySelectorDeep } from "@/utils/query-dom";
 import {
   hasExternalAddedNodes,
   hasExternalRemovedNodes,

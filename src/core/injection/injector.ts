@@ -1,4 +1,4 @@
-import { querySelectorAllDeep } from "query-selector-shadow-dom";
+import { querySelectorAllDeep } from "@/utils/query-dom";
 import type {
   PageRule,
   DynamicPageRule,
@@ -27,6 +27,12 @@ import { RemoteChangeBuffer } from "./remote-change-buffer";
 import { RuleScanScheduler } from "./scan-scheduler";
 import { delay, waitUntil } from "@/utils/scheduler";
 import { isNodeInsideScope } from "./watch-runtime";
+import {
+  describeElementForDiagnostics,
+  getScopeType,
+  recordRuleApplyDiagnostic,
+  recordRuleScanDiagnostic,
+} from "@/utils/perf-diagnostics";
 
 export class PageInjector {
   private domReady = false;
@@ -148,7 +154,7 @@ export class PageInjector {
       ...this.activePollingWatchers.keys(),
     ];
     if (activeRules.length === 0) return;
-    this.scanScheduler.scanRules(activeRules, scope);
+    this.scanScheduler.scanRules(activeRules, scope, "refresh active rules");
   }
 
   private startUrlMonitor() {
@@ -184,7 +190,7 @@ export class PageInjector {
       this.scanScheduler.clearStaticRuleRetries();
       return;
     }
-    this.scanScheduler.scanRules(staticRules, scope);
+    this.scanScheduler.scanRules(staticRules, scope, "static initial scan");
     this.scanScheduler.scheduleStaticRuleRetries(staticRules, scope);
   }
 
@@ -216,7 +222,7 @@ export class PageInjector {
     nextRules.forEach((rule) => {
       if (this.activePollingWatchers.has(rule)) return;
       const watcher = new PollingRuleWatcher(rule, (r, scope) => {
-        this.scanScheduler.scanRules([r], scope);
+        this.scanScheduler.scanRules([r], scope, "polling tick");
       });
       this.activePollingWatchers.set(rule, watcher);
       watcher.start();
@@ -229,20 +235,34 @@ export class PageInjector {
       ...this.activePollingWatchers.keys(),
     ]);
     if (rules.length === 0) return;
-    this.scanScheduler.scanRules(rules, scope);
+    this.scanScheduler.scanRules(rules, scope, "matchByName rescan");
   }
 
   private async scanAndInjectRule(rule: PageRule, scope: ScanScope) {
     const selector = buildRuleSelector(rule);
     if (!selector) return;
 
+    const scanStart = __IS_DEBUG__ ? performance.now() : 0;
+    const queryStart = __IS_DEBUG__ ? performance.now() : 0;
     const elements =
       scope instanceof ShadowRoot
         ? querySelectorAllDeep(selector).filter((element) =>
             isNodeInsideScope(element, scope),
           )
         : querySelectorAllDeep(selector, scope);
+    const queryMs = __IS_DEBUG__ ? performance.now() - queryStart : 0;
     logRuleScanResult(rule, selector, elements.length);
+    if (__IS_DEBUG__) {
+      recordRuleScanDiagnostic({
+        ruleName: rule.name,
+        mode: rule.injectMode,
+        selector,
+        scopeType: getScopeType(scope),
+        matchCount: elements.length,
+        queryMs,
+        totalMs: performance.now() - scanStart,
+      });
+    }
     if (elements.length === 0) return;
 
     elements.forEach((el) => {
@@ -251,19 +271,38 @@ export class PageInjector {
   }
 
   private async applyRuleToElement(el: HTMLElement, rule: PageRule) {
-    if (el.classList.contains("editable-textarea")) {
-      el.setAttribute("data-bili-processed", "true");
-      return;
-    }
+    const applyStart = __IS_DEBUG__ ? performance.now() : 0;
+    const element = __IS_DEBUG__ ? describeElementForDiagnostics(el) : "";
+    let uidResolved = false;
+    let applied = false;
 
-    const originalName = getElementDisplayName(el, rule);
-    const uid = this.resolveElementUid(el, rule, originalName);
-    if (!uid) return;
+    try {
+      if (el.classList.contains("editable-textarea")) {
+        el.setAttribute("data-bili-processed", "true");
+        return;
+      }
 
-    const user = userStore.ensureUser(uid, originalName);
-    const applied = await injectMemoRenderer(el, user, rule, { uid, originalName });
-    if (applied) {
-      el.setAttribute("data-bili-processed", "true");
+      const originalName = getElementDisplayName(el, rule);
+      const uid = this.resolveElementUid(el, rule, originalName);
+      uidResolved = Boolean(uid);
+      if (!uid) return;
+
+      const user = userStore.ensureUser(uid, originalName);
+      applied = await injectMemoRenderer(el, user, rule, { uid, originalName });
+      if (applied) {
+        el.setAttribute("data-bili-processed", "true");
+      }
+    } finally {
+      if (__IS_DEBUG__) {
+        recordRuleApplyDiagnostic({
+          ruleName: rule.name,
+          mode: rule.injectMode,
+          element,
+          uidResolved,
+          applied,
+          totalMs: performance.now() - applyStart,
+        });
+      }
     }
   }
 

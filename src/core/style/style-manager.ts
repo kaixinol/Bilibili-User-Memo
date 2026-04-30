@@ -1,5 +1,5 @@
 // src/core/style-manager.ts
-import { querySelectorAllDeep } from "query-selector-shadow-dom";
+import { querySelectorAllDeep } from "@/utils/query-dom";
 import { logger } from "@/utils/logger";
 import allStyle from "@/styles/memo.css?inline";
 

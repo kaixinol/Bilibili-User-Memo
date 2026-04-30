@@ -1,6 +1,6 @@
-import { getCaller } from "@/features/debugger/debugger";
+import { getCaller } from "@/utils/caller";
 import { logger } from "@/utils/logger";
-import { querySelectorDeep } from "query-selector-shadow-dom";
+import { querySelectorDeep } from "@/utils/query-dom";
 
 export const DEFAULT_AVATAR_URL =
   "https://i0.hdslb.com/bfs/face/member/noface.jpg@96w_96h_1c_1s.avif";

@@ -1,6 +1,10 @@
 import type { DynamicPageRule, PollingPageRule } from "@/core/rules/rules";
 import { logger } from "@/utils/logger";
 import {
+  getScopeType,
+  recordFlowDiagnostic,
+} from "@/utils/perf-diagnostics";
+import {
   getWatchTarget,
   getWatchTargets,
   isNodeInsideScope,
@@ -197,6 +201,14 @@ export class DynamicRuleWatcher {
   private createScopeObserver(scope: ScanScope): MutationObserver {
     const observer = new MutationObserver((mutations) => {
       if (!shouldHandleDiscoveryMutations(mutations).hasAddedNodes) return;
+      if (__IS_DEBUG__) {
+        recordFlowDiagnostic({
+          source: "dynamic mutation",
+          ruleName: this.rule.name,
+          mode: this.rule.injectMode,
+          scopeType: getScopeType(scope),
+        });
+      }
       this.onTrigger(this.rule, scope);
     });
     observer.observe(scope, { childList: true, subtree: true });
@@ -224,7 +236,17 @@ export class DynamicRuleWatcher {
 
     if (touchedScopes.size === 0) return;
 
-    touchedScopes.forEach((watchScope) => this.onTrigger(this.rule, watchScope));
+    touchedScopes.forEach((watchScope) => {
+      if (__IS_DEBUG__) {
+        recordFlowDiagnostic({
+          source: "dynamic shadow bridge",
+          ruleName: this.rule.name,
+          mode: this.rule.injectMode,
+          scopeType: getScopeType(watchScope),
+        });
+      }
+      this.onTrigger(this.rule, watchScope);
+    });
   }
 
   private attachInstanceWatcher(keyNode: HTMLElement, scope: ScanScope) {
@@ -232,6 +254,14 @@ export class DynamicRuleWatcher {
     this.instanceObservers.set(keyNode, { observer, scope });
 
     // 首次挂载成功，立即执行一次局部扫描
+    if (__IS_DEBUG__) {
+      recordFlowDiagnostic({
+        source: "dynamic attach",
+        ruleName: this.rule.name,
+        mode: this.rule.injectMode,
+        scopeType: getScopeType(scope),
+      });
+    }
     this.onTrigger(this.rule, scope);
   }
 
@@ -287,6 +317,14 @@ export class DynamicRuleWatcher {
     this.legacyObserver = this.createScopeObserver(scope);
 
     // 首次挂载成功，立即执行一次局部扫描
+    if (__IS_DEBUG__) {
+      recordFlowDiagnostic({
+        source: "dynamic legacy attach",
+        ruleName: this.rule.name,
+        mode: this.rule.injectMode,
+        scopeType: getScopeType(scope),
+      });
+    }
     this.onTrigger(this.rule, scope);
     return true;
   }
@@ -323,6 +361,14 @@ export class PollingRuleWatcher {
     const watchTarget = getWatchTarget(this.rule.trigger.watch);
     if (!watchTarget) return;
     const scope = resolveWatchScope(watchTarget);
+    if (__IS_DEBUG__) {
+      recordFlowDiagnostic({
+        source: "polling tick",
+        ruleName: this.rule.name,
+        mode: this.rule.injectMode,
+        scopeType: getScopeType(scope),
+      });
+    }
     this.onTrigger(this.rule, scope);
   }
 }

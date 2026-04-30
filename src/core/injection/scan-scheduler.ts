@@ -5,6 +5,10 @@ import type {
 } from "@/core/rules/rules";
 import { requestIdle } from "@/utils/scheduler";
 import type { ScanScope } from "./scan-scope";
+import {
+  getScopeType,
+  recordFlowDiagnostic,
+} from "@/utils/perf-diagnostics";
 
 export class RuleScanScheduler {
   private staticRetryTimers: number[] = [];
@@ -26,16 +30,29 @@ export class RuleScanScheduler {
     }
   }
 
-  public scanRules(rules: PageRule[], scope: ScanScope) {
+  public scanRules(rules: PageRule[], scope: ScanScope, source = "scan rules") {
     if (rules.length === 0) return;
 
     const queue = [...rules];
     const runChunk = (deadline: IdleDeadline) => {
       const processQueue = async () => {
+        const chunkStart = __IS_DEBUG__ ? performance.now() : 0;
+        let processedRules = 0;
         while (queue.length > 0 && deadline.timeRemaining() > 1) {
           const rule = queue.shift();
           if (!rule) continue;
           await this.scanRule(rule, scope);
+          processedRules += 1;
+        }
+
+        if (__IS_DEBUG__ && processedRules > 0) {
+          recordFlowDiagnostic({
+            source,
+            scopeType: getScopeType(scope),
+            ruleCount: processedRules,
+            durationMs: performance.now() - chunkStart,
+            chunked: queue.length > 0,
+          });
         }
 
         if (queue.length > 0) {
@@ -59,7 +76,7 @@ export class RuleScanScheduler {
     retryDelays.forEach((delay) => {
       const timerId = window.setTimeout(() => {
         if (!this.isActive() || token !== this.staticRetryToken) return;
-        this.scanRules(staticRules, scope);
+        this.scanRules(staticRules, scope, `static retry ${delay}ms`);
       }, delay);
       this.staticRetryTimers.push(timerId);
     });
@@ -93,7 +110,7 @@ export class RuleScanScheduler {
       if (activeScopeTimers && activeScopeTimers.size === 0) {
         this.ruleDebounceTimers.delete(rule);
       }
-      this.scanRules([rule], scope);
+      this.scanRules([rule], scope, "dynamic debounce");
     }, delay);
 
     scopeTimers.set(scope, timerId);

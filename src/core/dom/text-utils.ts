@@ -4,7 +4,7 @@ import type {
   PageRule,
   PollingPageRule,
 } from "@/core/rules/rules";
-import { querySelectorAllDeep } from "query-selector-shadow-dom";
+import { querySelectorAllDeep } from "@/utils/query-dom";
 
 function readPreferredText(node: HTMLElement | null): string | null {
   if (!node) return null;

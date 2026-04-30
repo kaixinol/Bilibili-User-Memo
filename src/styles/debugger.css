@@ -76,6 +76,7 @@
 
 .debugger-perf {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   align-items: center;
   background: var(--bg-sub);
@@ -92,6 +93,10 @@
   align-items: baseline;
 }
 
+.perf-item-wide {
+  min-width: 120px;
+}
+
 .perf-label {
   color: var(--text-sub);
 }
@@ -106,6 +111,7 @@
   display: flex;
   gap: 8px;
   margin-bottom: 12px;
+  align-items: center;
 }
 
 .debugger-input {
@@ -132,11 +138,6 @@
   box-shadow: 0 0 0 3px var(--focus-ring);
 }
 
-.debugger-input-selector {
-  font-size: 10px;
-  color: var(--text-sub);
-}
-
 .debugger-btn {
   background: var(--bg-sub);
   color: var(--text-main);
@@ -160,48 +161,140 @@
   background: var(--bg-sub);
 }
 
-.debugger-btn-danger {
-  color: var(--danger-color);
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  font-size: 12px;
-  padding: 4px 8px;
-  border-radius: 3px;
-  transition:
-    background 0.2s,
-    color 0.2s;
-}
-
-.debugger-btn-danger:hover {
-  background: var(--danger-alpha);
-  color: var(--danger-color);
-}
-
-.debugger-rules-container {
+.debugger-scroll {
   flex: 1;
   overflow-y: auto;
   padding-right: 4px;
-
   min-height: 0;
   min-width: 0;
 }
 
-.debugger-rules-container::-webkit-scrollbar {
+.debugger-scroll::-webkit-scrollbar {
   width: 6px;
 }
 
-.debugger-rules-container::-webkit-scrollbar-track {
+.debugger-scroll::-webkit-scrollbar-track {
   background: transparent;
 }
 
-.debugger-rules-container::-webkit-scrollbar-thumb {
+.debugger-scroll::-webkit-scrollbar-thumb {
   background: var(--border-main);
   border-radius: 3px;
 }
 
-.debugger-rules-container::-webkit-scrollbar-thumb:hover {
+.debugger-section {
+  border-bottom: 1px solid var(--border-main);
+  padding: 8px 0;
+}
+
+.debugger-section:first-child {
+  padding-top: 0;
+}
+
+.debugger-section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding: 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-main);
+  text-transform: uppercase;
+}
+
+.debugger-section-meta {
+  color: var(--text-sub);
+  font-weight: 500;
+  text-transform: none;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.debugger-empty {
+  padding: 6px 4px;
+  color: var(--text-sub);
+  font-size: 11px;
+}
+
+.perf-row {
+  padding: 6px 4px;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.perf-row:hover {
+  background: var(--bg-sub);
+}
+
+.perf-row-slow {
+  border-left: 2px solid var(--danger-color);
+  padding-left: 6px;
+}
+
+.perf-row-main {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.perf-row-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+.perf-row-badge {
+  flex-shrink: 0;
+  padding: 1px 4px;
+  border-radius: 3px;
   background: var(--border-main);
+  color: var(--text-sub);
+  font-size: 10px;
+}
+
+.perf-row-total {
+  flex-shrink: 0;
+  color: var(--text-main);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.perf-row-sub,
+.perf-row-selector {
+  color: var(--text-sub);
+  font-size: 10px;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.perf-row-sub {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.perf-row-selector,
+.debugger-code {
+  font-family:
+    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    monospace;
+}
+
+.debugger-code {
+  color: var(--text-sub);
+  font-size: 10px;
+  overflow-wrap: anywhere;
+  user-select: text;
 }
 
 .rule-item {
@@ -230,13 +323,6 @@
   align-items: center;
   gap: 4px;
   padding: 0 4px;
-}
-
-.rule-checkbox {
-  cursor: pointer;
-  width: 14px;
-  height: 14px;
-  flex-shrink: 0;
 }
 
 .rule-expand-btn {
@@ -278,15 +364,23 @@
   flex: 1;
   font-weight: 500;
   font-size: 12px;
-  cursor: pointer;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.rule-remove-btn {
+.rule-count {
   flex-shrink: 0;
+  min-width: 24px;
+  text-align: right;
+  color: var(--text-sub);
+  font-variant-numeric: tabular-nums;
+}
+
+.rule-count-error {
+  color: var(--danger-color);
+  min-width: 0;
 }
 
 .rule-details {
@@ -313,50 +407,10 @@
   text-transform: uppercase;
 }
 
-.rule-detail-hint {
-  font-size: 10px;
-  color: var(--text-sub);
-  margin-left: auto;
-}
-
 .rule-mode-label {
   font-size: 11px;
   font-weight: 500;
   color: var(--text-main);
-}
-
-.debugger-input-small {
-  max-width: 80px;
-}
-
-.rule-trigger-section {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 4px 0 4px 8px;
-  border-left: 2px solid var(--border-main);
-}
-
-.rule-checkboxes {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-top: 2px;
-}
-
-.rule-checkbox-label {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 10px;
-  color: var(--text-sub);
-  cursor: pointer;
-}
-
-.rule-checkbox-label input[type="checkbox"] {
-  width: 12px;
-  height: 12px;
-  cursor: pointer;
 }
 
 .debugger-color-picker {
@@ -368,6 +422,7 @@
   cursor: pointer;
   border-radius: 3px;
   transition: border-color 0.2s;
+  flex-shrink: 0;
 }
 
 .debugger-color-picker:hover {
@@ -424,10 +479,6 @@
   box-shadow: 0 0 0 3px var(--primary-alpha);
 }
 
-.memo-container-dark-theme .debugger-input-selector {
-  color: var(--text-sub);
-}
-
 /* 按钮适配 */
 .memo-container-dark-theme .debugger-btn {
   background: var(--bg-sub);
@@ -453,28 +504,12 @@
   background: var(--bg-sub);
 }
 
-/* 滚动条适配 */
-.memo-container-dark-theme .debugger-rules-container::-webkit-scrollbar-thumb {
-  background: var(--border-main);
-}
-
-.memo-container-dark-theme
-  .debugger-rules-container::-webkit-scrollbar-thumb:hover {
-  background: var(--text-sub);
-}
-
-/* 危险操作按钮 */
-.memo-container-dark-theme .debugger-btn-danger {
-  color: var(--danger-color); /* 稍亮一点的红色 */
-}
-
-.memo-container-dark-theme .debugger-btn-danger:hover {
-  background: var(--danger-alpha);
-  color: var(--danger-color);
-}
-
 /* 颜色选择器微调 */
 .memo-container-dark-theme .debugger-color-picker {
   border-color: var(--border-main);
   background: var(--bg-main);
+}
+
+.memo-container-dark-theme .debugger-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-main);
 }

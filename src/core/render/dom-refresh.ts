@@ -1,4 +1,4 @@
-import { querySelectorAllDeep } from "query-selector-shadow-dom";
+import { querySelectorAllDeep } from "@/utils/query-dom";
 import type { BiliUser } from "../types";
 import { syncRenderedNodeState } from "./rendered-node";
 

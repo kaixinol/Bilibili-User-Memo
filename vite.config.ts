@@ -1,5 +1,4 @@
 import { defineConfig } from "vite";
-import { visualizer } from "rollup-plugin-visualizer";
 import monkey, { cdn } from "vite-plugin-monkey";
 import { browserslistToTargets } from 'lightningcss';
 import browserslist from 'browserslist';
@@ -32,6 +31,7 @@ export default defineConfig(({ mode }) => {
           supportURL: "https://github.com/kaixinol/Bilibili-User-Memo/issues",
         },
         build: {
+          metaFileName: true, // Generate .meta.js for efficient update checks
           externalGlobals: {
             alpinejs: cdn.jsdelivr("Alpine", "dist/cdn.min.js"),
             "opencc-js": cdn.jsdelivr("OpenCC", "dist/umd/full.js"),
@@ -41,9 +41,10 @@ export default defineConfig(({ mode }) => {
             ),
           },
         },
-        server: { mountGmApi: true }, // 修复production莫名其妙没有gm api的问题
+        server: {
+          mountGmApi: true, // 修复production莫名其妙没有gm api的问题
+        },
       }),
-      visualizer({ filename: "stats.html" }),
     ],
     define: {
       "process.env.NODE_ENV": JSON.stringify(mode),

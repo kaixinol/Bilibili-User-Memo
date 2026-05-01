@@ -7,7 +7,27 @@ export default defineConfig(({ mode }) => {
   const isDebug = mode === "debug";
 
   return {
-    plugins: [
+    plugins: [{
+      name: 'minify-html-raw',
+      transform(code, id) {
+        // 1. 精准命中 ?raw 导入的 HTML 文件
+        if (id.endsWith('.html?raw') || id.endsWith('.html')) {
+          const minified = code
+            .replace(/\\n/g, '')             // 匹配 JS 字符串里的 \n 字符
+            .replace(/\\r/g, '')             // 匹配 \r
+            .replace(/>\s{1,}</g, '><')      // 删除标签间的空格
+            .replace(/\s{2,}/g, ' ');        // 将连续空格合并为一个
+
+          return {
+            code: minified,
+            map: null
+          };
+        }
+
+        // 2. 关键补丁：如果不匹配，必须返回 null，让 Vite 继续处理其他文件
+        return null;
+      }
+    },
       monkey({
         entry: "src/main.ts",
         userscript: {
@@ -104,6 +124,7 @@ export default defineConfig(({ mode }) => {
         },
 
       cssMinify: isDebug ? false : "lightningcss",
+      cssCodeSplit: false,
     },
     css: {
       transformer: 'lightningcss',
@@ -112,6 +133,9 @@ export default defineConfig(({ mode }) => {
         drafts: {
           customMedia: true
         },
+        minify: true,
+        nonStandardKeepWhitespace: false,
+        cssModules: false,
         unusedSymbols: [],
       }
     }

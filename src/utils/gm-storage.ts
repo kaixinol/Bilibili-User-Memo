@@ -1,10 +1,5 @@
 import { GM_getValue, GM_setValue } from "$";
-import { logger } from "./logger";
 
-if(__IS_DEBUG__){
-  logger.debug(typeof GM_getValue)
-  logger.debug(typeof unsafeWindow.GM_getValue)
-}
 export interface PersistStorage {
   getItem(key: string): string | null;
   setItem(key: string, value: string): void;

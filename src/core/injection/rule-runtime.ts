@@ -1,14 +1,17 @@
 import { unsafeWindow } from "$";
 import {
-  config,
   InjectionMode,
-} from "@/core/rules/rules";
+  isDynamicRule,
+  isPollingRule,
+  isStaticRule,
+} from "@/core/rules/rule-types";
+import { config } from "@/core/rules/rules";
 import type {
   DynamicPageRule,
   PageRule,
   PollingPageRule,
   StaticPageRule,
-} from "@/core/rules/rules";
+} from "@/core/rules/rule-types";
 import { logger } from "@/utils/logger";
 
 export interface RuleGroups {
@@ -26,11 +29,11 @@ export function getMatchedRules(currentUrl = unsafeWindow.location.href): PageRu
 export function groupRulesByMode(rules: PageRule[]): RuleGroups {
   return rules.reduce<RuleGroups>(
     (groups, rule) => {
-      if (rule.injectMode === InjectionMode.Static) {
+      if (isStaticRule(rule)) {
         groups.staticRules.push(rule);
-      } else if (rule.injectMode === InjectionMode.Dynamic) {
+      } else if (isDynamicRule(rule)) {
         groups.dynamicRules.push(rule);
-      } else {
+      } else if (isPollingRule(rule)) {
         groups.pollingRules.push(rule);
       }
 

@@ -1,9 +1,10 @@
 import type { BiliUser } from "../types";
-import type {
-  DynamicPageRule,
-  PageRule,
-  PollingPageRule,
-} from "@/core/rules/rules";
+import {
+  isDynamicRule,
+  type DynamicPageRule,
+  type PageRule,
+  type PollingPageRule,
+} from "@/core/rules/rule-types";
 import { querySelectorAllDeep } from "@/utils/query-dom";
 
 function readPreferredText(node: HTMLElement | null): string | null {
@@ -66,7 +67,7 @@ export function resolveRuleTextTarget(
 ): HTMLElement | null {
   if (!rule.textSelector) return el;
 
-  if (rule.textSource !== "watch") {
+  if (!isDynamicRule(rule)) {
     return resolveSelfTextTarget(el, rule.textSelector);
   }
 

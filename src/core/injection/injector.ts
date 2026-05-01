@@ -1,9 +1,9 @@
 import { querySelectorAllDeep } from "@/utils/query-dom";
-import type {
-  PageRule,
-  DynamicPageRule,
-  PollingPageRule,
-} from "@/core/rules/rules";
+import {
+  type PageRule,
+  type DynamicPageRule,
+  type PollingPageRule,
+} from "@/core/rules/rule-types";
 import { logger } from "@/utils/logger";
 import { extractUid } from "../dom/uid-extractor";
 import { getElementDisplayName } from "../dom/text-utils";
@@ -205,7 +205,7 @@ export class PageInjector {
     nextRules.forEach((rule) => {
       if (this.activeWatchers.has(rule)) return;
       const watcher = new DynamicRuleWatcher(rule, (r, scope) => {
-        this.scanScheduler.scheduleDynamicRuleScan(r, r.trigger.debounceMs, scope);
+        this.scanScheduler.scheduleDynamicRuleScan(r, r.trigger.interval, scope);
       });
       this.activeWatchers.set(rule, watcher);
       watcher.start();

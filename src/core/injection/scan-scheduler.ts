@@ -2,7 +2,7 @@ import type {
   DynamicPageRule,
   PageRule,
   StaticPageRule,
-} from "@/core/rules/rules";
+} from "@/core/rules/rule-types";
 import { requestIdle } from "@/utils/scheduler";
 import type { ScanScope } from "./scan-scope";
 import {
@@ -19,7 +19,7 @@ export class RuleScanScheduler {
   >();
 
   constructor(
-    private readonly scanRule: (rule: PageRule, scope: ScanScope) => Promise<void>,
+    private readonly scanRule: (rule: PageRule, scope: ScanScope) => Promise<void>, // QUESTION: 这是个啥
     private readonly isActive: () => boolean,
   ) {}
 

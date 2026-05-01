@@ -1,3 +1,5 @@
+import type { ScanScope } from "@/core/injection/scan-scope";
+
 const MAX_EVENTS = 80;
 const MAX_SUMMARIES = 80;
 const MAX_QUERY_EVENTS = 240;
@@ -139,11 +141,10 @@ function modeLabel(mode: number | string) {
   }
 }
 
-export function getScopeType(scope: unknown): string {
-  if (scope instanceof ShadowRoot) return "shadow";
+export function getScopeType(scope: ScanScope): string {
   if (scope === document) return "document";
-  if (scope instanceof HTMLElement) return scope.tagName.toLowerCase();
-  return "unknown";
+  // ShadowRoot 没有 tagName，HTMLElement 有 tagName
+  return "tagName" in scope ? scope.tagName.toLowerCase() : "shadow";
 }
 
 export function describeElementForDiagnostics(element: HTMLElement): string {
@@ -156,7 +157,7 @@ export function describeElementForDiagnostics(element: HTMLElement): string {
 
 export function recordRuleScanDiagnostic(input: {
   ruleName: string;
-  mode: number | string;
+  mode: number;
   selector: string;
   scopeType: string;
   matchCount: number;
@@ -203,7 +204,7 @@ export function recordRuleScanDiagnostic(input: {
 
 export function recordRuleApplyDiagnostic(input: {
   ruleName: string;
-  mode: number | string;
+  mode: number;
   element: string;
   uidResolved: boolean;
   applied: boolean;

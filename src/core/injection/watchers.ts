@@ -1,4 +1,4 @@
-import type { DynamicPageRule, PollingPageRule } from "@/core/rules/rules";
+import { type DynamicPageRule, type PollingPageRule } from "@/core/rules/rule-types";
 import { logger } from "@/utils/logger";
 import {
   getScopeType,
@@ -41,7 +41,7 @@ export class DynamicRuleWatcher {
   constructor(
     public readonly rule: DynamicPageRule, // 公开 rule 以便 Map 索引比对
     private onTrigger: (rule: DynamicPageRule, root: ScanScope) => void,
-  ) {}
+  ) { }
 
   public start() {
     if (this.rule.dynamicWatch) {
@@ -336,16 +336,16 @@ export class PollingRuleWatcher {
   constructor(
     public readonly rule: PollingPageRule,
     private onTrigger: (rule: PollingPageRule, root: ScanScope) => void,
-  ) {}
+  ) { }
 
   public start() {
     logger.debug(
-      `⏱️ 轮询规则启动: [${this.rule.name}] interval=${this.rule.trigger.intervalMs}ms watch=${this.rule.trigger.watch}`,
+      `⏱️ 轮询规则启动: [${this.rule.name}] interval=${this.rule.trigger.interval}ms watch=${this.rule.trigger.watch}`,
     );
     this.tick();
     this.pollTimer = window.setInterval(
       () => this.tick(),
-      this.rule.trigger.intervalMs,
+      this.rule.trigger.interval,
     );
   }
 

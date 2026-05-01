@@ -5,7 +5,7 @@ TODO: 触发查询dom的文件标签（可按标签过滤）。
 */
 
 /* QUESTION: 为啥`最近 - *`规则匹配到的元素明明是在用户不可见的地方静默更新的，可还是一直触发重扫
-FIXME
+FIXME： dynamicWatch 开启 vs 不开启
 */
 
 // FIXME: 高亮样式没有标注。
@@ -131,10 +131,10 @@ function getRuleTrigger(rule: PageRule): string | undefined {
   if (rule.injectMode === InjectionMode.Static) return undefined;
   if (rule.injectMode === InjectionMode.Dynamic) {
     const trigger = rule.trigger as DynamicTriggerConfig;
-    return `${trigger.watch} / debounce ${trigger.debounceMs}ms`;
+    return `${trigger.watch} / debounce ${trigger.interval}ms`;
   }
   const trigger = rule.trigger as PollingTriggerConfig;
-  return `${trigger.watch} / interval ${trigger.intervalMs}ms`;
+  return `${trigger.watch} / interval ${trigger.interval}ms`;
 }
 
 function getMatchedRuleEntries(): RuleConfigEntry[] {

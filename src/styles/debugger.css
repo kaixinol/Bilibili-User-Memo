@@ -218,6 +218,26 @@
   font-size: 11px;
 }
 
+.debugger-filter-control {
+  padding: 4px 4px 6px;
+}
+
+.debugger-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--text-sub);
+  cursor: pointer;
+  user-select: none;
+}
+
+.debugger-checkbox-label input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+  accent-color: var(--primary-color);
+}
+
 .perf-row {
   padding: 6px 4px;
   border-radius: 4px;
@@ -249,6 +269,7 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-weight: 600;
+  line-height: 1.1;
 }
 
 .perf-row-badge {

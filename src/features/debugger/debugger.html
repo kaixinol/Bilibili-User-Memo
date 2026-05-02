@@ -88,11 +88,20 @@
           <span>卡顿事件</span>
           <span class="debugger-section-meta" x-text="`${perf.longTaskEvents.length} recent`"></span>
         </div>
-        <template x-if="perf.longTaskEvents.length === 0">
-          <div class="debugger-empty">暂无 long task</div>
+        <div class="debugger-filter-control">
+          <label class="debugger-checkbox-label">
+            <input type="checkbox" x-model="showUnrelatedTasks" />
+            <span>显示无关事件 (unrelated)</span>
+          </label>
+        </div>
+        <template x-if="filteredLongTaskEvents.length === 0">
+          <div class="debugger-empty">暂无卡顿事件</div>
         </template>
-        <template x-for="task in perf.longTaskEvents" :key="task.id">
-          <div class="perf-row" :class="{ 'perf-row-slow': task.relatedKind !== 'unrelated' }">
+        <template x-for="task in filteredLongTaskEvents" :key="task.id">
+          <div 
+            class="perf-row" 
+            :class="{ 'perf-row-slow': task.relatedKind !== 'unrelated' }"
+          >
             <div class="perf-row-main">
               <span class="perf-row-title" x-text="formatTime(task.time)"></span>
               <span class="perf-row-badge" x-text="task.relatedKind"></span>

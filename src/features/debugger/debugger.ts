@@ -98,7 +98,9 @@ interface MonkeyApp {
   expandedRuleId: number | null;
   selectorError: string;
   selectorMatchCount: number;
+  showUnrelatedTasks: boolean;
   perf: PerfStats;
+  filteredLongTaskEvents: LongTaskDiagnostic[];
   init(): void;
   refreshRuleList(): void;
   scan(): void;
@@ -192,6 +194,7 @@ export function initDebugger() {
       expandedRuleId: null,
       selectorError: "",
       selectorMatchCount: 0,
+      showUnrelatedTasks: false,
       perf: {
         fps: 0,
         longTasks: 0,
@@ -201,6 +204,15 @@ export function initDebugger() {
         recentFlows: [],
         slowQueries: [],
         recentQueries: [],
+      },
+
+      get filteredLongTaskEvents() {
+        if (this.showUnrelatedTasks) {
+          return this.perf.longTaskEvents;
+        }
+        return this.perf.longTaskEvents.filter(
+          (task) => task.relatedKind !== "unrelated",
+        );
       },
 
       init() {

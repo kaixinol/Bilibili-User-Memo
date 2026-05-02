@@ -4,7 +4,8 @@ TODO: 加一个搜索功能
 TODO: 触发查询dom的文件标签（可按标签过滤）。
 
 // QUESTION: 为啥`最近 - *`规则匹配到的元素明明是在用户不可见的地方静默更新的，可还是一直触发重扫
-FIXME： dynamicWatch 开启 vs 不开启
+FIXME： dynamicWatch 开启 vs 不开启，似乎是非预期行为
+TODO: 使用IntersectionObserver来判断元素是否可见
 
 // QUESTION: 为啥有些规则一直被频繁的触发（指Dynamic规则）为什么？找出原因。
 */
@@ -75,6 +76,7 @@ interface DebuggerState {
   currentTranslateY: number;
   rafId: number | null;
   containerWidth: number;
+  ruleCountTimer: number | null;
 }
 
 const state: DebuggerState = {
@@ -89,6 +91,7 @@ const state: DebuggerState = {
   currentTranslateY: 0,
   rafId: null,
   containerWidth: 360,
+  ruleCountTimer: null,
 };
 
 interface MonkeyApp {
@@ -110,6 +113,7 @@ interface MonkeyApp {
   clearHighlights(): void;
   applyHighlightColor(color: string): void;
   updateDiagnostics(): void;
+  startRuleCountRefresh(): void;
   onPointerDown(event: PointerEvent): void;
   onPointerMove(event: PointerEvent): void;
   onPointerUp(event: PointerEvent): void;
@@ -216,6 +220,7 @@ export function initDebugger() {
         this.refreshRuleList();
         this.updateDiagnostics();
         this.scan();
+        this.startRuleCountRefresh();
         this.startPerformanceMonitor();
 
         requestAnimationFrame(() => {
@@ -272,7 +277,6 @@ export function initDebugger() {
           if (_highlightedElements.size > 0) {
             clearAllHighlights();
           }
-          this.refreshRuleList();
           return;
         }
 
@@ -313,7 +317,6 @@ export function initDebugger() {
         _highlightedElements = newSet;
         this.selectorMatchCount = visibleCount;
         this.applyHighlightColor(this.color);
-        this.refreshRuleList();
       },
 
       clearHighlights() {
@@ -405,6 +408,12 @@ export function initDebugger() {
         state.isDragging = false;
       },
 
+      startRuleCountRefresh() {
+        state.ruleCountTimer = window.setInterval(() => {
+          this.refreshRuleList();
+        }, 4000);
+      },
+
       startPerformanceMonitor() {
         let lastTime = performance.now();
         let frames = 0;
@@ -451,7 +460,6 @@ export function initDebugger() {
           } else {
             this.perf.memory = "n/a";
           }
-          this.refreshRuleList();
           this.updateDiagnostics();
         }, 1000);
       },

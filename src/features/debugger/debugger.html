@@ -37,7 +37,7 @@
       />
       <input
         x-model="color"
-        @input.debounce.100ms="scan"
+        @input.debounce.100ms="applyHighlightColor(color)"
         type="color"
         class="debugger-color-picker"
         title="高亮颜色"
@@ -86,7 +86,7 @@
       <section class="debugger-section">
         <div class="debugger-section-title">
           <span>卡顿事件</span>
-          <span class="debugger-section-meta" x-text="`${perf.longTaskEvents.length} recent`"></span>
+          <span class="debugger-section-meta" x-text="`${relatedLongTaskCount} related`"></span>
         </div>
         <div class="debugger-filter-control">
           <label class="debugger-checkbox-label">
@@ -94,12 +94,12 @@
             <span>显示无关事件 (unrelated)</span>
           </label>
         </div>
-        <template x-if="filteredLongTaskEvents.length === 0">
+        <template x-if="displayLongTaskEvents.length === 0">
           <div class="debugger-empty">暂无卡顿事件</div>
         </template>
-        <template x-for="task in filteredLongTaskEvents" :key="task.id">
-          <div 
-            class="perf-row" 
+        <template x-for="task in displayLongTaskEvents" :key="task.id">
+          <div
+            class="perf-row"
             :class="{ 'perf-row-slow': task.relatedKind !== 'unrelated' }"
           >
             <div class="perf-row-main">
@@ -146,21 +146,23 @@
         <template x-if="perf.recentQueries.length === 0">
           <div class="debugger-empty">暂无 deep query 数据</div>
         </template>
-        <template x-for="query in perf.recentQueries" :key="query.id">
-          <div class="perf-row" :class="{ 'perf-row-slow': query.slow }">
-            <div class="perf-row-main">
-              <span class="perf-row-title" x-text="query.caller"></span>
-              <span class="perf-row-badge" x-text="query.kind"></span>
-              <span class="perf-row-total" x-text="formatMs(query.durationMs)"></span>
+        <div class="debugger-query-list" x-show="perf.recentQueries.length > 0">
+          <template x-for="query in perf.recentQueries" :key="query.id">
+            <div class="perf-row" :class="{ 'perf-row-slow': query.slow }">
+              <div class="perf-row-main">
+                <span class="perf-row-title" x-text="query.caller"></span>
+                <span class="perf-row-badge" x-text="query.kind"></span>
+                <span class="perf-row-total" x-text="formatMs(query.durationMs)"></span>
+              </div>
+              <div class="perf-row-sub">
+                <span x-text="query.scopeType"></span>
+                <span x-text="`${query.matchCount} hits`"></span>
+                <span x-text="query.error || ''"></span>
+              </div>
+              <div class="perf-row-selector" x-text="query.selector"></div>
             </div>
-            <div class="perf-row-sub">
-              <span x-text="query.scopeType"></span>
-              <span x-text="`${query.matchCount} hits`"></span>
-              <span x-text="query.error || ''"></span>
-            </div>
-            <div class="perf-row-selector" x-text="query.selector"></div>
-          </div>
-        </template>
+          </template>
+        </div>
       </section>
 
       <section class="debugger-section">

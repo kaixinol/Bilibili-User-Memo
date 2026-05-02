@@ -2,13 +2,12 @@
 能不能:
 TODO: 加一个搜索功能
 TODO: 触发查询dom的文件标签（可按标签过滤）。
-*/
 
-/* QUESTION: 为啥`最近 - *`规则匹配到的元素明明是在用户不可见的地方静默更新的，可还是一直触发重扫
+// QUESTION: 为啥`最近 - *`规则匹配到的元素明明是在用户不可见的地方静默更新的，可还是一直触发重扫
 FIXME： dynamicWatch 开启 vs 不开启
-*/
 
-// FIXME: 高亮样式没有标注。
+// QUESTION: 为啥有些规则一直被频繁的触发（指Dynamic规则）为什么？找出原因。
+*/
 import Alpine from "alpinejs";
 import { querySelectorAllDeep } from "@/utils/query-dom";
 import { config as defaultRules } from "@/core/rules/rules";
@@ -27,7 +26,6 @@ import highlightCss from "@/styles/debugger-highlight.css?raw";
 import { logger } from "@/utils/logger";
 import {
   getPerfDiagnosticsSnapshot,
-  recordFlowDiagnostic,
   recordLongTaskDiagnostic,
   type FlowDiagnostic,
   type LongTaskDiagnostic,
@@ -35,11 +33,13 @@ import {
   type RulePerfSummary,
 } from "@/utils/perf-diagnostics";
 
-const highlightSheet = new CSSStyleSheet();
-highlightSheet.replaceSync(highlightCss);
+const HIGHLIGHT_CLASS = "debugger-highlight-active";
+
+const highlightStyleSheet = new CSSStyleSheet();
+highlightStyleSheet.replaceSync(highlightCss);
+document.adoptedStyleSheets = [...document.adoptedStyleSheets, highlightStyleSheet];
 
 const adoptedShadowRoots = new WeakSet<ShadowRoot>();
-const HIGHLIGHT_CLASS = "debugger-highlight-active";
 
 interface DebugRuleView {
   id: number;
@@ -99,12 +99,16 @@ interface MonkeyApp {
   selectorError: string;
   selectorMatchCount: number;
   showUnrelatedTasks: boolean;
+  relatedLongTaskCount: number;
   perf: PerfStats;
-  filteredLongTaskEvents: LongTaskDiagnostic[];
+  displayLongTaskEvents: LongTaskDiagnostic[];
+  scanTimer: number | null;
   init(): void;
   refreshRuleList(): void;
   scan(): void;
+  _runScan(): void;
   clearHighlights(): void;
+  applyHighlightColor(color: string): void;
   updateDiagnostics(): void;
   onPointerDown(event: PointerEvent): void;
   onPointerMove(event: PointerEvent): void;
@@ -153,35 +157,19 @@ function countSelectorMatches(selector: string): { count: number; error?: string
   }
 }
 
-function adoptStylesToShadowRoot(element: HTMLElement) {
-  const shadowRoot = element.getRootNode();
-  if (!(shadowRoot instanceof ShadowRoot)) return;
-  if (adoptedShadowRoots.has(shadowRoot)) return;
-
-  shadowRoot.adoptedStyleSheets = [
-    ...shadowRoot.adoptedStyleSheets,
-    highlightSheet,
-  ];
-  adoptedShadowRoots.add(shadowRoot);
+function adoptHighlightToRoot(element: HTMLElement) {
+  const root = element.getRootNode();
+  if (!(root instanceof ShadowRoot)) return;
+  if (adoptedShadowRoots.has(root)) return;
+  root.adoptedStyleSheets = [...root.adoptedStyleSheets, highlightStyleSheet];
+  adoptedShadowRoots.add(root);
 }
 
-function removeHighlightFromElement(element: HTMLElement) {
-  element.classList.remove(HIGHLIGHT_CLASS);
-  element.style.removeProperty("--overlay-color");
-}
+let _highlightedElements = new Set<HTMLElement>();
 
 function clearAllHighlights() {
-  document.querySelectorAll(`.${HIGHLIGHT_CLASS}`).forEach((element) => {
-    if (element instanceof HTMLElement) removeHighlightFromElement(element);
-  });
-
-  try {
-    querySelectorAllDeep(`.${HIGHLIGHT_CLASS}`).forEach((element) => {
-      if (element instanceof HTMLElement) removeHighlightFromElement(element);
-    });
-  } catch (error) {
-    logger.warn("[Debugger] Failed to clear Shadow DOM highlights:", error);
-  }
+  _highlightedElements.forEach((el) => el.classList.remove(HIGHLIGHT_CLASS));
+  _highlightedElements = new Set();
 }
 
 export function initDebugger() {
@@ -195,6 +183,8 @@ export function initDebugger() {
       selectorError: "",
       selectorMatchCount: 0,
       showUnrelatedTasks: false,
+      relatedLongTaskCount: 0,
+      scanTimer: null,
       perf: {
         fps: 0,
         longTasks: 0,
@@ -206,7 +196,7 @@ export function initDebugger() {
         recentQueries: [],
       },
 
-      get filteredLongTaskEvents() {
+      get displayLongTaskEvents() {
         if (this.showUnrelatedTasks) {
           return this.perf.longTaskEvents;
         }
@@ -261,17 +251,31 @@ export function initDebugger() {
       },
 
       scan() {
-        clearAllHighlights();
+        if (this.scanTimer !== null) {
+          clearInterval(this.scanTimer);
+          this.scanTimer = null;
+        }
+
+        this._runScan();
+
+        this.scanTimer = window.setInterval(() => {
+          this._runScan();
+        }, 500);
+      },
+
+      _runScan() {
         this.selectorError = "";
         this.selectorMatchCount = 0;
 
         const selector = this.selector.trim();
         if (!selector) {
+          if (_highlightedElements.size > 0) {
+            clearAllHighlights();
+          }
           this.refreshRuleList();
           return;
         }
 
-        const startedAt = performance.now();
         let elements: Element[];
         try {
           elements = querySelectorAllDeep(selector);
@@ -281,39 +285,62 @@ export function initDebugger() {
           return;
         }
 
+        const newSet = new Set<HTMLElement>();
         let visibleCount = 0;
         elements.forEach((element) => {
           if (!(element instanceof HTMLElement)) return;
           const rect = element.getBoundingClientRect();
           if (rect.width <= 0 || rect.height <= 0) return;
           visibleCount += 1;
-          adoptStylesToShadowRoot(element);
-          element.style.setProperty("--overlay-color", this.color);
-          element.classList.add(HIGHLIGHT_CLASS);
+          adoptHighlightToRoot(element);
+          newSet.add(element);
         });
 
+        // Remove highlights from elements no longer matched
+        _highlightedElements.forEach((el) => {
+          if (!newSet.has(el)) {
+            el.classList.remove(HIGHLIGHT_CLASS);
+          }
+        });
+
+        // Add highlights to newly matched elements
+        newSet.forEach((el) => {
+          if (!_highlightedElements.has(el)) {
+            el.classList.add(HIGHLIGHT_CLASS);
+          }
+        });
+
+        _highlightedElements = newSet;
         this.selectorMatchCount = visibleCount;
+        this.applyHighlightColor(this.color);
         this.refreshRuleList();
-        if (__IS_DEBUG__) {
-          recordFlowDiagnostic({
-            source: "debugger manual scan",
-            ruleCount: 1,
-            durationMs: performance.now() - startedAt,
-          });
-        }
       },
 
       clearHighlights() {
+        if (this.scanTimer !== null) {
+          clearInterval(this.scanTimer);
+          this.scanTimer = null;
+        }
         this.selector = "";
         this.selectorError = "";
         this.selectorMatchCount = 0;
         clearAllHighlights();
       },
 
+      applyHighlightColor(color: string) {
+        document.documentElement.style.setProperty(
+          "--debugger-highlight-color",
+          color,
+        );
+      },
+
       updateDiagnostics() {
         const snapshot = getPerfDiagnosticsSnapshot();
         this.perf.slowRules = snapshot.slowRules;
         this.perf.longTaskEvents = snapshot.longTasks.slice(0, 10);
+        this.relatedLongTaskCount = snapshot.longTasks.filter(
+          (task) => task.relatedKind !== "unrelated",
+        ).length;
         this.perf.recentFlows = snapshot.recentFlows.slice(0, 10);
         this.perf.slowQueries = snapshot.slowQueries.slice(0, 10);
         this.perf.recentQueries = snapshot.recentQueries.slice(0, 40);
@@ -373,7 +400,7 @@ export function initDebugger() {
 
         try {
           state.containerElement.releasePointerCapture(event.pointerId);
-        } catch {}
+        } catch { }
 
         state.isDragging = false;
       },
@@ -406,7 +433,7 @@ export function initDebugger() {
               }
             });
             state.perfObserver.observe({ entryTypes: ["longtask"] });
-          } catch {}
+          } catch { }
         }
 
         state.perfTimer = window.setInterval(() => {

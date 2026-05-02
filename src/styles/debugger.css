@@ -1,4 +1,12 @@
 /* Debugger Panel Styles */
+input {
+  color-scheme: light;
+}
+
+/* 父级有 .memo-container-dark-theme 时 */
+.memo-container-dark-theme input {
+  color-scheme: dark;
+}
 .debugger-window {
   position: fixed;
   background: var(--bg-main);
@@ -178,6 +186,25 @@
 }
 
 .debugger-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-main);
+  border-radius: 3px;
+}
+
+.debugger-query-list {
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.debugger-query-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.debugger-query-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.debugger-query-list::-webkit-scrollbar-thumb {
   background: var(--border-main);
   border-radius: 3px;
 }

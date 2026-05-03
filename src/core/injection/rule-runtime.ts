@@ -1,17 +1,16 @@
 import { unsafeWindow } from "$";
 import {
-  InjectionMode,
-  isDynamicRule,
-  isPollingRule,
-  isStaticRule,
+  isDynamicMode,
+  isPollingMode,
+  isStaticMode,
 } from "@/core/rules/rule-types";
-import { config } from "@/core/rules/rules";
 import type {
   DynamicPageRule,
   PageRule,
   PollingPageRule,
   StaticPageRule,
 } from "@/core/rules/rule-types";
+import { config } from "@/core/rules/rules";
 import { logger } from "@/utils/logger";
 
 export interface RuleGroups {
@@ -29,11 +28,11 @@ export function getMatchedRules(currentUrl = unsafeWindow.location.href): PageRu
 export function groupRulesByMode(rules: PageRule[]): RuleGroups {
   return rules.reduce<RuleGroups>(
     (groups, rule) => {
-      if (isStaticRule(rule)) {
+      if (isStaticMode(rule)) {
         groups.staticRules.push(rule);
-      } else if (isDynamicRule(rule)) {
+      } else if (isDynamicMode(rule)) {
         groups.dynamicRules.push(rule);
-      } else if (isPollingRule(rule)) {
+      } else if (isPollingMode(rule)) {
         groups.pollingRules.push(rule);
       }
 
@@ -65,12 +64,12 @@ export function logRuleScanResult(
 ) {
   if (count === 0) return;
 
-  if (rule.injectMode === InjectionMode.Static) {
+  if (isStaticMode(rule)) {
     logger.debug(`💉 静态注入: 找到 ${count} 个目标元素 [${selector}]`);
     return;
   }
 
-  if (rule.injectMode === InjectionMode.Polling) {
+  if (isPollingMode(rule)) {
     logger.debug(`🔁 轮询注入 [${rule.name}]: 找到 ${count} 个目标元素`);
   }
 }

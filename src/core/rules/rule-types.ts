@@ -13,7 +13,7 @@ export class RawRule {
   styleScope!: StyleScope;
   aSelector?: string;
   textSelector?: string;
-  trigger?: { watch: string; interval: number;};
+  trigger?: { watch: string; interval: number };
   ignoreProcessed?: boolean;
   matchByName?: boolean;
   dynamicWatch?: boolean;
@@ -21,7 +21,6 @@ export class RawRule {
     if (!this.trigger) return InjectionMode.Static;
     return this.ignoreProcessed ? InjectionMode.Polling : InjectionMode.Dynamic;
   }
-
 }
 
 export interface RawConfig {
@@ -29,25 +28,17 @@ export interface RawConfig {
   rule: RawRule;
 }
 
-// 修正：StaticPageRule 的 trigger 必须是 undefined[cite: 2]
+export type UidResolverFn = (el: HTMLElement, rule: RawRule) => string | null;
+
 export type StaticPageRule = RawRule & { trigger?: never };
-export type DynamicPageRule = RawRule & { trigger: NonNullable<RawRule["trigger"]> };
+export type DynamicPageRule = RawRule & { trigger: NonNullable<RawRule["trigger"]>; uidResolver?: UidResolverFn };
 export type PollingPageRule = DynamicPageRule & { ignoreProcessed: true };
 
-// 类型守卫：显式使用 rule.trigger 判断[cite: 2]
-export const isDynamicRule = (rule: RawRule): rule is DynamicPageRule => !!rule.trigger;
-export const isStaticRule = (rule: RawRule): rule is StaticPageRule => rule.trigger === undefined;
-export const isPollingRule = (rule: RawRule): rule is PollingPageRule => isDynamicRule(rule) && rule.ignoreProcessed === true;
-
-/** 隐式推导：绝不返回 undefined */
-export const getInjectionMode = (rule: RawRule): InjectionMode => {
-  if (isPollingRule(rule)) return InjectionMode.Polling;
-  if (isDynamicRule(rule)) return InjectionMode.Dynamic;
-  return InjectionMode.Static;
-};
-
-// 语义一致性别名
 export type PageRule = RawRule;
 export type RuleConfigEntry = RawConfig;
 export type DynamicTriggerConfig = NonNullable<RawRule["trigger"]>;
 export type PollingTriggerConfig = DynamicTriggerConfig & { ignoreProcessed: true };
+
+export const isStaticMode = (rule: RawRule): rule is StaticPageRule => rule.injectMode === InjectionMode.Static;
+export const isDynamicMode = (rule: RawRule): rule is DynamicPageRule => rule.injectMode === InjectionMode.Dynamic;
+export const isPollingMode = (rule: RawRule): rule is PollingPageRule => rule.injectMode === InjectionMode.Polling;

@@ -1,4 +1,3 @@
-// src/core/renderer.ts
 import type { BiliUser, ElementMeta } from "../types";
 import type { PageRule } from "@/core/rules/rule-types";
 import { StyleScope } from "@/core/rules/rules";
@@ -11,13 +10,9 @@ import { syncElementMeta, syncRenderedNodeState } from "./rendered-node";
 import { markOwnedElement } from "../dom/owned-node";
 import { fontSizeCache } from "@/utils/cache";
 
-// ✅ 核心优化：使用 WeakMap 建立 "B站原元素" -> "我们注入的元素" 的映射
-// 这样可以避免重复创建 DOM，也能防止内存泄漏（当 B 站元素被回收时，我们的记录也会自动回收）
+// 使用 WeakMap 建立 "B站原元素" -> "我们注入的元素" 的映射
 const wrapperCache = new WeakMap<HTMLElement, HTMLElement>();
 
-/**
- * 主渲染入口
- */
 export async function injectMemoRenderer(
   el: HTMLElement,
   user: BiliUser,
@@ -26,7 +21,6 @@ export async function injectMemoRenderer(
 ): Promise<boolean> {
   const displayMode = userStore.displayMode;
 
-  // 根据样式作用域分发处理逻辑
   switch (rule.styleScope) {
     case StyleScope.Minimal:
       return renderMinimal(
@@ -43,10 +37,6 @@ export async function injectMemoRenderer(
   }
 }
 
-/**
- * 策略 1: Minimal (直接修改原文本)
- */
-
 function renderMinimal(
   element: HTMLElement | null,
   user: BiliUser,
@@ -55,7 +45,6 @@ function renderMinimal(
 ): boolean {
   if (!element) return false;
 
-  // 只需检查一次样式
   ensureStylesForElement(element);
   syncRenderedNodeState(element, user, meta.originalName, displayMode);
   syncElementMeta(element, meta);
@@ -63,10 +52,6 @@ function renderMinimal(
   return true;
 }
 
-/**
- * 策略 2: Editable (隐藏原元素，插入可编辑 Span)
- * ✅ 解决了重复插入 span 的问题
- */
 function renderEditable(
   el: HTMLElement,
   user: BiliUser,
@@ -76,7 +61,6 @@ function renderEditable(
 ): boolean {
   let wrapper = wrapperCache.get(el);
 
-  // 如果缓存里没有，检查 DOM 里是否真的没有 (防止页面刷新残留)
   if (
     !wrapper &&
     el.nextElementSibling?.classList.contains("editable-textarea")
@@ -85,17 +69,15 @@ function renderEditable(
     wrapperCache.set(el, wrapper);
   }
 
-  // 1. 初始化：如果是第一次渲染
   if (!wrapper) {
+    // 初始化 wrapper（第一次渲染）
     wrapper = markOwnedElement(document.createElement("span"));
     wrapper.classList.add("editable-textarea");
-    // 防止被后续选择器当成未处理节点再次注入
     wrapper.setAttribute("data-bili-processed", "true");
     if(__IS_DEBUG__){
       wrapper.style.position = "relative";
       wrapper.style.zIndex = "10000";
     }
-    // 绑定点击事件 (只绑一次)
     wrapper.addEventListener("click", (e) => {
       e.stopPropagation();
       e.preventDefault();
@@ -108,21 +90,21 @@ function renderEditable(
       enterEditMode(wrapper!, latestUser);
     });
 
-    // 插入 DOM
+    // 插入 DOM（非调试模式隐藏原元素）
     if (!__IS_DEBUG__)
-      el.style.display = "none"; // 隐藏原元素
+      el.style.display = "none";
     el.insertAdjacentElement("afterend", wrapper);
 
     // 存入缓存
     wrapperCache.set(el, wrapper);
   }
 
-  // 2. 更新：无论是新建的还是缓存的，都需要更新数据
+  // 更新数据
+
   syncRenderedNodeState(wrapper, user, meta.originalName, displayMode, {
     isEditableWrapper: true,
   });
 
-  // 3. 设置字体大小（使用自动检测，缓存高效）
   const detectedSize = fontSizeCache.getOrDetect(el, rule);
   if (detectedSize) {
     wrapper.style.setProperty("--auto-detected-font-size", detectedSize);

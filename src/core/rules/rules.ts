@@ -1,11 +1,15 @@
-import { RawRule, StyleScope, type RawConfig } from "./rule-types";
-export { StyleScope, InjectionMode, getInjectionMode } from "./rule-types";
+import { RawRule, StyleScope, type RawConfig, type UidResolverFn } from "./rule-types";
+export { StyleScope, InjectionMode } from "./rule-types";
 const COMMON_REG = /^https:\/\/[a-z0-9.]+\.bilibili\.com\/.*/;
-const r = (rule: Partial<RawRule>) => new RawRule(rule);
+const r = (rule: Partial<RawRule> & { uidResolver?: UidResolverFn }) => new RawRule(rule);
 const rawConfig: RawConfig[] = [
   {
     urlPattern: /^https:\/\/www\.bilibili\.com\/(video|list)\/.*/,
     rule: r({ name: "视频页面", styleScope: StyleScope.Editable, aSelector: ".up-name" })
+  },
+  {
+    urlPattern: /^https:\/\/www\.bilibili\.com\/(video|list)\/.*/,
+    rule: r({ name: "视频页面-Staff", styleScope: StyleScope.Editable, aSelector: "a.staff-name" })
   },
   {
     urlPattern: /^https:\/\/www\.bilibili\.com\/(video|list)\/.*/,
@@ -20,6 +24,10 @@ const rawConfig: RawConfig[] = [
   {
     urlPattern: /^https:\/\/space\.bilibili\.com\/.*/,
     rule: r({ name: "空间", styleScope: StyleScope.Editable, aSelector: ".nickname" })
+  },
+  {
+    urlPattern: /^https:\/\/space\.bilibili\.com\/.*/,
+    rule: r({ name: "空间关注/粉丝", styleScope: StyleScope.Editable, aSelector: "a.relation-card-info__uname" })
   },
   {
     urlPattern:
@@ -118,9 +126,13 @@ const rawConfig: RawConfig[] = [
     rule: r({
       name: "私信",
       styleScope: StyleScope.Minimal,
-      aSelector: 'div[data-id^="contact"]',
+      aSelector: 'div[data-id^="contact"], div[class^="_ContactName_"]',
+      textSelector: 'div[class*="_SessionItem__Name"], div[class^="_ContactName_"]',
       trigger: { watch: 'div[class^="_IM_"]', interval: 2000 },
-      ignoreProcessed: true
+      ignoreProcessed: true,
+      uidResolver: (el) =>
+        el.closest('[data-id^="contact_"]')?.getAttribute("data-id")?.split("_")?.[1] || null,
+      matchByName: true,
     })
   },
   {

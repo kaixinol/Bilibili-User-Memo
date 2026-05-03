@@ -1,5 +1,6 @@
 import { querySelectorAllDeep } from "@/utils/query-dom";
 import {
+  isDynamicMode,
   type PageRule,
   type DynamicPageRule,
   type PollingPageRule,
@@ -319,33 +320,19 @@ export class PageInjector {
     rule: PageRule,
     originalName: string,
   ): string | null {
-    // matchByName 规则：跳过 extractUid，仅按名称在 store 中查找
     if (rule.matchByName && originalName) {
       return userStore.findUserByName(originalName)?.id || null;
     }
 
-    // 常规规则：从元素属性提取 UID
+    if (isDynamicMode(rule) && rule.uidResolver) {
+      const uid = rule.uidResolver(el, rule);
+      if (uid) return uid;
+    }
+
     const uid = extractUid(el, Boolean(rule.matchByName));
     if (uid) return uid;
 
-    // 私信特殊处理
-    if (el.matches('div[class^="_ContactName_"]')) {
-      const whisperUid = this.getActiveWhisperUid();
-      if (whisperUid) return whisperUid;
-    }
-
     return null;
-  }
-
-  private getActiveWhisperUid(): string | null {
-    return (
-      document
-        .querySelector(
-          'div[class*="_SessionItemIsActive_"][data-id^="contact_"]',
-        )
-        ?.getAttribute("data-id")
-        ?.split("_")?.[1] || null
-    );
   }
 
   private onDomReady(callback: () => void) {

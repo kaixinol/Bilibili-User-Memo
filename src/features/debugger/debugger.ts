@@ -14,6 +14,8 @@ import {
   type PageRule,
   type PollingTriggerConfig,
   type RuleConfigEntry,
+  isStaticMode,
+  isDynamicMode,
 } from "@/core/rules/rule-types";
 import "@/styles/global.css";
 import "@/styles/debugger.css";
@@ -133,8 +135,8 @@ function getRuleSelector(rule: PageRule): string {
 }
 
 function getRuleTrigger(rule: PageRule): string | undefined {
-  if (rule.injectMode === InjectionMode.Static) return undefined;
-  if (rule.injectMode === InjectionMode.Dynamic) {
+  if (isStaticMode(rule)) return undefined;
+  if (isDynamicMode(rule)) {
     const trigger = rule.trigger as DynamicTriggerConfig;
     return `${trigger.watch} / debounce ${trigger.interval}ms`;
   }

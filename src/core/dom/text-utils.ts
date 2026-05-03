@@ -1,6 +1,6 @@
 import type { BiliUser } from "../types";
 import {
-  isDynamicRule,
+  isDynamicMode,
   type DynamicPageRule,
   type PageRule,
   type PollingPageRule,
@@ -81,12 +81,13 @@ export function resolveRuleTextTarget(
 ): HTMLElement | null {
   if (!rule.textSelector) return el;
 
-  if (!isDynamicRule(rule)) {
-    return resolveSelfTextTarget(el, rule.textSelector);
+  // Polling rules have trigger but don't use watch-based text resolution
+  if (isDynamicMode(rule)) {
+    if (!hasWatchTrigger(rule)) return null;
+    return resolveWatchTextTarget(el, rule, rule.textSelector);
   }
 
-  if (!hasWatchTrigger(rule)) return null;
-  return resolveWatchTextTarget(el, rule, rule.textSelector);
+  return resolveSelfTextTarget(el, rule.textSelector);
 }
 
 /**

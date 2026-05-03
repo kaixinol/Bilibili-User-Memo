@@ -4,14 +4,12 @@ import {
 } from "query-selector-shadow-dom";
 import { getCaller } from "./caller";
 import { recordQueryDiagnostic } from "./perf-diagnostics";
-import { logger } from "./logger";
 
 export function querySelectorDeep(selector: string): HTMLElement | null {
   if (!__IS_DEBUG__) return rawQuerySelectorDeep(selector);
 
   const startedAt = performance.now();
   const caller = getCaller();
-  logger.debug("querySelectorDeep", selector, caller);
   try {
     const element = rawQuerySelectorDeep(selector);
     recordQueryIfUseful({
@@ -77,6 +75,6 @@ function describeRoot(root: Document | Element | ShadowRoot | undefined) {
 }
 
 function recordQueryIfUseful(input: Parameters<typeof recordQueryDiagnostic>[0]) {
-  if (input.caller?.includes("/features/debugger/debugger.ts")) return;
+  if (input.caller?.startsWith("features.debugger.")) return;
   recordQueryDiagnostic(input);
 }

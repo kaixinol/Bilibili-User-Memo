@@ -117,7 +117,7 @@ const rawConfig: RawConfig[] = [
       name: "评论区",
       styleScope: StyleScope.Editable,
       aSelector: "#user-name a",
-      trigger: { watch: "div#contents", interval: 500 },
+      trigger: { watch: "div#contents", interval: 1000 },
       dynamicWatch: true
     })
   },
@@ -203,7 +203,6 @@ const rawConfig: RawConfig[] = [
       aSelector: "a.up-item",
       textSelector: "div.up-name",
       trigger: { watch: "div.living-up-list", interval: 1000 },
-      matchByName: true,
     })
   },
   {

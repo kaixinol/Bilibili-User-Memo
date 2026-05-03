@@ -131,11 +131,6 @@ export class DynamicRuleWatcher {
         shouldHandleDiscoveryMutations(mutations);
 
       if (hasAddedNodes) {
-        mutations.forEach((mutation) => {
-          mutation.addedNodes.forEach((node) =>
-            this.discoverShadowScopesFromNode(node),
-          );
-        });
         this.scanAndAttachNewTargets();
         this.bridgeShadowMutationsToWatchScopes(scope);
       }
@@ -158,15 +153,6 @@ export class DynamicRuleWatcher {
       .forEach((element) => this.observeHostShadowScope(element));
   }
 
-  private discoverShadowScopesFromNode(node: Node) {
-    if (!(node instanceof Element)) return;
-
-    this.observeHostShadowScope(node);
-    node
-      .querySelectorAll("*")
-      .forEach((element) => this.observeHostShadowScope(element));
-  }
-
   private observeHostShadowScope(element: Element) {
     const shadowRoot = element.shadowRoot;
     if (shadowRoot) {
@@ -174,23 +160,24 @@ export class DynamicRuleWatcher {
     }
   }
 
+  private discoveryTargetsCached = false;
+
   private scanAndAttachNewTargets() {
-    // 查找所有符合 watch 选择器的元素
+    if (this.discoveryTargetsCached) return;
     const targets = getWatchTargets(this.rule.trigger.watch);
+    if (targets.length === 0) return;
 
     targets.forEach((target) => {
-      const scope = resolveWatchScope(target); // 优先监听 ShadowRoot
-      const keyNode = target; // 使用元素本身作为 Map 的 Key
+      const scope = resolveWatchScope(target);
+      const keyNode = target;
       const current = this.instanceObservers.get(keyNode);
 
-      // 如果这个元素还没有被监听，则挂载
       if (!current) {
         logger.debug(`🔭 [${this.rule.name}] 捕获新容器实例`, target);
         this.attachInstanceWatcher(keyNode, scope);
         return;
       }
 
-      // 已挂载监听，但 scope 发生变化（例如后续 attachShadow），需要重绑
       if (current.scope !== scope) {
         logger.debug(
           `🔁 [${this.rule.name}] 容器作用域切换，重绑监听`,
@@ -200,6 +187,8 @@ export class DynamicRuleWatcher {
         this.attachInstanceWatcher(keyNode, scope);
       }
     });
+
+    this.discoveryTargetsCached = true;
   }
 
   private createScopeObserver(keyNode: HTMLElement, scope: ScanScope): MutationObserver {
@@ -207,18 +196,8 @@ export class DynamicRuleWatcher {
       if (!shouldHandleDiscoveryMutations(mutations).hasAddedNodes) return;
       if (this.instanceIdlePending.has(keyNode)) return;
       this.instanceIdlePending.add(keyNode);
-      requestIdle(() => {
-        this.instanceIdlePending.delete(keyNode);
-        if (__IS_DEBUG__) {
-          recordFlowDiagnostic({
-            source: "dynamic idle",
-            ruleName: this.rule.name,
-            mode: this.rule.injectMode,
-            scopeType: getScopeType(scope),
-          });
-        }
-        this.onTrigger(this.rule, scope);
-      }, this.rule.trigger.interval);
+      this.onTrigger(this.rule, scope);
+      this.instanceIdlePending.delete(keyNode);
     });
     observer.observe(scope, { childList: true, subtree: true });
     return observer;
@@ -226,26 +205,16 @@ export class DynamicRuleWatcher {
 
   /**
    * ShadowRoot 内部新增节点不会冒泡到其宿主元素的 childList 观察器。
-   * 因此在 discovery 层发现 shadow 变更时，主动桥接到对应 watch 容器触发一次扫描。
+   * 因此在 discovery 层发现 shadow 变更时，桥接到对应 watch 容器触发扫描。
+   * 仅处理新增节点的场景；去重由 scheduler 的 pendingQueue 保证。
    */
   private bridgeShadowMutationsToWatchScopes(scope: DiscoveryScope) {
     if (!(scope instanceof ShadowRoot)) return;
     if (this.instanceObservers.size === 0) return;
 
-    const touchedScopes = new Set<ScanScope>();
     for (const { scope: watchScope } of this.instanceObservers.values()) {
-      // watchScope 本身就是该 ShadowRoot 的情况，实例观察器已经覆盖，无需桥接
-      if (watchScope instanceof ShadowRoot && watchScope === scope) {
-        continue;
-      }
-
+      if (watchScope instanceof ShadowRoot && watchScope === scope) continue;
       if (!isNodeInsideScope(scope, watchScope)) continue;
-      touchedScopes.add(watchScope);
-    }
-
-    if (touchedScopes.size === 0) return;
-
-    touchedScopes.forEach((watchScope) => {
       if (__IS_DEBUG__) {
         recordFlowDiagnostic({
           source: "dynamic shadow bridge",
@@ -255,7 +224,7 @@ export class DynamicRuleWatcher {
         });
       }
       this.onTrigger(this.rule, watchScope);
-    });
+    }
   }
 
   private attachInstanceWatcher(keyNode: HTMLElement, scope: ScanScope) {

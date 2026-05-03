@@ -102,7 +102,7 @@ function syncUsersSnapshot(store: InternalUserListStore, users: BiliUser[]) {
 }
 
 async function waitForUsersSnapshotIdle() {
-  await afterFramesAndIdle(2, 300);
+  await afterFramesAndIdle(5, 1000);
 }
 
 export function registerUserStore() {

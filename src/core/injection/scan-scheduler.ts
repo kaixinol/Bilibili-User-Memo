@@ -19,7 +19,7 @@ export class RuleScanScheduler {
   >();
 
   constructor(
-    private readonly scanRule: (rule: PageRule, scope: ScanScope) => Promise<void>, // QUESTION: 这是个啥
+    private readonly processRule: (rule: PageRule, scope: ScanScope) => Promise<void>,
     private readonly isActive: () => boolean,
   ) {}
 
@@ -41,7 +41,7 @@ export class RuleScanScheduler {
         while (queue.length > 0 && deadline.timeRemaining() > 1) {
           const rule = queue.shift();
           if (!rule) continue;
-          await this.scanRule(rule, scope);
+          await this.processRule(rule, scope);
           processedRules += 1;
         }
 

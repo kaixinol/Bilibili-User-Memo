@@ -13,6 +13,7 @@ import {
   type DiscoveryScope,
 } from "./watch-runtime";
 import type { ScanScope } from "./scan-scope";
+import { requestIdle } from "@/utils/scheduler";
 
 interface InstanceObserverRecord {
   observer: MutationObserver;
@@ -29,10 +30,12 @@ export class DynamicRuleWatcher {
   // Legacy Mode (dynamicWatch = false): Single target management
   private legacyObserver: MutationObserver | null = null;
   private legacyPollTimer: number | null = null;
+  private legacyIdlePending = false;
 
   // Global Mode (dynamicWatch = true): Multi-target management
   private discoveryObservers = new Map<DiscoveryScope, MutationObserver>();
   private instanceObservers = new Map<HTMLElement, InstanceObserverRecord>();
+  private readonly instanceIdlePending = new WeakSet<HTMLElement>();
   private readonly handleShadowAttached = (shadowRoot: ShadowRoot) => {
     this.observeDiscoveryScope(shadowRoot);
     this.scanAndAttachNewTargets();
@@ -61,6 +64,7 @@ export class DynamicRuleWatcher {
       this.legacyObserver.disconnect();
       this.legacyObserver = null;
     }
+    this.legacyIdlePending = false;
 
     // Stop Global
     this.unregisterAttachShadowListener();
@@ -198,18 +202,23 @@ export class DynamicRuleWatcher {
     });
   }
 
-  private createScopeObserver(scope: ScanScope): MutationObserver {
+  private createScopeObserver(keyNode: HTMLElement, scope: ScanScope): MutationObserver {
     const observer = new MutationObserver((mutations) => {
       if (!shouldHandleDiscoveryMutations(mutations).hasAddedNodes) return;
-      if (__IS_DEBUG__) {
-        recordFlowDiagnostic({
-          source: "dynamic mutation",
-          ruleName: this.rule.name,
-          mode: this.rule.injectMode,
-          scopeType: getScopeType(scope),
-        });
-      }
-      this.onTrigger(this.rule, scope);
+      if (this.instanceIdlePending.has(keyNode)) return;
+      this.instanceIdlePending.add(keyNode);
+      requestIdle(() => {
+        this.instanceIdlePending.delete(keyNode);
+        if (__IS_DEBUG__) {
+          recordFlowDiagnostic({
+            source: "dynamic idle",
+            ruleName: this.rule.name,
+            mode: this.rule.injectMode,
+            scopeType: getScopeType(scope),
+          });
+        }
+        this.onTrigger(this.rule, scope);
+      }, this.rule.trigger.interval);
     });
     observer.observe(scope, { childList: true, subtree: true });
     return observer;
@@ -250,7 +259,7 @@ export class DynamicRuleWatcher {
   }
 
   private attachInstanceWatcher(keyNode: HTMLElement, scope: ScanScope) {
-    const observer = this.createScopeObserver(scope);
+    const observer = this.createScopeObserver(keyNode, scope);
     this.instanceObservers.set(keyNode, { observer, scope });
 
     // 首次挂载成功，立即执行一次局部扫描
@@ -305,7 +314,7 @@ export class DynamicRuleWatcher {
           this.legacyPollTimer = null;
           logger.debug(`👀 规则 [${this.rule.name}] 监听器挂载成功`);
         }
-      }, 800); // 稍微放宽轮询间隔，减少空转消耗
+      }, this.rule.trigger.interval * 2); // 轮询间隔设为 debounce 的两倍，减少空转
     }
   }
 
@@ -314,9 +323,8 @@ export class DynamicRuleWatcher {
     if (!watchTarget) return false;
 
     const scope = resolveWatchScope(watchTarget);
-    this.legacyObserver = this.createScopeObserver(scope);
+    this.legacyObserver = this.createIdleLegacyObserver(scope);
 
-    // 首次挂载成功，立即执行一次局部扫描
     if (__IS_DEBUG__) {
       recordFlowDiagnostic({
         source: "dynamic legacy attach",
@@ -327,6 +335,35 @@ export class DynamicRuleWatcher {
     }
     this.onTrigger(this.rule, scope);
     return true;
+  }
+
+  /**
+   * Legacy 模式专用 observer：mutation 后空闲时触发，最高 500ms 触发一次
+   */
+  private createIdleLegacyObserver(scope: ScanScope): MutationObserver {
+    const scheduleTrigger = () => {
+      if (this.legacyIdlePending) return;
+      this.legacyIdlePending = true;
+      requestIdle(() => {
+        this.legacyIdlePending = false;
+        if (__IS_DEBUG__) {
+          recordFlowDiagnostic({
+            source: "dynamic legacy idle",
+            ruleName: this.rule.name,
+            mode: this.rule.injectMode,
+            scopeType: getScopeType(scope),
+          });
+        }
+        this.onTrigger(this.rule, scope);
+      }, this.rule.trigger.interval);
+    };
+
+    const observer = new MutationObserver((mutations) => {
+      if (!shouldHandleDiscoveryMutations(mutations).hasAddedNodes) return;
+      scheduleTrigger();
+    });
+    observer.observe(scope, { childList: true, subtree: true });
+    return observer;
   }
 }
 

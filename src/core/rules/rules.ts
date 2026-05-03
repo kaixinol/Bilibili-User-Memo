@@ -147,7 +147,7 @@ const rawConfig: RawConfig[] = [
     rule: r({
       name: "动态页",
       styleScope: StyleScope.Editable,
-      aSelector: "span.bili-dyn-title__text",
+      textSelector: "span.bili-dyn-title__text",
       trigger: { watch: "div.bili-dyn-item__main", interval: 1000 },
       dynamicWatch: true,
       matchByName: true

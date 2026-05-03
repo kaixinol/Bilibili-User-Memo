@@ -10,7 +10,6 @@ import { getElementDisplayName } from "../dom/text-utils";
 import { refreshRenderedMemoNodes } from "../render/dom-refresh";
 import { injectMemoRenderer } from "../render/renderer";
 import { userStore, type UserStoreChange } from "../store/store";
-import { findUniqueUserByName } from "../store/name-match";
 import type { BiliUser } from "../types";
 import { DynamicRuleWatcher, PollingRuleWatcher } from "./watchers";
 import { unsafeWindow } from "$";
@@ -306,33 +305,35 @@ export class PageInjector {
     }
   }
 
+  /**
+   * 解析元素对应的 UID。
+   *
+   * matchByName 的特殊性：
+   *   1. extractUid 不应参与匹配——它会从 location.href 提取空间页面的 UID，
+   *      导致所有元素都被误匹配到页面主人。
+   *   2. 名称匹配失败时（none / ambiguous）直接返回 null，不渲染 Editable 样式。
+   *      这是预期行为：只对 store 中已有的用户（已添加备注的用户）应用样式。
+   */
   private resolveElementUid(
     el: HTMLElement,
     rule: PageRule,
     originalName: string,
   ): string | null {
+    // matchByName 规则：跳过 extractUid，仅按名称在 store 中查找
+    if (rule.matchByName && originalName) {
+      return userStore.findUserByName(originalName)?.id || null;
+    }
+
+    // 常规规则：从元素属性提取 UID
     const uid = extractUid(el, Boolean(rule.matchByName));
     if (uid) return uid;
 
+    // 私信特殊处理
     if (el.matches('div[class^="_ContactName_"]')) {
       const whisperUid = this.getActiveWhisperUid();
       if (whisperUid) return whisperUid;
     }
 
-    if (rule.matchByName && originalName) {
-      const match = findUniqueUserByName(userStore.getUsers(), originalName);
-      if (match.reason === "ignored") {
-        logger.warn(`⚠️ matchByName 遇到已忽略昵称，已跳过匹配: [${rule.name}]`, {
-          originalName,
-        });
-      }
-      if (match.reason === "ambiguous") {
-        logger.warn(`⚠️ matchByName 遇到重名，已跳过匹配: [${rule.name}]`, {
-          originalName,
-        });
-      }
-      return match.user?.id || null;
-    }
     return null;
   }
 

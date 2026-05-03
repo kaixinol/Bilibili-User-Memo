@@ -60,6 +60,7 @@ function readUidFromDynamicItemRoot(el: Element): string | null {
 }
 
 function readUidFromHrefOrLocation(el: Element): string | null {
+  logger.debug("尝试从 href 或 location 中提取 UID，这可能不是你所想要的情况");
   const href = el.getAttribute("href") || location.href;
   if (!href) return null;
   const match = href.match(SPACE_UID_REGEX);

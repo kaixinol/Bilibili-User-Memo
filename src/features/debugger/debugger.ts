@@ -3,11 +3,6 @@
 TODO: 加一个搜索功能
 TODO: 触发查询dom的文件标签（可按标签过滤）。
 
-// QUESTION: 为啥`最近 - *`规则匹配到的元素明明是在用户不可见的地方静默更新的，可还是一直触发重扫
-FIXME： dynamicWatch 开启 vs 不开启，似乎是非预期行为
-TODO: 使用IntersectionObserver来判断元素是否可见
-
-// QUESTION: 为啥有些规则一直被频繁的触发（指Dynamic规则）为什么？找出原因。
 */
 import Alpine from "alpinejs";
 import { querySelectorAllDeep } from "@/utils/query-dom";

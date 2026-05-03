@@ -49,6 +49,8 @@ export default defineConfig(({ mode }) => {
           connect: ["api.bilibili.com"],
           "run-at": "document-body",
           supportURL: "https://github.com/kaixinol/Bilibili-User-Memo/issues",
+          contributionURL: "https://s2.loli.net/2025/08/04/1hjKA5qwXHS8Glu.webp",
+          contributionAmount: "10￥",
         },
         build: {
           metaFileName: true, // Generate .meta.js for efficient update checks
@@ -62,7 +64,7 @@ export default defineConfig(({ mode }) => {
           },
         },
         server: {
-          mountGmApi: true, // 修复production莫名其妙没有gm api的问题
+          mountGmApi: true,
         },
       }),
     ],

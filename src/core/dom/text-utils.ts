@@ -31,12 +31,26 @@ function resolveSelfTextTarget(
   );
 }
 
+/**
+ * 在有 watch 容器的规则中，找到 "当前元素对应的昵称 span"。
+ *
+ * el 是选择器匹配到的元素：
+ *   - 有 aSelector 时，el 是链接元素（如 <a class="up-item">）
+ *     需要进一步定位对应的昵称 span
+ *   - 没有 aSelector 只有 textSelector 时，el 就是昵称 span 本身
+ *     此时 .matches(textSelector) 成立，直接返回 el
+ */
 function resolveWatchTextTarget(
   el: HTMLElement,
   rule: DynamicPageRule | PollingPageRule,
   textSelector: string,
 ): HTMLElement | null {
-  // 1) 优先命中“当前元素所属”的 watch 容器，避免多容器串数据
+  // 元素自身就是文本节点（无 aSelector 的 matchByName 规则），直接返回。
+  // 不跳过这一步会导致后续 .querySelector(textSelector) 在 watch 容器内
+  // 永远返回第一个 span 的文本，造成昵称串数据。
+  if (el.matches(textSelector)) return el;
+
+  // 1) 优先命中"当前元素所属"的 watch 容器，避免多容器串数据
   const directContainer = el.closest(rule.trigger.watch);
   if (directContainer) {
     return directContainer.querySelector(textSelector) as HTMLElement | null;
@@ -59,7 +73,7 @@ function resolveWatchTextTarget(
 }
 
 /**
- * 解析规则对应的“文本承载节点”。
+ * 解析规则对应的"文本承载节点"。
  */
 export function resolveRuleTextTarget(
   el: HTMLElement,

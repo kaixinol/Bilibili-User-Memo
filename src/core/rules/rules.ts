@@ -22,6 +22,88 @@ const rawConfig: RawConfig[] = [
     rule: r({ name: "空间", styleScope: StyleScope.Editable, aSelector: ".nickname" })
   },
   {
+    urlPattern:
+      /^https:\/\/space\.bilibili\.com\/\d+\/favlist\?(?=[^#]*\bfid=\d+\b)(?=[^#]*\bftype=create\b)[^#]*(?:#.*)?$/,
+    rule: r({
+      name: "空间收藏夹",
+      styleScope: StyleScope.Minimal,
+      aSelector: ".bili-video-card__author",
+      textSelector: ".bili-video-card__text span[title]",
+      trigger: { watch: ".favlist-main", interval: 1000 },
+    })
+  },
+  {
+    urlPattern:
+      /^https:\/\/www\.bilibili\.com\/watchlater\/list(?:\?[^#]*)?(?:#.*)?$/,
+    rule: r({
+      name: "稍后再看",
+      styleScope: StyleScope.Minimal,
+      aSelector: ".bili-video-card__author",
+      textSelector: ".bili-video-card__text span[title]",
+      trigger: { watch: "body", interval: 1000 },
+    })
+  },
+  {
+    urlPattern: /^https:\/\/www\.bilibili\.com\/?(?:\?[^#]*)?(?:#.*)?$/,
+    rule: r({
+      name: "首页",
+      styleScope: StyleScope.Minimal,
+      aSelector:
+        ".bili-video-card__info--owner, .bili-video-card__author, a.up-name",
+      textSelector:
+        ".bili-video-card__info--author, .bili-video-card__text span[title], .up-name__text",
+      trigger: { watch: "#app", interval: 1000 },
+    })
+  },
+  {
+    urlPattern: /^https:\/\/search\.bilibili\.com\/(?:all|video|bangumi|pgc|live|article|user)(?:\?[^#]*)?(?:#.*)?$/,
+    rule: r({
+      name: "搜索",
+      styleScope: StyleScope.Minimal,
+      aSelector:
+        ".bili-video-card__info--owner, .bili-video-card__author, a.up-name",
+      textSelector:
+        ".bili-video-card__info--author, .bili-video-card__text span[title], .up-name__text",
+      trigger: { watch: "#app", interval: 1000 },
+    })
+  },
+  {
+    urlPattern: /^https:\/\/www\.bilibili\.com\/v\/popular\/?(?:\?[^#]*)?(?:#.*)?$/,
+    rule: r({
+      name: "热门",
+      styleScope: StyleScope.Minimal,
+      aSelector:
+        ".bili-video-card__info--owner, .bili-video-card__author, a.up-name",
+      textSelector:
+        ".bili-video-card__info--author, .bili-video-card__text span[title], .up-name__text",
+      trigger: { watch: "#app", interval: 1000 },
+    })
+  },
+  {
+    urlPattern: /^https:\/\/www\.bilibili\.com\/v\/[a-z]+\/?(?:\?[^#]*)?(?:#.*)?$/,
+    rule: r({
+      name: "分区",
+      styleScope: StyleScope.Minimal,
+      aSelector:
+        ".bili-video-card__info--owner, .bili-video-card__author, a.up-name",
+      textSelector:
+        ".bili-video-card__info--author, .bili-video-card__text span[title], .up-name__text",
+      trigger: { watch: "#app", interval: 1000 },
+    })
+  },
+  {
+    urlPattern: /^https:\/\/www\.bilibili\.com\/c\/[a-z0-9_-]+\/?(?:\?[^#]*)?(?:#.*)?$/,
+    rule: r({
+      name: "频道",
+      styleScope: StyleScope.Minimal,
+      aSelector:
+        ".bili-video-card__info--owner, .bili-video-card__author, a.up-name",
+      textSelector:
+        ".bili-video-card__info--author, .bili-video-card__text span[title], .up-name__text",
+      trigger: { watch: "#app", interval: 1000 },
+    })
+  },
+  {
     urlPattern: COMMON_REG,
     rule: r({
       name: "评论区",
@@ -32,13 +114,32 @@ const rawConfig: RawConfig[] = [
     })
   },
   {
-    urlPattern: /^https:\/\/message\.bilibili\.com\/.*whisper/,
+    urlPattern: /^https:\/\/message\.bilibili\.com\/(?:[^#]*)?(?:#\/)?whisper(?:\/|$)/,
     rule: r({
       name: "私信",
       styleScope: StyleScope.Minimal,
       aSelector: 'div[data-id^="contact"]',
       trigger: { watch: 'div[class^="_IM_"]', interval: 2000 },
-      ignoreProcessed: true // 隐式判定为 Polling
+      ignoreProcessed: true
+    })
+  },
+  {
+    urlPattern: /^https:\/\/space\.bilibili\.com\/\d+\/dynamic\/*/,
+    rule: r({
+      name: "个人空间动态",
+      styleScope: StyleScope.Minimal,
+      aSelector: "div.bili-dyn-title span.bili-dyn-title__text",
+      trigger: { watch: ".bili-dyn-list", interval: 1000 },
+    })
+  },
+  {
+    urlPattern:
+      /^https:\/\/message\.bilibili\.com\/(?:[^#]*)?(?:#\/)?(?:reply|love|at)(?:\/|$)/,
+    rule: r({
+      name: "回复/赞/AT",
+      styleScope: StyleScope.Minimal,
+      aSelector: "a.interaction-item__uname",
+      trigger: { watch: "div.message-content", interval: 1000 },
     })
   },
   {
@@ -52,31 +153,54 @@ const rawConfig: RawConfig[] = [
       matchByName: true
     })
   },
-  // 批量生成：首页/搜索/热门
-  ...["首页", "搜索", "热门"].map(name => ({
-    urlPattern: name === "首页" ? /^https:\/\/www\.bilibili\.com\/?(\?.*)?$/ :
-      name === "搜索" ? /^https:\/\/search\.bilibili\.com\/.*/ :
-        /^https:\/\/www\.bilibili\.com\/v\/popular\/?/,
-    rule: r({
-      name,
-      styleScope: StyleScope.Minimal,
-      aSelector: ".bili-video-card__info--owner",
-      textSelector: ".bili-video-card__info--author",
-      trigger: { watch: "#app", interval: 1000 }
-    })
-  })),
   // 弹出层规则
-  ...[
-    { name: "最近-UP动态", aSelector: "div.user-name a", watch: "div.header-content-panel" },
-    { name: "最近-收藏夹", aSelector: "span.header-fav-card__info--name", watch: "div.favorite-panel-popover" }
-  ].map(item => ({
+  {
     urlPattern: COMMON_REG,
     rule: r({
-      name: item.name,
-      styleScope: StyleScope.Minimal,
-      aSelector: item.aSelector,
-      trigger: { watch: item.watch, interval: 1000 }
+      name: "最近-UP动态",
+      styleScope: StyleScope.Editable,
+      aSelector: "div.user-name a",
+      trigger: { watch: "div.header-content-panel", interval: 1000 },
     })
-  }))
+  },
+  {
+    urlPattern: COMMON_REG,
+    rule: r({
+      name: "最近-收藏夹",
+      styleScope: StyleScope.Minimal,
+      aSelector: "span.header-fav-card__info--name",
+      textSelector: "span.header-fav-card__info--name span",
+      trigger: { watch: "div.favorite-panel-popover", interval: 1000 },
+    })
+  },
+  {
+    urlPattern: COMMON_REG,
+    rule: r({
+      name: "最近-历史",
+      styleScope: StyleScope.Editable,
+      textSelector: "div.header-history-card__info--name span",
+      trigger: { watch: "div.history-panel-popover", interval: 1000 },
+      matchByName: true,
+    })
+  },
+  {
+    urlPattern: COMMON_REG,
+    rule: r({
+      name: "最近-正在直播",
+      styleScope: StyleScope.Minimal,
+      aSelector: "a.up-item",
+      textSelector: "div.up-name",
+      trigger: { watch: "div.living-up-list", interval: 1000 },
+      matchByName: true,
+    })
+  },
+  {
+    urlPattern: /^https:\/\/www\.bilibili\.com\/opus\/\d+/,
+    rule: r({
+      name: "新版动态",
+      styleScope: StyleScope.Editable,
+      aSelector: "div.opus-module-author__name",
+    })
+  }
 ];
 export const config = rawConfig;

@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { BiliUser } from "../types";
-import {
-  findUniqueUserByName,
-  resolveUniqueUserIdByName,
-} from "./name-match";
+import { findUniqueUserByName } from "./name-match";
 
 function createUser(id: string, nickname: string): BiliUser {
   return {
@@ -76,22 +73,5 @@ describe("findUniqueUserByName", () => {
 
     expect(result.reason).toBe("ignored");
     expect(result.user).toBeUndefined();
-  });
-});
-
-describe("resolveUniqueUserIdByName", () => {
-  it("returns the uid when matchByName fallback has a unique nickname match", () => {
-    const users = [createUser("1001", "唯一用户")];
-
-    expect(resolveUniqueUserIdByName(users, "唯一用户")).toBe("1001");
-  });
-
-  it("returns null when matchByName fallback hits an ambiguous nickname", () => {
-    const users = [
-      createUser("1001", "账号已注销"),
-      createUser("1002", "账号已注销"),
-    ];
-
-    expect(resolveUniqueUserIdByName(users, "账号已注销")).toBeNull();
   });
 });

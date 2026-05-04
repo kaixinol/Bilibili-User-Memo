@@ -14,24 +14,6 @@ export function setGmValue<T>(key: string, value: T): void {
   GM_setValue(key, value);
 }
 
-export function readGmValue<T>(
-  key: string,
-  fallback: T,
-  normalize: (raw: unknown) => T,
-): T {
-  return normalize(getGmValue<unknown>(key, fallback));
-}
-
-export function updateGmValue<T>(
-  key: string,
-  fallback: T,
-  updater: (current: T) => T,
-): T {
-  const nextValue = updater(getGmValue(key, fallback));
-  setGmValue(key, nextValue);
-  return nextValue;
-}
-
 export function createPrefixedGmStorage(
   prefix: string,
   emptyValue = "",

@@ -133,10 +133,6 @@ class UserStore {
   private _displayMode = DEFAULT_DISPLAY_MODE;
   private listeners = new Set<StoreListener>();
 
-  // 标记是否正在进行系统级的数据变更
-  // private 访问权限，强制通过方法修改
-  private isSystemChanging = false;
-
   constructor() {
     this.refreshData();
     // 初始化跨标签页/跨域监听
@@ -183,7 +179,7 @@ class UserStore {
    */
   private listenToRemoteChanges() {
     GM_addValueChangeListener(USERS_KEY, (_name, _oldValue, newValue, remote) => {
-      if (!remote || this.isSystemChanging) return;
+      if (!remote) return;
       this.applyRemoteUsers(newValue);
     });
 
@@ -203,9 +199,7 @@ class UserStore {
       const diff = diffUsers(this.users, nextUsers);
       if (!diff.hasContentChanges && !diff.orderOnly) return;
 
-      this.withSystemLock(() => {
-        this.users = nextUsers;
-      });
+      this.users = nextUsers;
       if (diff.orderOnly) {
         this.emitUsers("remote");
         return;
@@ -242,9 +236,7 @@ class UserStore {
     if (nextMode === this._displayMode) return;
 
     this._displayMode = nextMode;
-    this.withSystemLock(() => {
-      saveDisplayModeToStorage(nextMode);
-    });
+    saveDisplayModeToStorage(nextMode);
     this.emitDisplayMode("update");
   }
   /**
@@ -256,6 +248,7 @@ class UserStore {
       // 历史数据可能因选择器异常被写成 UID，这里在拿到真实名字时回填
       if (originalName && (!existing.nickname || existing.nickname === uid)) {
         existing.nickname = originalName;
+        this.commitUsers("update", [uid]);
       }
       return existing;
     }
@@ -491,23 +484,12 @@ class UserStore {
     return updatedCount;
   }
 
-  private withSystemLock(action: () => void) {
-    this.isSystemChanging = true;
-    try {
-      action();
-    } finally {
-      this.isSystemChanging = false;
-    }
-  }
-
   private commitUsers(
     reason: ChangeReason,
     changedIds: string[] = [],
     rescanMatchByName = reason === "import",
   ) {
-    this.withSystemLock(() => {
-      saveUsersToStorage(this.users);
-    });
+    saveUsersToStorage(this.users);
     this.emitUsers(reason, changedIds, rescanMatchByName);
   }
 

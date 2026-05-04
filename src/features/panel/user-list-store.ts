@@ -62,11 +62,11 @@ export function setPanelPreloadAllCards(value: boolean) {
   setGmValue(PRELOAD_ALL_CARDS_KEY, value);
 }
 
-export function getPanelFuzzySearch(): boolean {
+function getPanelFuzzySearch(): boolean {
   return getGmValue<boolean>(FUZZY_SEARCH_KEY, false);
 }
 
-export function setPanelFuzzySearch(value: boolean) {
+function setPanelFuzzySearch(value: boolean) {
   setGmValue(FUZZY_SEARCH_KEY, value);
 }
 

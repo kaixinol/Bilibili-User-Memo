@@ -358,8 +358,4 @@ export function initPageInjection() {
   if (!pageInjector) pageInjector = new PageInjector();
 }
 
-export function refreshPageInjection() {
-  pageInjector?.refreshData();
-}
-
 export { setCustomMemoCss } from "../style/style-manager";

@@ -41,10 +41,3 @@ export function findUniqueUserByName(
 
   return { user: matchedUser, reason: "unique" };
 }
-
-export function resolveUniqueUserIdByName(
-  users: readonly BiliUser[],
-  name: string,
-): string | null {
-  return findUniqueUserByName(users, name).user?.id || null;
-}

@@ -22,17 +22,26 @@ export function getUserAvatarFromDOM(userID: string): string {
       attr: "srcset",
     },
     {
-      selector: `div.avatar source`,
-      attr: "srcset", // 个人空间顶部
+      selector: `#user-avatar[data-user-profile-id="${userID}"] img`, // 评论区回复
+      attr: "src",
     },
     {
-      selector: `up-avatar-wrap a[href*="${userID}"] img.bili-avatar-img`,
-      attr: "data-src", // 忘了是啥
+      selector: `a[href*="${userID}"] img.bili-avatar-img`,
+      attr: "data-src", // 忘了是啥，旧版专栏？
+    },
+    {
+      selector: `.bili-dyn-item__main source`, // 旧动态顶部
+      attr: "srcset",
+    },
+    {
+      selector: `div.avatar source`,
+      attr: "srcset", // 个人空间顶部
     },
   ];
 
   for (const { selector, attr } of rules) {
     const el = querySelectorDeep(selector);
+    logger.debug(`Found avatar for user ${userID} in ${selector}`);
     const val = el?.getAttribute(attr);
     if (val) return val;
   }

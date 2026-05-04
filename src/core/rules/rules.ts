@@ -1,3 +1,4 @@
+import { getUidFromVueInstance } from "@/utils/UIDExtractor";
 import { RawRule, StyleScope, type RawConfig, type UidResolverFn } from "./rule-types";
 export { StyleScope, InjectionMode } from "./rule-types";
 const COMMON_REG = /^https:\/\/[a-z0-9.]+\.bilibili\.com\/.*/;
@@ -162,8 +163,9 @@ const rawConfig: RawConfig[] = [
       textSelector: "span.bili-dyn-title__text",
       trigger: { watch: "div.bili-dyn-item__main", interval: 1000 },
       dynamicWatch: true,
-      matchByName: true
-    })
+      uidResolver: (el) =>{
+        return getUidFromVueInstance(el.closest(".bili-dyn-item")!)
+      }})
   },
   // 弹出层规则
   {
@@ -211,7 +213,12 @@ const rawConfig: RawConfig[] = [
       name: "新版动态",
       styleScope: StyleScope.Editable,
       aSelector: "div.opus-module-author__name",
-    })
+      uidResolver: (_el) => {
+        const rawUid = window.__INITIAL_STATE__?.detail?.basic?.uid
+          || window.__INITIAL_STATE__?.detail?.modules?.find(m => m.module_author)?.module_author?.mid;
+
+        return rawUid ? String(rawUid) : null;
+    }})
   }
 ];
 export const config = rawConfig;

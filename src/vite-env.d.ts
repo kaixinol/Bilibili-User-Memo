@@ -14,13 +14,31 @@ declare module "*.css?inline" {
 // 引入类型（使用 type-only import 避免运行时副作用）
 import type Alpine from "alpinejs";
 
+
+type InitialState = {
+  detail?: {
+    basic?: { uid?: unknown };
+    modules?: Array<{ module_author?: { mid?: unknown } }>;
+  };
+};
 declare global {
   // 全局常量（来自打包替换或 define）
   const __IS_DEBUG__: boolean;
   interface Window {
     Alpine: typeof Alpine;
+    __INITIAL_STATE__?: InitialState;
   }
   interface WindowEventMap {
     "biliFix:request-api": CustomEvent<(api: BiliFixAPI) => void>;
   }
+  interface VueInstance {
+    $data: Record<string, any>;
+    $props: Record<string, any>;
+    [key: string]: any;
+  }
+
+  interface HTMLElement {
+    __vue__?: VueInstance;
+  }
+
 }

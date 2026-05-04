@@ -1,9 +1,3 @@
-/* TODO: QueryDOM区块，还是刷新的好快！
-能不能:
-TODO: 加一个搜索功能
-TODO: 触发查询dom的文件标签（可按标签过滤）。
-
-*/
 import Alpine from "alpinejs";
 import { querySelectorAllDeep } from "@/utils/query-dom";
 import { config as defaultRules } from "@/core/rules/rules";

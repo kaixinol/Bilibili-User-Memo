@@ -1,4 +1,3 @@
-import { unsafeWindow } from "$";
 import { logger } from "../../utils/logger";
 
 const DIRECT_UID_ATTRS = ["data-user-profile-id", "bilisponsor-userid"] as const;
@@ -67,32 +66,12 @@ function readUidFromHrefOrLocation(el: Element): string | null {
   return normalizeUid(match?.[1]);
 }
 
-type InitialState = {
-  detail?: {
-    basic?: { uid?: unknown };
-    modules?: Array<{ module_author?: { mid?: unknown } }>;
-  };
-};
-
 type UidStrategy = (el: Element) => string | null;
-
-function readUidFromInitialState(): string | null {
-  const initialState = (unsafeWindow as { __INITIAL_STATE__?: InitialState })
-    .__INITIAL_STATE__;
-  return (
-    normalizeUid(initialState?.detail?.basic?.uid) ||
-    normalizeUid(
-      initialState?.detail?.modules?.find((module) => module.module_author)
-        ?.module_author?.mid,
-    )
-  );
-}
 
 const UID_STRATEGIES: readonly UidStrategy[] = [
   readUidFromOwnAttributes,
   readUidFromDynamicItemRoot,
   readUidFromHrefOrLocation,
-  () => readUidFromInitialState(),
 ];
 
 /**

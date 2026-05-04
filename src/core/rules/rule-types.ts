@@ -17,6 +17,7 @@ export class RawRule {
   ignoreProcessed?: boolean;
   matchByName?: boolean;
   dynamicWatch?: boolean;
+  uidResolver?: UidResolverFn;
   get injectMode(): InjectionMode {
     if (!this.trigger) return InjectionMode.Static;
     return this.ignoreProcessed ? InjectionMode.Polling : InjectionMode.Dynamic;
@@ -31,7 +32,7 @@ export interface RawConfig {
 export type UidResolverFn = (el: HTMLElement, rule: RawRule) => string | null;
 
 export type StaticPageRule = RawRule & { trigger?: never };
-export type DynamicPageRule = RawRule & { trigger: NonNullable<RawRule["trigger"]>; uidResolver?: UidResolverFn };
+export type DynamicPageRule = RawRule & { trigger: NonNullable<RawRule["trigger"]> };
 export type PollingPageRule = DynamicPageRule & { ignoreProcessed: true };
 
 export type PageRule = RawRule;

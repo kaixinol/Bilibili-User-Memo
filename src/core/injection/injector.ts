@@ -1,6 +1,5 @@
 import { querySelectorAllDeep } from "@/utils/query-dom";
 import {
-  isDynamicMode,
   type PageRule,
   type DynamicPageRule,
   type PollingPageRule,
@@ -324,7 +323,7 @@ export class PageInjector {
       return userStore.findUserByName(originalName)?.id || null;
     }
 
-    if (isDynamicMode(rule) && rule.uidResolver) {
+    if (rule.uidResolver) {
       const uid = rule.uidResolver(el, rule);
       if (uid) return uid;
     }

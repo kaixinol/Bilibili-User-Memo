@@ -1,5 +1,6 @@
 import { getUidFromVueInstance } from "@/utils/UIDExtractor";
 import { RawRule, StyleScope, type RawConfig, type UidResolverFn } from "./rule-types";
+import { logger } from "@/utils/logger";
 export { StyleScope, InjectionMode } from "./rule-types";
 const COMMON_REG = /^https:\/\/[a-z0-9.]+\.bilibili\.com\/.*/;
 const r = (rule: Partial<RawRule> & { uidResolver?: UidResolverFn }) => new RawRule(rule);
@@ -216,7 +217,7 @@ const rawConfig: RawConfig[] = [
       uidResolver: (_el) => {
         const rawUid = window.__INITIAL_STATE__?.detail?.basic?.uid
           || window.__INITIAL_STATE__?.detail?.modules?.find(m => m.module_author)?.module_author?.mid;
-
+        logger.debug("rawUid", rawUid);
         return rawUid ? String(rawUid) : null;
     }})
   }

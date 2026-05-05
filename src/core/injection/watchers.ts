@@ -160,10 +160,7 @@ export class DynamicRuleWatcher {
     }
   }
 
-  private discoveryTargetsCached = false;
-
   private scanAndAttachNewTargets() {
-    if (this.discoveryTargetsCached) return;
     const targets = getWatchTargets(this.rule.trigger.watch);
     if (targets.length === 0) return;
 
@@ -187,8 +184,6 @@ export class DynamicRuleWatcher {
         this.attachInstanceWatcher(keyNode, scope);
       }
     });
-
-    this.discoveryTargetsCached = true;
   }
 
   private createScopeObserver(keyNode: HTMLElement, scope: ScanScope): MutationObserver {
@@ -250,7 +245,7 @@ export class DynamicRuleWatcher {
   private cleanupDetachedTargets() {
     for (const [node, { observer }] of this.instanceObservers) {
       // document.contains(node) 对 Shadow DOM 内节点会误判为 false
-      // isConnected 能正确反映“是否仍连接在文档树（含 shadow tree）”
+      // isConnected 能正确反映"是否仍连接在文档树（含 shadow tree）"
       if (!node.isConnected) {
         logger.debug(`🗑️ [${this.rule.name}] 容器已销毁，移除监听器`);
         observer.disconnect();

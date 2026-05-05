@@ -50,6 +50,10 @@ function resolveWatchTextTarget(
   // 永远返回第一个 span 的文本，造成昵称串数据。
   if (el.matches(textSelector)) return el;
 
+  // 0) 优先从当前元素的后代中查找（适用于 aSelector 指向容器元素，textSelector 指向其内部子元素的情况）
+  const childTextEl = el.querySelector(textSelector) as HTMLElement | null;
+  if (childTextEl) return childTextEl;
+
   // 1) 优先命中"当前元素所属"的 watch 容器，避免多容器串数据
   const directContainer = el.closest(rule.trigger.watch);
   if (directContainer) {

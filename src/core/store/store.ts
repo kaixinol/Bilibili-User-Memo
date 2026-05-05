@@ -245,11 +245,6 @@ class UserStore {
   public ensureUser(uid: string, originalName: string): BiliUser {
     const existing = this.users.find((u) => u.id === uid);
     if (existing) {
-      // 历史数据可能因选择器异常被写成 UID，这里在拿到真实名字时回填
-      if (originalName && (!existing.nickname || existing.nickname === uid)) {
-        existing.nickname = originalName;
-        this.commitUsers("update", [uid]);
-      }
       return existing;
     }
 

@@ -206,6 +206,7 @@ const rawConfig: RawConfig[] = [
       aSelector: "a.up-item",
       textSelector: "div.up-name",
       trigger: { watch: "div.living-up-list", interval: 1000 },
+      matchByName: true, // 因为直播间ID不是UID
     })
   },
   {

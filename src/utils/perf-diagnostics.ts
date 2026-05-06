@@ -134,8 +134,6 @@ function modeLabel(mode: number | string) {
       return "Static";
     case 2:
       return "Dynamic";
-    case 3:
-      return "Polling";
     default:
       return String(mode);
   }

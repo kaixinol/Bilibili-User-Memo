@@ -3,7 +3,6 @@ import {
   isDynamicMode,
   type DynamicPageRule,
   type PageRule,
-  type PollingPageRule,
 } from "@/core/rules/rule-types";
 import { querySelectorAllDeep } from "@/utils/query-dom";
 
@@ -17,7 +16,7 @@ function readPreferredText(node: HTMLElement | null): string | null {
 
 function hasWatchTrigger(
   rule: PageRule,
-): rule is DynamicPageRule | PollingPageRule {
+): rule is DynamicPageRule {
   return "trigger" in rule;
 }
 
@@ -42,7 +41,7 @@ function resolveSelfTextTarget(
  */
 function resolveWatchTextTarget(
   el: HTMLElement,
-  rule: DynamicPageRule | PollingPageRule,
+  rule: DynamicPageRule,
   textSelector: string,
 ): HTMLElement | null {
   // 元素自身就是文本节点（无 aSelector 的 matchByName 规则），直接返回。
@@ -85,7 +84,6 @@ export function resolveRuleTextTarget(
 ): HTMLElement | null {
   if (!rule.textSelector) return el;
 
-  // Polling rules have trigger but don't use watch-based text resolution
   if (isDynamicMode(rule)) {
     if (!hasWatchTrigger(rule)) return null;
     return resolveWatchTextTarget(el, rule, rule.textSelector);

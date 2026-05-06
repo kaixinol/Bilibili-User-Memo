@@ -2,7 +2,7 @@ import { querySelectorAllDeep } from "@/utils/query-dom";
 import {
   type PageRule,
   type DynamicPageRule,
-  type PollingPageRule,
+  isDynamicMode,
 } from "@/core/rules/rule-types";
 import { logger } from "@/utils/logger";
 import { extractUid } from "../dom/uid-extractor";
@@ -11,7 +11,7 @@ import { refreshRenderedMemoNodes } from "../render/dom-refresh";
 import { injectMemoRenderer } from "../render/renderer";
 import { userStore, type UserStoreChange } from "../store/store";
 import type { BiliUser } from "../types";
-import { DynamicRuleWatcher, PollingRuleWatcher } from "./watchers";
+import { DynamicRuleWatcher } from "./watchers";
 import { unsafeWindow } from "$";
 import type { ScanScope } from "./scan-scope";
 import {
@@ -43,7 +43,6 @@ export class PageInjector {
   );
 
   private activeWatchers = new Map<DynamicPageRule, DynamicRuleWatcher>();
-  private activePollingWatchers = new Map<PollingPageRule, PollingRuleWatcher>();
 
   constructor() {
     logger.info("🚀 PageInjector 正在启动...");
@@ -148,10 +147,7 @@ export class PageInjector {
   }
 
   private scanActiveRules(scope: ScanScope) {
-    const activeRules = [
-      ...this.activeWatchers.keys(),
-      ...this.activePollingWatchers.keys(),
-    ];
+    const activeRules = [...this.activeWatchers.keys()];
     if (activeRules.length === 0) return;
     this.scanScheduler.scanRules(activeRules, scope, "refresh active rules");
   }
@@ -174,7 +170,6 @@ export class PageInjector {
     const groups = this.groupRulesByMode(matchedRules);
     this.applyStaticRules(groups.staticRules, document);
     this.reconcileWatchers(groups.dynamicRules);
-    this.reconcilePollingWatchers(groups.pollingRules);
   }
 
   private groupRulesByMode(rules: PageRule[]): RuleGroups {
@@ -211,28 +206,8 @@ export class PageInjector {
     });
   }
 
-  private reconcilePollingWatchers(nextRules: PollingPageRule[]) {
-    for (const [rule, watcher] of this.activePollingWatchers) {
-      if (nextRules.includes(rule)) continue;
-      watcher.stop();
-      this.activePollingWatchers.delete(rule);
-    }
-
-    nextRules.forEach((rule) => {
-      if (this.activePollingWatchers.has(rule)) return;
-      const watcher = new PollingRuleWatcher(rule, (r, scope) => {
-        this.scanScheduler.scanRules([r], scope, "polling tick");
-      });
-      this.activePollingWatchers.set(rule, watcher);
-      watcher.start();
-    });
-  }
-
   private scanMatchByNameRules(scope: ScanScope) {
-    const rules = getMatchByNameRules([
-      ...this.activeWatchers.keys(),
-      ...this.activePollingWatchers.keys(),
-    ]);
+    const rules = getMatchByNameRules(this.activeWatchers.keys());
     if (rules.length === 0) return;
     this.scanScheduler.scanRules(rules, scope, "matchByName rescan");
   }
@@ -288,7 +263,7 @@ export class PageInjector {
 
       const user = userStore.ensureUser(uid, originalName);
       applied = await injectMemoRenderer(el, user, rule, { uid, originalName });
-      if (applied) {
+      if (applied && this.shouldMarkProcessed(rule)) {
         el.setAttribute("data-bili-processed", "true");
       }
     } finally {
@@ -332,6 +307,11 @@ export class PageInjector {
     if (uid) return uid;
 
     return null;
+  }
+
+  private shouldMarkProcessed(rule: PageRule): boolean {
+    if (!isDynamicMode(rule)) return true;
+    return rule.markProcessed !== false;
   }
 
   private onDomReady(callback: () => void) {

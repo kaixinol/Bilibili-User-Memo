@@ -1,4 +1,4 @@
-import { type DynamicPageRule, type PollingPageRule } from "@/core/rules/rule-types";
+import { type DynamicPageRule } from "@/core/rules/rule-types";
 import { logger } from "@/utils/logger";
 import {
   getScopeType,
@@ -328,48 +328,5 @@ export class DynamicRuleWatcher {
     });
     observer.observe(scope, { childList: true, subtree: true });
     return observer;
-  }
-}
-
-export class PollingRuleWatcher {
-  private pollTimer: number | null = null;
-
-  constructor(
-    public readonly rule: PollingPageRule,
-    private onTrigger: (rule: PollingPageRule, root: ScanScope) => void,
-  ) { }
-
-  public start() {
-    logger.debug(
-      `⏱️ 轮询规则启动: [${this.rule.name}] interval=${this.rule.trigger.interval}ms watch=${this.rule.trigger.watch}`,
-    );
-    this.tick();
-    this.pollTimer = window.setInterval(
-      () => this.tick(),
-      this.rule.trigger.interval,
-    );
-  }
-
-  public stop() {
-    if (this.pollTimer) {
-      clearInterval(this.pollTimer);
-      this.pollTimer = null;
-    }
-    logger.debug(`🛑 轮询规则停止: [${this.rule.name}]`);
-  }
-
-  private tick() {
-    const watchTarget = getWatchTarget(this.rule.trigger.watch);
-    if (!watchTarget) return;
-    const scope = resolveWatchScope(watchTarget);
-    if (__IS_DEBUG__) {
-      recordFlowDiagnostic({
-        source: "polling tick",
-        ruleName: this.rule.name,
-        mode: this.rule.injectMode,
-        scopeType: getScopeType(scope),
-      });
-    }
-    this.onTrigger(this.rule, scope);
   }
 }

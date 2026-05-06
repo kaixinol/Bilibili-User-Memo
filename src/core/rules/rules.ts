@@ -126,15 +126,27 @@ const rawConfig: RawConfig[] = [
   {
     urlPattern: /^https:\/\/message\.bilibili\.com\/(?:[^#]*)?(?:#\/)?whisper(?:\/|$)/,
     rule: r({
-      name: "私信",
+      name: "私信-侧边栏",
       styleScope: StyleScope.Minimal,
-      aSelector: 'div[data-id^="contact"], div[class^="_ContactName_"]',
-      textSelector: 'div[class*="_SessionItem__Name"], div[class^="_ContactName_"]',
-      trigger: { watch: 'div[class^="_IM_"]', interval: 2000 },
-      ignoreProcessed: true,
+      aSelector: 'div[data-id^="contact"]',
+      textSelector: 'div[class*="_SessionItem__Name"]',
+      trigger: { watch: 'div[class^="_Sidebar_"]', interval: 1000 },
       uidResolver: (el) =>
         el.closest('[data-id^="contact_"]')?.getAttribute("data-id")?.split("_")?.[1] || null,
-      matchByName: true,
+    })
+  },
+  {
+    urlPattern: /^https:\/\/message\.bilibili\.com\/(?:[^#]*)?(?:#\/)?whisper(?:\/|$)/,
+    rule: r({
+      name: "私信-当前",
+      styleScope: StyleScope.Editable,
+      textSelector: 'div[class^="_ContactName_"]',
+      trigger: { watch: 'div[class^="_ChatHeader_"]', interval: 1000 },
+      markProcessed: false,
+      uidResolver: (el) => {
+        logger.debug(el);
+        return el.closest('div[class^="_SessionItemIsActive_"]')?.getAttribute("data-id")?.split("_")?.[1] || null
+      }
     })
   },
   {

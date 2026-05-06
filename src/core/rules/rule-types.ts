@@ -18,6 +18,7 @@ export class RawRule {
   matchByName?: boolean;
   dynamicWatch?: boolean;
   uidResolver?: UidResolverFn;
+  originalNameResolver?: OriginalNameResolverFn;
   get injectMode(): InjectionMode {
     if (!this.trigger) return InjectionMode.Static;
     return InjectionMode.Dynamic;
@@ -30,6 +31,10 @@ export interface RawConfig {
 }
 
 export type UidResolverFn = (el: HTMLElement, rule: RawRule) => string | null;
+export type OriginalNameResolverFn = (
+  el: HTMLElement,
+  rule: RawRule,
+) => string | null;
 
 export type StaticPageRule = RawRule & { trigger?: never };
 export type DynamicPageRule = RawRule & {

@@ -4,6 +4,7 @@ import { logger } from "@/utils/logger";
 export { StyleScope, InjectionMode } from "./rule-types";
 const COMMON_REG = /^https:\/\/[a-z0-9.]+\.bilibili\.com\/.*/;
 const r = (rule: Partial<RawRule> & { uidResolver?: UidResolverFn }) => new RawRule(rule);
+
 const rawConfig: RawConfig[] = [
   {
     urlPattern: /^https:\/\/www\.bilibili\.com\/(video|list)\/.*/,
@@ -28,8 +29,13 @@ const rawConfig: RawConfig[] = [
     rule: r({ name: "空间", styleScope: StyleScope.Editable, aSelector: ".nickname" })
   },
   {
-    urlPattern: /^https:\/\/space\.bilibili\.com\/.*/,
-    rule: r({ name: "空间关注/粉丝", styleScope: StyleScope.Editable, aSelector: "a.relation-card-info__uname" })
+    urlPattern: /^https:\/\/space\.bilibili\.com\/\d+\/relation\/(follow|fans)(?:[/?#].*)?$/,
+    rule: r({
+      name: "空间关注/粉丝",
+      styleScope: StyleScope.Editable,
+      aSelector: "a.relation-card-info__uname",
+      trigger: { watch: "main.space-main", interval: 1000 },
+    })
   },
   {
     urlPattern:
@@ -139,14 +145,24 @@ const rawConfig: RawConfig[] = [
     urlPattern: /^https:\/\/message\.bilibili\.com\/(?:[^#]*)?(?:#\/)?whisper(?:\/|$)/,
     rule: r({
       name: "私信-当前",
-      styleScope: StyleScope.Editable,
+      styleScope: StyleScope.Minimal,
       textSelector: 'div[class^="_ContactName_"]',
       trigger: { watch: 'div[class^="_ChatHeader_"]', interval: 1000 },
       markProcessed: false,
-      uidResolver: (el) => {
-        logger.debug(el);
-        return el.closest('div[class^="_SessionItemIsActive_"]')?.getAttribute("data-id")?.split("_")?.[1] || null
-      }
+      uidResolver: () => window.location.href.match(/#\/whisper\/mid(\d+)/)?.[1] || null,
+      originalNameResolver: () => {
+        const uid = window.location.href.match(/#\/whisper\/mid(\d+)/)?.[1];
+        if (!uid) return null;
+        const sessionName = document
+          .querySelector(`[data-id="contact_${uid}"] div[class*="_SessionItem__Name"]`) as
+          | HTMLElement
+          | null;
+        return (
+          sessionName?.dataset.biliOriginal?.trim() ||
+          sessionName?.textContent?.trim() ||
+          null
+        );
+      },
     })
   },
   {
@@ -176,9 +192,10 @@ const rawConfig: RawConfig[] = [
       textSelector: "span.bili-dyn-title__text",
       trigger: { watch: "div.bili-dyn-item__main", interval: 1000 },
       dynamicWatch: true,
-      uidResolver: (el) =>{
+      uidResolver: (el) => {
         return getUidFromVueInstance(el.closest(".bili-dyn-item")!)
-      }})
+      }
+    })
   },
   // 弹出层规则
   {
@@ -232,7 +249,8 @@ const rawConfig: RawConfig[] = [
           || window.__INITIAL_STATE__?.detail?.modules?.find(m => m.module_author)?.module_author?.mid;
         logger.debug("rawUid", rawUid);
         return rawUid ? String(rawUid) : null;
-    }})
+      }
+    })
   }
 ];
 export const config = rawConfig;

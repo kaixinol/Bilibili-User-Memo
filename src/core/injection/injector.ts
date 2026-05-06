@@ -170,6 +170,7 @@ export class PageInjector {
     const groups = this.groupRulesByMode(matchedRules);
     this.applyStaticRules(groups.staticRules, document);
     this.reconcileWatchers(groups.dynamicRules);
+    this.scanActiveRules(document);
   }
 
   private groupRulesByMode(rules: PageRule[]): RuleGroups {
@@ -256,7 +257,8 @@ export class PageInjector {
         return;
       }
 
-      const originalName = getElementDisplayName(el, rule);
+      const originalName =
+        rule.originalNameResolver?.(el, rule) || getElementDisplayName(el, rule);
       const uid = this.resolveElementUid(el, rule, originalName);
       uidResolved = Boolean(uid);
       if (!uid) return;
@@ -283,28 +285,33 @@ export class PageInjector {
   /**
    * 解析元素对应的 UID。
    *
-   * matchByName 的特殊性：
-   *   1. extractUid 不应参与匹配——它会从 location.href 提取空间页面的 UID，
-   *      导致所有元素都被误匹配到页面主人。
-   *   2. 名称匹配失败时（none / ambiguous）直接返回 null，不渲染 Editable 样式。
-   *      这是预期行为：只对 store 中已有的用户（已添加备注的用户）应用样式。
+   * 优先级固定为：
+   *   1. rule.uidResolver
+   *   2. extractUid
+   *   3. matchByName（仅显式开启时作为最后兜底）
    */
   private resolveElementUid(
     el: HTMLElement,
     rule: PageRule,
     originalName: string,
   ): string | null {
-    if (rule.matchByName && originalName) {
-      return userStore.findUserByName(originalName)?.id || null;
-    }
-
     if (rule.uidResolver) {
       const uid = rule.uidResolver(el, rule);
       if (uid) return uid;
+      logger.warn("[resolveElementUid] uidResolver returned empty", {
+        ruleName: rule.name,
+        originalName,
+        textContent: el.textContent?.trim() || "",
+        element: el,
+      });
     }
 
     const uid = extractUid(el, Boolean(rule.matchByName));
     if (uid) return uid;
+
+    if (rule.matchByName && originalName) {
+      return userStore.findUserByName(originalName)?.id || null;
+    }
 
     return null;
   }

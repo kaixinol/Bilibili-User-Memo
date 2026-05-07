@@ -77,10 +77,9 @@ const rawConfig: RawConfig[] = [
       name: "搜索",
       styleScope: StyleScope.Minimal,
       aSelector:
-        ".bili-video-card__info--owner, .bili-video-card__author, a.up-name",
+        ".bili-video-card__info--owner, .bili-video-card__author, a.up-name, a.flex_start.flex_inline",
       textSelector:
-        ".bili-video-card__info--author, .bili-video-card__text span[title], .up-name__text",
-      trigger: { watch: "#app", interval: 1000 },
+        ".bili-video-card__info--author, .bili-video-card__text span[title], .up-name__text, span.lh_xs",
     })
   },
   {
@@ -251,6 +250,15 @@ const rawConfig: RawConfig[] = [
         return rawUid ? String(rawUid) : null;
       }
     })
+  },
+  {
+    urlPattern: /^https:\/\/search\.bilibili\.com\/(all|live|upuser）?.+)/,
+    rule: r({
+      name: "搜索页面-UP主",
+      styleScope: StyleScope.Editable,
+      aSelector: "a.user-name, a.p_relative, a.live-title",
+    })
   }
+
 ];
 export const config = rawConfig;

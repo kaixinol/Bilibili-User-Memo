@@ -189,25 +189,6 @@
   overflow: hidden;
   pointer-events: none;
 }
-.panel-custom-color-setting label {
-  cursor: pointer;
-}
-.panel-custom-color-setting input[type="color"] {
-  width: 24px;
-  height: 24px;
-  border: 1px solid var(--border-main);
-  border-radius: 6px;
-  padding: 0;
-  background: var(--bg-main);
-  cursor: pointer;
-}
-.panel-custom-color-setting input[type="color"]::-webkit-color-swatch-wrapper {
-  padding: 0;
-}
-.panel-custom-color-setting input[type="color"]::-webkit-color-swatch {
-  border: none;
-  border-radius: 4px;
-}
 
 /* 关键：将主题按钮推向最右侧 */
 .panel-theme-toggle {

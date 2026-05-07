@@ -104,6 +104,7 @@
 
     <div class="panel-control-bar" x-data="panelActions">
       <button x-bind="panelImportBtn">导入</button>
+      <button class="panel-btn" @click="$store.addUserDialog.open()">添加</button>
       <button x-bind="panelMultiSelectBtn">
         <span x-show="!userList.isMultiSelect">多选用户</span>
         <span x-show="userList.isMultiSelect">退出多选</span>
@@ -229,3 +230,84 @@
     </div>
   </div>
 </div>
+
+<!-- 添加用户对话框 -->
+<dialog
+  x-data
+  class="add-user-dialog"
+  :open="$store.addUserDialog.isOpen"
+  @keydown.escape.window="$store.addUserDialog.close()"
+>
+  <div class="add-user-dialog-backdrop" @click.self="$store.addUserDialog.close()">
+    <div class="add-user-dialog-content">
+      <div class="add-user-dialog-header">
+        <h3>添加用户</h3>
+        <button
+          type="button"
+          class="add-user-dialog-close"
+          @click="$store.addUserDialog.close()"
+        >
+          &times;
+        </button>
+      </div>
+      <form class="add-user-dialog-form" @submit.prevent="$store.addUserDialog.submit()">
+        <div class="add-user-dialog-body">
+          <div class="add-user-field">
+            <label for="add-user-uid">UID <span class="required">*</span></label>
+            <input
+              id="add-user-uid"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]+"
+              title="UID 只能包含数字"
+              required
+              x-model.trim="$store.addUserDialog.uid"
+              placeholder="请输入用户 UID"
+              :disabled="$store.addUserDialog.isLoading"
+            />
+          </div>
+          <div class="add-user-field">
+            <label for="add-user-memo">备注 <span class="required">*</span></label>
+            <input
+              id="add-user-memo"
+              type="text"
+              pattern=".*\S.*"
+              title="请输入备注"
+              required
+              x-model.trim="$store.addUserDialog.memo"
+              placeholder="请输入备注（必填）"
+              :disabled="$store.addUserDialog.isLoading"
+            />
+          </div>
+          <div class="add-user-field">
+            <label for="add-user-avatar">头像 URL（可选）</label>
+            <input
+              id="add-user-avatar"
+              type="text"
+              x-model.trim="$store.addUserDialog.avatar"
+              placeholder="留空将自动获取头像"
+              :disabled="$store.addUserDialog.isLoading"
+            />
+          </div>
+        </div>
+        <div class="add-user-dialog-footer">
+          <button
+            type="submit"
+            class="panel-btn add-user-submit"
+            :disabled="$store.addUserDialog.isLoading"
+          >
+            <span x-show="$store.addUserDialog.isLoading">添加中...</span>
+            <span x-show="!$store.addUserDialog.isLoading">添加</span>
+          </button>
+          <button
+            type="button"
+            class="panel-btn panel-btn-secondary"
+            @click="$store.addUserDialog.close()"
+          >
+            取消
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</dialog>

@@ -206,14 +206,19 @@ async function _getUserInfo(mid: string): Promise<UserInfo | null> {
 
     if (res.code !== 0) {
       logger.debug("getUserInfo failed", res, response);
-      if (res.code === -404) return {
-        nickname: "账号已注销", avatar: DEFAULT_AVATAR_URL, isDeleted: true
-      }
-      else if ([-352, -412, -799].includes(res.code)) {
-        logger.debug("可能已被风控，暂停请求"); return null;
+
+      if (res.code === -404) {
+        return {
+          nickname: "账号已注销",
+          avatar: DEFAULT_AVATAR_URL,
+          isDeleted: true,
+        };
       }
 
-
+      if ([-352, -412, -799].includes(res.code)) {
+        logger.debug("可能已被风控，暂停请求");
+        return null;
+      }
     }
 
     return {

@@ -4,6 +4,7 @@ import type { PanelPrefsStore } from "./panel-prefs";
 import type { UserListStore } from "./user-list-store";
 import { confirmDialog } from "./dialogs";
 import { biliFixAPIReady } from "@/utils/compatibility";
+import { registerAddUserDialog } from "./add-user-dialog";
 interface DisplayModeOption {
   value: number;
   label: string;
@@ -90,6 +91,7 @@ export function registerPanelComponents() {
   if (panelComponentsRegistered) return;
   panelComponentsRegistered = true;
   registerPanelBindings();
+  registerAddUserDialog();
 
   Alpine.data("panelShell", () => ({
     init() {

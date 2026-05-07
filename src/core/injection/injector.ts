@@ -5,7 +5,7 @@ import {
   isDynamicMode,
 } from "@/core/rules/rule-types";
 import { logger } from "@/utils/logger";
-import { extractUid } from "../dom/uid-extractor";
+import { extractUid, isDeletedUserSpace } from "../dom/uid-extractor";
 import { getElementDisplayName } from "../dom/text-utils";
 import { refreshRenderedMemoNodes } from "../render/dom-refresh";
 import { injectMemoRenderer } from "../render/renderer";
@@ -264,6 +264,9 @@ export class PageInjector {
       if (!uid) return;
 
       const user = userStore.ensureUser(uid, originalName);
+      if (isDeletedUserSpace(location.href)) {
+        user.isDeleted = true;
+      }
       applied = await injectMemoRenderer(el, user, rule, { uid, originalName });
       if (applied && this.shouldMarkProcessed(rule)) {
         el.setAttribute("data-bili-processed", "true");

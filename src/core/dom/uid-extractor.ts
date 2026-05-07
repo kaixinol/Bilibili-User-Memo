@@ -4,6 +4,14 @@ const DIRECT_UID_ATTRS = ["data-user-profile-id", "bilisponsor-userid"] as const
 const DYNAMIC_ITEM_SELECTOR = "div.bili-dyn-item__main";
 const SPACE_UID_REGEX = /(?:space\.bilibili\.com|www\.bilibili\.com\/list)\/(\d+)/;
 
+/**
+ * 检查 URL 是否为已注销用户的 B站 空间
+ * 格式: www.bilibili.com/list/xxx
+ */
+export function isDeletedUserSpace(url: string): boolean {
+  return /:\/\/(?:www\.)?bilibili\.com\/list\/\d+/.test(url);
+}
+
 function normalizeUid(value: unknown): string | null {
   if (value === null || value === undefined) return null;
   const uid = String(value).trim();

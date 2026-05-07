@@ -183,6 +183,22 @@ export function registerPanelComponents() {
     get showAdvancedCss(): boolean {
       return this.prefs.showAdvancedCss;
     },
+    syncAdvancedCssDialog() {
+      const dialog = getRef<HTMLDialogElement>(this, "memoCssDialog");
+      if (!dialog) return;
+
+      if (this.showAdvancedCss && !dialog.open) {
+        dialog.showModal();
+        runOnNextTick(this, () => {
+          getRef<HTMLTextAreaElement>(this, "memoCssInput")?.focus();
+        });
+        return;
+      }
+
+      if (!this.showAdvancedCss && dialog.open) {
+        dialog.close();
+      }
+    },
     toggleTheme() {
       this.prefs.toggleTheme();
     },
@@ -195,11 +211,6 @@ export function registerPanelComponents() {
     handleColorSettingContextMenu(event: MouseEvent) {
       event.preventDefault();
       this.prefs.showAdvancedCss = !this.prefs.showAdvancedCss;
-      if (!this.prefs.showAdvancedCss) return;
-
-      runOnNextTick(this, () => {
-        getRef<HTMLTextAreaElement>(this, "memoCssInput")?.focus();
-      });
     },
     handleColorSettingMouseDown(event: MouseEvent) {
       if (event.button !== 1) return;

@@ -76,18 +76,46 @@
   gap: 10px;
 }
 .panel-custom-css-section {
-  margin-top: 8px;
-  padding: 8px 12px;
+  width: min(560px, calc(100vw - 32px));
+  padding: 12px;
   border-radius: 10px;
   background: var(--bg-sub);
   border: 1px solid var(--border-main);
+  color: var(--text-main);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 25%);
+}
+.panel-custom-css-section[open] {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
+}
+.panel-custom-css-section::backdrop {
+  background: rgb(0 0 0 / 35%);
+}
+.panel-custom-css-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 .panel-custom-css-title {
   font-size: 13px;
   font-weight: 600;
+  color: var(--text-main);
+}
+.panel-custom-css-close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-sub);
+  cursor: pointer;
+  font-size: 22px;
+  line-height: 1;
+}
+.panel-custom-css-close:hover {
+  background: var(--bg-main);
   color: var(--text-main);
 }
 .panel-custom-css-input {

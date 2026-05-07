@@ -2,9 +2,10 @@ import Alpine from "alpinejs";
 import type { BiliUser } from "@/core/types";
 import type { PanelPrefsStore } from "./panel-prefs";
 import type { UserListStore } from "./user-list-store";
-import { confirmDialog } from "./dialogs";
+import { confirmDialog, promptText, showAlert } from "./dialogs";
 import { biliFixAPIReady } from "@/utils/compatibility";
 import { registerAddUserDialog } from "./add-user-dialog";
+import { isNoFaceAvatar } from "@/core/dom/dom-utils";
 interface DisplayModeOption {
   value: number;
   label: string;
@@ -44,6 +45,15 @@ function getRef<T extends Element>(context: object, key: string): T | undefined 
 
 function getCurrentElement(context: object): HTMLElement | undefined {
   return (context as AlpineMagicContext).$el;
+}
+
+function isValidHttpUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function registerPanelBindings() {
@@ -299,6 +309,39 @@ export function registerPanelComponents() {
     },
     get displayText(): string {
       return this.copied ? "✅ 已复制" : this.uid;
+    },
+  }));
+
+  Alpine.data("avatarEditor", (userId: string) => ({
+    userId,
+    get userList(): UserListStore {
+      return getUserListStore();
+    },
+    get currentUser(): BiliUser | undefined {
+      return this.userList.getUserById(this.userId);
+    },
+    get currentAvatar(): string {
+      return this.currentUser?.avatar || "";
+    },
+    get canEditAvatar(): boolean {
+      return isNoFaceAvatar(this.currentAvatar);
+    },
+    get avatarTitle(): string {
+      if (this.canEditAvatar) return "右键修改头像";
+      return this.currentUser?.nickname || this.userId;
+    },
+    editAvatar() {
+      if (this.userList.isMultiSelect || !this.canEditAvatar) return;
+
+      const nextAvatar = promptText("请输入头像 URL");
+      if (!nextAvatar) return;
+
+      if (!isValidHttpUrl(nextAvatar)) {
+        showAlert("请输入有效的 http(s) 头像 URL");
+        return;
+      }
+
+      this.userList.updateUser(this.userId, { avatar: nextAvatar });
     },
   }));
 

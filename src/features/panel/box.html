@@ -9,7 +9,12 @@
     <input type="checkbox" :value="user.id" x-model="selectedIds" @click.stop />
     <span class="user-select-mark"></span>
   </label>
-  <div class="user-avatar-wrapper">
+  <div
+    class="user-avatar-wrapper"
+    x-data="avatarEditor(user.id)"
+    @contextmenu.prevent="editAvatar()"
+    :title="avatarTitle"
+  >
     <img
       :src="currentUser?.avatar || ''"
       class="user-avatar"

@@ -5,6 +5,10 @@ import { querySelectorDeep } from "@/utils/query-dom";
 export const DEFAULT_AVATAR_URL =
   "https://i0.hdslb.com/bfs/face/member/noface.jpg@96w_96h_1c_1s.avif";
 
+export function isNoFaceAvatar(url: string): boolean {
+  return url.includes("noface.jpg");
+}
+
 /**
  * 获取用户头像 URL
  * 尝试从 DOM 中查找现有的头像元素，找不到则使用默认图

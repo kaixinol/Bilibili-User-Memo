@@ -3,7 +3,7 @@ import type { BiliUser } from "@/core/types";
 import { normalizeUserCollection } from "@/core/store/user-normalization";
 import { logger } from "@/utils/logger";
 import { getUserInfo } from "@/utils/sign";
-import { DEFAULT_AVATAR_URL } from "@/core/dom/dom-utils";
+import { isNoFaceAvatar } from "@/core/dom/dom-utils";
 
 interface UserProfile {
   id: string;
@@ -70,7 +70,7 @@ export function exportUsersAsJson(users: BiliUser[]) {
     };
 
     // Only include avatar if it's not the default noface avatar
-    if (user.avatar && user.avatar !== DEFAULT_AVATAR_URL) {
+    if (user.avatar && !isNoFaceAvatar(user.avatar)) {
       data.avatar = user.avatar;
     }
 

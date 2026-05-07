@@ -1,6 +1,6 @@
 import { logger } from "../../utils/logger";
 import type { BiliUser } from "../types";
-import { getUserAvatarFromDOM, DEFAULT_AVATAR_URL } from "../dom/dom-utils";
+import { getUserAvatarFromDOM, isNoFaceAvatar, DEFAULT_AVATAR_URL } from "../dom/dom-utils";
 import { GM_addValueChangeListener } from "$";
 import {
   DEFAULT_DISPLAY_MODE,
@@ -401,8 +401,8 @@ class UserStore {
       // Protect existing custom avatar from being overwritten by default avatar
       let finalAvatar = incoming.avatar;
       if (
-        incoming.avatar === DEFAULT_AVATAR_URL &&
-        existing.avatar !== DEFAULT_AVATAR_URL
+        isNoFaceAvatar(incoming.avatar) &&
+        !isNoFaceAvatar(existing.avatar)
       ) {
         finalAvatar = existing.avatar;
       }
@@ -449,8 +449,8 @@ class UserStore {
       // Protect existing custom avatar from being overwritten by default avatar
       let finalAvatar = profile.avatar;
       if (
-        profile.avatar === DEFAULT_AVATAR_URL &&
-        target.avatar !== DEFAULT_AVATAR_URL
+        isNoFaceAvatar(profile.avatar) &&
+        !isNoFaceAvatar(target.avatar)
       ) {
         finalAvatar = target.avatar;
       }

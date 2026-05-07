@@ -2,7 +2,7 @@
 import GM_fetch from "@trim21/gm-fetch";
 import { logger } from "./logger";
 import { withLimit } from "./limiter";
-import {DEFAULT_AVATAR_URL} from "@/core/dom/dom-utils";
+import { DEFAULT_AVATAR_URL } from "@/core/dom/dom-utils";
 import {
   getFreshGmCache,
   setTimestampedGmCache,
@@ -182,7 +182,7 @@ function encWbi(
 
 // --- 主逻辑 ---
 
-async function _getUserInfo(mid: string): Promise<UserInfo> {
+async function _getUserInfo(mid: string): Promise<UserInfo | null> {
   try {
     const { img_key, sub_key } = await getWbiKeys();
 
@@ -207,7 +207,13 @@ async function _getUserInfo(mid: string): Promise<UserInfo> {
     if (res.code !== 0) {
       logger.debug("getUserInfo failed", res, response);
       if (res.code === -404) return {
-        nickname: "账号已注销", avatar: DEFAULT_AVATAR_URL, isDeleted: true };
+        nickname: "账号已注销", avatar: DEFAULT_AVATAR_URL, isDeleted: true
+      }
+      else if ([-352, -412, -799].includes(res.code)) {
+        logger.debug("可能已被风控，暂停请求"); return null;
+      }
+
+
     }
 
     return {
@@ -215,7 +221,7 @@ async function _getUserInfo(mid: string): Promise<UserInfo> {
       avatar: res.data.face + "@96w_96h_1c_1s.avif",
     };
   } catch (error) {
-    logger.error("getUserInfo failed", error);
+    logger.error("getUserInfo failed", error,);
     throw error;
   }
 }

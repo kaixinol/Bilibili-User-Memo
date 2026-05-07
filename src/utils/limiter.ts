@@ -1,8 +1,7 @@
 // utils/limiter.ts
 import pLimit from "p-limit"; // 建议安装 p-limit 库，或者用刚才手写的 createLimit
 
-// 创建一个全局并发计数器（并发 2，每秒最多处理几个，比较稳）
-const limit = pLimit(2);
+const limit = pLimit(4);
 
 /**
  * 限速装饰器：将普通异步函数包装成带并发控制的任务

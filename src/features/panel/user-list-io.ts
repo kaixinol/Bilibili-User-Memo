@@ -96,10 +96,23 @@ export async function fetchLatestProfiles(
   onProgress: () => void,
 ): Promise<UserProfile[]> {
   const profiles: UserProfile[] = [];
+  let aborted = false;
+
   const tasks = users.map(async (user) => {
+    if (aborted) return;
+
     try {
       const newData = await getUserInfo(String(user.id));
-      if (!newData.nickname) return;
+      if (aborted) return;
+      if (!newData) {
+        aborted = true;
+        onProgress();
+        return;
+      }
+      if (!newData.nickname) {
+        onProgress();
+        return;
+      }
       profiles.push({
         id: user.id,
         nickname: newData.nickname,
@@ -107,6 +120,7 @@ export async function fetchLatestProfiles(
         isDeleted: newData.isDeleted,
       });
     } catch (error) {
+      if (aborted) return;
       logger.error(`刷新用户 [${user.id}] 失败:`, error);
     } finally {
       onProgress();

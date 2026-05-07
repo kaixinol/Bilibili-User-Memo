@@ -1,3 +1,0 @@
-1. 支持手動添加用戶
-2. 將含noface.jpg的視爲無頭像
-3. search.bilibili.com 搜索的第一个用户 / UP主投稿

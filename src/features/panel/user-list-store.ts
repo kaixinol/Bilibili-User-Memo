@@ -34,6 +34,7 @@ export interface UserListStore {
   clearSelection(): void;
   invertSelection(ids: string[]): void;
   removeSelected(): void;
+  getRefreshTargets(): BiliUser[];
   setDisplayMode(mode: number): void;
   setFuzzySearchEnabled(next: boolean): void;
   setOpen(next: boolean): void;
@@ -201,6 +202,14 @@ export function registerUserStore() {
       this.clearSelection();
     },
 
+    getRefreshTargets() {
+      if (!this.isMultiSelect) return this._usersList;
+
+      return this.selectedIds
+        .map((id) => this._usersMap.get(id))
+        .filter((user): user is BiliUser => Boolean(user));
+    },
+
     setDisplayMode(mode: number) {
       userStore.setDisplayMode(mode);
     },
@@ -251,13 +260,14 @@ export function registerUserStore() {
     },
 
     async refreshData() {
-      if (this.isRefreshing || this._usersList.length === 0) return;
+      const refreshTargets = this.getRefreshTargets();
+      if (this.isRefreshing || refreshTargets.length === 0) return;
       this.isRefreshing = true;
       this.refreshCurrent = 0;
-      this.refreshTotal = this._usersList.length;
+      this.refreshTotal = refreshTargets.length;
 
       try {
-        const profiles = await fetchLatestProfiles(this.users, () => {
+        const profiles = await fetchLatestProfiles(refreshTargets, () => {
           this.refreshCurrent++;
         });
         userStore.updateUserProfiles(profiles);

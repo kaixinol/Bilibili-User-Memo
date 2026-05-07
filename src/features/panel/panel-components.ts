@@ -76,10 +76,12 @@ function registerPanelBindings() {
 
   Alpine.bind("panelRefreshBtn", () => ({
     type: "button",
-    ":disabled": "userList.isRefreshing",
-    ":class": "{ 'panel-btn': true, 'btn-disabled': userList.isRefreshing }",
+    ":disabled":
+      "userList.isRefreshing || (userList.isMultiSelect && userList.selectedIds.length === 0)",
+    ":class":
+      "{ 'panel-btn': true, 'btn-disabled': userList.isRefreshing || (userList.isMultiSelect && userList.selectedIds.length === 0) }",
     ":title":
-      "userList.isRefreshing ? '正在同步 Bilibili 最新数据...' : '刷新UP主名字和头像'",
+      "userList.isRefreshing ? '正在同步 Bilibili 最新数据...' : (userList.isMultiSelect ? (userList.selectedIds.length === 0 ? '请选择要刷新的用户' : '刷新所选用户数据') : '刷新UP主名字和头像')",
     "@click": "userList.refreshData()",
   }));
 

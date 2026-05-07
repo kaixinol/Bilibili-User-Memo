@@ -138,7 +138,8 @@
       </button>
       <div class="panel-title">备注列表</div>
       <button x-bind="panelRefreshBtn">
-        <span x-show="!userList.isRefreshing">⚡一键刷新数据</span>
+        <span x-show="!userList.isRefreshing && (!userList.isMultiSelect || userList.selectedIds.length === 0)">⚡一键刷新数据</span>
+        <span x-show="!userList.isRefreshing && userList.isMultiSelect && userList.selectedIds.length > 0">⚡刷新所选</span>
 
         <span x-show="userList.isRefreshing" class="refresh-content">
           <span class="loading-spinner">⏳</span>

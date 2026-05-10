@@ -80,14 +80,7 @@ export default defineConfig(({ mode }) => {
     build: {
       minify: isDebug ? false : "terser",
 
-      rollupOptions: {
-        treeshake: "recommended",
-        output: {
-          inlineDynamicImports: true,
-          manualChunks: undefined,
-        },
-      },
-
+      modulePreload: false,
       terserOptions: isDebug
         ? {
           compress: false,
@@ -103,7 +96,7 @@ export default defineConfig(({ mode }) => {
             unused: true,
             dead_code: true,
             drop_debugger: true,
-            passes: 2,
+            passes: 3,
 
             // 安全结构优化
             hoist_funs: true, // 函数提升
@@ -114,14 +107,15 @@ export default defineConfig(({ mode }) => {
             booleans: true,
             conditionals: true,
             sequences: false, // ❗ 保持语句可读
-            inline: 1, // 仅简单内联
+            inline: 4, // 仅简单内联
+            pure_getters: true,
+            comparisons: true,
           },
 
           mangle: false, // GF 友好：保留变量名
 
           format: {
             beautify: false,
-            comments: /^\s*(@|==UserScript==|==\/UserScript==)/,
           },
         },
 

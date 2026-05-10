@@ -107,7 +107,7 @@ export default defineConfig(({ mode }) => {
             booleans: true,
             conditionals: true,
             sequences: false, // ❗ 保持语句可读
-            inline: 4, // 仅简单内联
+            inline: true, // 仅简单内联
             pure_getters: true,
             comparisons: true,
           },

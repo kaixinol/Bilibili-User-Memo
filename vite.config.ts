@@ -36,7 +36,7 @@ export default defineConfig(({ mode }) => {
           website: "https://github.com/kaixinol/Bilibili-User-Memo",
           icon: "https://www.bilibili.com/favicon.ico",
           match: ["https://*.bilibili.com/*"],
-          exclude: ["https://*.hdslb.com/*"],
+          exclude: ["https://*.hdslb.com/*", "https://live.bilibili.com/*", "https://www.bilibili.com/match/*","https://app.bilibili.com/*"],
           noframes: true,
           grant: [
             "GM_setValue",
@@ -64,7 +64,7 @@ export default defineConfig(({ mode }) => {
           },
         },
         server: {
-          mountGmApi: true,
+          mountGmApi: false,
         },
       }),
     ],

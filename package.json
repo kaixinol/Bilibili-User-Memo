@@ -1,6 +1,6 @@
 {
   "name": "bili-user-memo",
-  "version": "2.7.0",
+  "version": "2.7.1",
   "description": "B站UP主一键备注 | B站一键备注 Rev 的重写版本",
   "main": "src/main.ts",
   "scripts": {
@@ -18,16 +18,16 @@
   ],
   "author": "Kaesinol",
   "license": "AGPL-3.0-or-later",
-  "packageManager": "pnpm@10.33.0",
+  "packageManager": "pnpm@11.1.1",
   "devDependencies": {
     "@types/alpinejs": "^3.13.11",
     "@types/alpinejs__persist": "^3.13.4",
-    "@types/node": "^25.6.2",
+    "@types/node": "^25.7.0",
     "@types/opencc-js": "^1.0.3",
     "@types/query-selector-shadow-dom": "^1.0.4",
     "@types/tampermonkey": "^5.0.5",
-    "@typescript-eslint/eslint-plugin": "^8.59.2",
-    "@typescript-eslint/parser": "^8.59.2",
+    "@typescript-eslint/eslint-plugin": "^8.59.3",
+    "@typescript-eslint/parser": "^8.59.3",
     "browserslist": "^4.28.2",
     "eslint": "^10.3.0",
     "eslint-plugin-compat": "^7.0.2",
@@ -37,9 +37,9 @@
     "stylelint-no-unsupported-browser-features": "^8.1.1",
     "terser": "^5.47.1",
     "typescript": "^6.0.3",
-    "vite": "^8.0.11",
-    "vite-plugin-monkey": "^8.0.2",
-    "vitest": "^4.1.5"
+    "vite": "^8.0.12",
+    "vite-plugin-monkey": "^8.0.5",
+    "vitest": "^4.1.6"
   },
   "dependencies": {
     "@alpinejs/persist": "^3.15.12",

@@ -4,3 +4,7 @@ export function getUidFromVueInstance(el: HTMLElement): string | null {
         ?? null);
 
 }
+export function getOpusAuthorUid(): unknown {
+  return window.__INITIAL_STATE__?.detail?.basic?.uid
+    || window.__INITIAL_STATE__?.detail?.modules?.find((m) => m.module_author)?.module_author?.mid;
+}

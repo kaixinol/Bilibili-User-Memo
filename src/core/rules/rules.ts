@@ -1,9 +1,13 @@
 import { getUidFromVueInstance } from "@/utils/UIDExtractor";
 import { RawRule, StyleScope, type RawConfig, type UidResolverFn } from "./rule-types";
 import { logger } from "@/utils/logger";
+import { waitUntil } from "@/utils/scheduler";
 export { StyleScope, InjectionMode } from "./rule-types";
+import { getOpusAuthorUid } from "@/utils/UIDExtractor";
 const COMMON_REG = /^https:\/\/[a-z0-9.]+\.bilibili\.com\/.*/;
 const r = (rule: Partial<RawRule> & { uidResolver?: UidResolverFn }) => new RawRule(rule);
+
+
 
 const rawConfig: RawConfig[] = [
   {
@@ -243,15 +247,53 @@ const rawConfig: RawConfig[] = [
       name: "新版动态",
       styleScope: StyleScope.Editable,
       aSelector: "div.opus-module-author__name",
-      uidResolver: (_el) => {
-        const rawUid = window.__INITIAL_STATE__?.detail?.basic?.uid
-          || window.__INITIAL_STATE__?.detail?.modules?.find(m => m.module_author)?.module_author?.mid;
+      uidResolver: async (_el) => {
+        let rawUid = getOpusAuthorUid();
+        if (!rawUid) {
+          await waitUntil(() => Boolean(getOpusAuthorUid()), {
+            intervalMs: 50,
+            timeoutMs: 1500,
+          });
+          rawUid = getOpusAuthorUid();
+        }
         logger.debug("rawUid", rawUid);
         return rawUid ? String(rawUid) : null;
       }
     })
   },
   {
+    urlPattern: /^https:\/\/t\.bilibili\.com\/\d+/,
+    rule: r({
+      name: "动态-转发",
+      styleScope: StyleScope.Minimal,
+      aSelector: "span.dyn-orig-author__name",
+      uidResolver: el => {
+        return (el as any)._profile.uid;
+      }
+    })
+  }, {
+    urlPattern: /^https:\/\/space\.bilibili\.com\/\d+\/dynamic/,
+    rule: r({
+      name: "用户空间动态-转发",
+      styleScope: StyleScope.Minimal,
+      aSelector: "span.dyn-orig-author__name",
+      trigger: { watch: "bili-dyn-content__orig", interval: 1000 },
+      dynamicWatch: true,
+      uidResolver: el => {
+        return (el as any)._profile.uid;
+      }
+    })
+  },
+  {
+    urlPattern: /^https:\/\/space\.bilibili\.com\/\d+\/dynamic/,
+    rule: r({
+      name: "用户空间动态-点赞",
+      styleScope: StyleScope.Minimal,
+      aSelector: 'span[data-module="desc"]',
+      trigger: { watch: "bili-dyn-interaction__item", interval: 1000 },
+      dynamicWatch: true,
+    })
+  }, {
     urlPattern: /^https:\/\/search\.bilibili\.com\/(all|live|upuser）?.+)/,
     rule: r({
       name: "搜索页面-UP主",
@@ -259,6 +301,5 @@ const rawConfig: RawConfig[] = [
       aSelector: "a.user-name, a.p_relative, a.live-title",
     })
   }
-
 ];
 export const config = rawConfig;

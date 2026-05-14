@@ -259,7 +259,7 @@ export class PageInjector {
 
       const originalName =
         rule.originalNameResolver?.(el, rule) || getElementDisplayName(el, rule);
-      const uid = this.resolveElementUid(el, rule, originalName);
+      const uid = await this.resolveElementUid(el, rule, originalName);
       uidResolved = Boolean(uid);
       if (!uid) return;
 
@@ -293,13 +293,13 @@ export class PageInjector {
    *   2. extractUid
    *   3. matchByName（仅显式开启时作为最后兜底）
    */
-  private resolveElementUid(
+  private async resolveElementUid(
     el: HTMLElement,
     rule: PageRule,
     originalName: string,
-  ): string | null {
+  ): Promise<string | null> {
     if (rule.uidResolver) {
-      const uid = rule.uidResolver(el, rule);
+      const uid = await rule.uidResolver(el, rule);
       if (uid) return uid;
       logger.warn("[resolveElementUid] uidResolver returned empty", {
         ruleName: rule.name,

@@ -30,7 +30,10 @@ export interface RawConfig {
   rule: RawRule;
 }
 
-export type UidResolverFn = (el: HTMLElement, rule: RawRule) => string | null;
+export type UidResolverFn = (
+  el: HTMLElement,
+  rule: RawRule,
+) => string | null | Promise<string | null>;
 export type OriginalNameResolverFn = (
   el: HTMLElement,
   rule: RawRule,

@@ -251,8 +251,8 @@ const rawConfig: RawConfig[] = [
         let rawUid = getOpusAuthorUid();
         if (!rawUid) {
           await waitUntil(() => Boolean(getOpusAuthorUid()), {
-            intervalMs: 50,
-            timeoutMs: 1500,
+            intervalMs: 200,
+            timeoutMs: 10000,
           });
           rawUid = getOpusAuthorUid();
         }

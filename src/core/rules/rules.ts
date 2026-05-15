@@ -290,7 +290,7 @@ const rawConfig: RawConfig[] = [
       name: "用户空间动态-点赞",
       styleScope: StyleScope.Minimal,
       aSelector: 'span[data-module="desc"]',
-      trigger: { watch: "bili-dyn-interaction__item", interval: 1000 },
+      trigger: { watch: "div.bili-dyn-interaction__item", interval: 1000 },
       dynamicWatch: true,
     })
   }, {

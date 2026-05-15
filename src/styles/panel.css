@@ -84,6 +84,9 @@
   color: var(--text-main);
   box-shadow: 0 12px 40px rgb(0 0 0 / 25%);
 }
+.panel-custom-css-section:not([open]) {
+  display: none !important;
+}
 .panel-custom-css-section[open] {
   display: flex;
   flex-direction: column;

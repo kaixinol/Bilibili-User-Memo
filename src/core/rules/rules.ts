@@ -196,7 +196,7 @@ const rawConfig: RawConfig[] = [
       trigger: { watch: "div.bili-dyn-item__main", interval: 1000 },
       dynamicWatch: true,
       uidResolver: (el) => {
-        return getUidFromVueInstance(el.closest(".bili-dyn-item")!)
+        return getUidFromVueInstance(el.parentElement!)
       }
     })
   },
@@ -247,14 +247,14 @@ const rawConfig: RawConfig[] = [
       name: "新版动态",
       styleScope: StyleScope.Editable,
       aSelector: "div.opus-module-author__name",
-      uidResolver: async (_el) => {
-        let rawUid = getOpusAuthorUid();
+      uidResolver: async (el) => {
+        let rawUid = getOpusAuthorUid(el);
         if (!rawUid) {
-          await waitUntil(() => Boolean(getOpusAuthorUid()), {
+          await waitUntil(() => Boolean(getOpusAuthorUid(el)), {
             intervalMs: 200,
             timeoutMs: 10000,
           });
-          rawUid = getOpusAuthorUid();
+          rawUid = getOpusAuthorUid(el);
         }
         logger.debug("rawUid", rawUid);
         return rawUid ? String(rawUid) : null;

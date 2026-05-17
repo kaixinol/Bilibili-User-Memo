@@ -22,6 +22,21 @@ function normalizeUid(value: unknown): string | null {
   return uid.length > 0 ? uid : null;
 }
 
+export function getUidFromVueInstance(el: HTMLElement | null | undefined): string | null {
+  return normalizeUid(el?.__vue__?.author?.mid);
+}
+
+export function getOpusAuthorUid(el: Element | null | undefined): string | null {
+  return (
+    normalizeUid(window.__INITIAL_STATE__?.detail?.basic?.uid) ||
+    normalizeUid(
+      window.__INITIAL_STATE__?.detail?.modules?.find((module) => module.module_author)
+        ?.module_author?.mid,
+    ) ||
+    normalizeUid((el as any)?.$log?.click?.value?.mid)
+  );
+}
+
 function getAttr(el: Element, name: string): string | null {
   return normalizeUid(el.getAttribute(name));
 }

@@ -1,9 +1,8 @@
-import { getUidFromVueInstance } from "@/utils/UIDExtractor";
+import { getOpusAuthorUid, getUidFromVueInstance } from "@/core/dom/uid-extractor";
 import { RawRule, StyleScope, type RawConfig, type UidResolverFn } from "./rule-types";
 import { logger } from "@/utils/logger";
 import { waitUntil } from "@/utils/scheduler";
 export { StyleScope, InjectionMode } from "./rule-types";
-import { getOpusAuthorUid } from "@/utils/UIDExtractor";
 const COMMON_REG = /^https:\/\/[a-z0-9.]+\.bilibili\.com\/.*/;
 const r = (rule: Partial<RawRule> & { uidResolver?: UidResolverFn }) => new RawRule(rule);
 
@@ -257,7 +256,7 @@ const rawConfig: RawConfig[] = [
           rawUid = getOpusAuthorUid(el);
         }
         logger.debug("rawUid", rawUid);
-        return rawUid ? String(rawUid) : null;
+        return rawUid;
       }
     })
   },

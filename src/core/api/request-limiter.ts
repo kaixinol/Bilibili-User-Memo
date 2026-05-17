@@ -1,4 +1,3 @@
-// utils/limiter.ts
 import pLimit from "p-limit"; // 建议安装 p-limit 库，或者用刚才手写的 createLimit
 
 const limit = pLimit(4);

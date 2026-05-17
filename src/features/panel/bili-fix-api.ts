@@ -1,4 +1,4 @@
-import { logger } from "./logger";
+import { logger } from "@/utils/logger";
 
 export type BiliFixAPI = {
     annotateElements(elements: Iterable<HTMLElement>): void;

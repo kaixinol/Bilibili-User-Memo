@@ -1,13 +1,13 @@
 // rewritten from SocialSisterYi/bilibili-API-collect/docs/misc/sign/wbi.md#javascript
 import GM_fetch from "@trim21/gm-fetch";
-import { logger } from "./logger";
-import { withLimit } from "./limiter";
+import { logger } from "@/utils/logger";
+import { withLimit } from "./request-limiter";
 import { DEFAULT_AVATAR_URL } from "@/core/dom/dom-utils";
 import {
   getFreshGmCache,
   setTimestampedGmCache,
   withMemoryCache,
-} from "./cache";
+} from "@/utils/cache";
 // --- 常量定义 ---
 const MIXIN_KEY_ENC_TAB = [
   46, 47, 18, 2, 53, 8, 23, 32, 15, 50, 10, 31, 58, 3, 45, 35, 27, 43, 5, 49,

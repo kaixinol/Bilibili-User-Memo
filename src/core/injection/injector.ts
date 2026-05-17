@@ -338,7 +338,12 @@ export class PageInjector {
   }
 
   private async waitForBiliEnvironment(): Promise<void> {
-    await waitUntil(() => Boolean((unsafeWindow as any).__VUE__));
+    const ready = await waitUntil(() => Boolean((unsafeWindow as any).__VUE__), {
+      timeoutMs: 5000,
+    });
+    if (!ready) {
+      logger.warn("等待 Bilibili Vue 环境超时，继续初始化页面注入");
+    }
   }
 }
 

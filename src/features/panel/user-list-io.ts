@@ -4,6 +4,7 @@ import { normalizeUserCollection } from "@/core/store/user-normalization";
 import { logger } from "@/utils/logger";
 import { getUserInfo } from "@/utils/sign";
 import { isNoFaceAvatar } from "@/core/dom/dom-utils";
+import pLimit from "p-limit";
 
 interface UserProfile {
   id: string;
@@ -11,6 +12,8 @@ interface UserProfile {
   avatar: string;
   isDeleted?: boolean;
 }
+
+const REFRESH_PROFILE_CONCURRENCY = 4;
 
 type ImportReadResult =
   | { status: "cancelled" }
@@ -96,21 +99,20 @@ export async function fetchLatestProfiles(
   onProgress: () => void,
 ): Promise<UserProfile[]> {
   const profiles: UserProfile[] = [];
+  const limit = pLimit(REFRESH_PROFILE_CONCURRENCY);
   let aborted = false;
 
-  const tasks = users.map(async (user) => {
-    if (aborted) return;
-
+  const tasks = users.map((user) => limit(async () => {
     try {
+      if (aborted) return;
+
       const newData = await getUserInfo(String(user.id));
       if (aborted) return;
       if (!newData) {
         aborted = true;
-        onProgress();
         return;
       }
       if (!newData.nickname) {
-        onProgress();
         return;
       }
       profiles.push({
@@ -125,11 +127,10 @@ export async function fetchLatestProfiles(
     } finally {
       onProgress();
     }
-  });
+  }));
   await Promise.allSettled(tasks);
   return profiles;
 }
-
 
 
 

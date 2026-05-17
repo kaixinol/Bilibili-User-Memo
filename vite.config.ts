@@ -5,6 +5,11 @@ import browserslist from 'browserslist';
 import { fileURLToPath, URL } from "node:url";
 export default defineConfig(({ mode }) => {
   const isDebug = mode === "debug";
+  const lightningCssTargets = browserslistToTargets(browserslist());
+
+  if (isDebug) {
+    console.log('LightningCSS Targets:', lightningCssTargets);
+  }
 
   return {
     plugins: [{
@@ -125,7 +130,7 @@ export default defineConfig(({ mode }) => {
     css: {
       transformer: 'lightningcss',
       lightningcss: {
-        targets: browserslistToTargets(browserslist()),
+        targets: lightningCssTargets,
         drafts: {
           customMedia: true
         },
@@ -137,5 +142,3 @@ export default defineConfig(({ mode }) => {
     }
   };
 });
-const targets = browserslistToTargets(browserslist());
-console.log('LightningCSS Targets:', targets);

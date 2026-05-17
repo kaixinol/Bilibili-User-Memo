@@ -6,6 +6,7 @@ import { confirmDialog, promptText, showAlert } from "./dialogs";
 import { biliFixAPIReady } from "@/utils/compatibility";
 import { registerAddUserDialog } from "./add-user-dialog";
 import { isNoFaceAvatar } from "@/core/dom/dom-utils";
+import { AVATAR_URL_INVALID_MESSAGE, isValidAvatarUrl } from "./avatar-url";
 interface DisplayModeOption {
   value: number;
   label: string;
@@ -45,15 +46,6 @@ function getRef<T extends Element>(context: object, key: string): T | undefined 
 
 function getCurrentElement(context: object): HTMLElement | undefined {
   return (context as AlpineMagicContext).$el;
-}
-
-function isValidHttpUrl(value: string): boolean {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:";
-  } catch {
-    return false;
-  }
 }
 
 function registerPanelBindings() {
@@ -349,8 +341,8 @@ export function registerPanelComponents() {
       const nextAvatar = promptText("请输入头像 URL");
       if (!nextAvatar) return;
 
-      if (!isValidHttpUrl(nextAvatar)) {
-        showAlert("请输入有效的 http(s) 头像 URL");
+      if (!isValidAvatarUrl(nextAvatar)) {
+        showAlert(AVATAR_URL_INVALID_MESSAGE);
         return;
       }
 

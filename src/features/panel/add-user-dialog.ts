@@ -4,6 +4,7 @@ import { DEFAULT_AVATAR_URL } from "@/core/dom/dom-utils";
 import { userStore } from "@/core/store/store";
 import type { BiliUser } from "@/core/types";
 import { showAlert } from "./dialogs";
+import { AVATAR_URL_INVALID_MESSAGE, isValidAvatarUrl } from "./avatar-url";
 
 type AddUserDialogStore = {
   isOpen: boolean;
@@ -45,6 +46,12 @@ export function registerAddUserDialog() {
         return;
       }
 
+      const avatar = this.avatar.trim();
+      if (avatar && !isValidAvatarUrl(avatar)) {
+        showAlert(AVATAR_URL_INVALID_MESSAGE);
+        return;
+      }
+
       const existing = userStore.getUsers().find((u) => u.id === uid);
       if (existing) {
         showAlert(`用户 UID:${uid} 已存在`);
@@ -63,7 +70,7 @@ export function registerAddUserDialog() {
         const newUser: BiliUser = {
           id: uid,
           nickname: userInfo.nickname,
-          avatar: this.avatar.trim() || (userInfo.avatar ?? DEFAULT_AVATAR_URL),
+          avatar: avatar || (userInfo.avatar ?? DEFAULT_AVATAR_URL),
           memo,
           isDeleted: userInfo.isDeleted,
         };

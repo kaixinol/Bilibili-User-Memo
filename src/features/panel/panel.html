@@ -290,7 +290,7 @@
               id="add-user-avatar"
               type="text"
               x-model.trim="$store.addUserDialog.avatar"
-              placeholder="留空将自动获取头像"
+              placeholder="留空将自动获取头像，支持 http(s) 或 data:"
               :disabled="$store.addUserDialog.isLoading"
             />
           </div>

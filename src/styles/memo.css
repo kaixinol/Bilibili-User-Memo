@@ -3,7 +3,7 @@
   min-width: 2ch;
   color: var(--memo-textarea-color);
   margin-right: 8px;
-  padding: 4px 6px;
+  padding: 0 6px;
   display: inline-block;
   white-space: nowrap;
   background: var(--memo-textarea-bg);
@@ -23,6 +23,15 @@
   opacity: 0.85;
 }
 
+.editable-textarea,
+.bili-memo-tag,
+.bili-memo-input {
+  box-sizing: border-box;
+  height: 21px;
+  line-height: 19px;
+  min-height: 21px;
+}
+
 /* hover 状态 - 使用 color-mix 动态提亮背景色，适配所有主题 */
 .editable-textarea:hover {
   opacity: 1;
@@ -31,10 +40,11 @@
 
 .bili-memo-tag {
   cursor: pointer;
-  display: inline;
+  display: inline-block;
   vertical-align: middle;
   color: var(--memo-tag-color);
   font-size: inherit;
+  padding: 0 6px;
 }
 
 .bili-memo-input {
@@ -42,11 +52,9 @@
   border: 1px solid var(--primary-color);
   font-size: var(--auto-detected-font-size, 13px);
   padding: 0 4px;
-  margin-left: 4px;
+  margin: 0;
   border-radius: 4px;
   outline: none;
-  height: calc(var(--auto-detected-font-size, 14px) + 6px);
-  line-height: calc(var(--auto-detected-font-size, 14px) + 6px);
   vertical-align: middle;
   color: var(--memo-input-color);
 }

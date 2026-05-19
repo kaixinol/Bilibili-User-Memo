@@ -15,7 +15,7 @@ const rawConfig: RawConfig[] = [
   },
   {
     urlPattern: /^https:\/\/www\.bilibili\.com\/(video|list)\/.*/,
-    rule: r({ name: "视频页面-Staff", styleScope: StyleScope.Editable, aSelector: "a.staff-name" })
+    rule: r({ name: "视频页面-Staff", styleScope: StyleScope.Minimal, aSelector: "a.staff-name" })
   },
   {
     urlPattern: /^https:\/\/www\.bilibili\.com\/(video|list)\/.*/,

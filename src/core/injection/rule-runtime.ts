@@ -44,9 +44,17 @@ export function getMatchByNameRules(rules: Iterable<PageRule>): PageRule[] {
   return Array.from(rules).filter((rule) => Boolean(rule.matchByName));
 }
 
-export function buildRuleSelector(rule: PageRule): string | null {
+export interface RuleSelectorOptions {
+  includeProcessed?: boolean;
+}
+
+export function buildRuleSelector(
+  rule: PageRule,
+  options: RuleSelectorOptions = {},
+): string | null {
   const baseSelector = rule.aSelector || rule.textSelector;
   if (!baseSelector) return null;
+  if (options.includeProcessed) return baseSelector;
   return `${baseSelector}:not([data-bili-processed])`;
 }
 

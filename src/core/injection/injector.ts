@@ -20,6 +20,7 @@ import {
   getMatchedRules,
   groupRulesByMode,
   logRuleScanResult,
+  type RuleSelectorOptions,
   type RuleGroups,
 } from "./rule-runtime";
 import { RemoteChangeBuffer } from "./remote-change-buffer";
@@ -38,7 +39,7 @@ export class PageInjector {
   private lastUrl = "";
   private readonly pendingRemoteChanges = new RemoteChangeBuffer();
   private readonly scanScheduler = new RuleScanScheduler(
-    (rule, scope) => this.scanAndInjectRule(rule, scope),
+    (rule, scope, options) => this.scanAndInjectRule(rule, scope, options),
     () => this.domReady,
   );
 
@@ -146,10 +147,13 @@ export class PageInjector {
     refreshRenderedMemoNodes(users, displayMode, changedIds);
   }
 
-  private scanActiveRules(scope: ScanScope) {
+  private scanActiveRules(
+    scope: ScanScope,
+    options: RuleSelectorOptions = {},
+  ) {
     const activeRules = [...this.activeWatchers.keys()];
     if (activeRules.length === 0) return;
-    this.scanScheduler.scanRules(activeRules, scope, "refresh active rules");
+    this.scanScheduler.scanRules(activeRules, scope, "refresh active rules", options);
   }
 
   private startUrlMonitor() {
@@ -168,9 +172,9 @@ export class PageInjector {
 
     const matchedRules = getMatchedRules();
     const groups = this.groupRulesByMode(matchedRules);
-    this.applyStaticRules(groups.staticRules, document);
+    this.applyStaticRules(groups.staticRules, document, { includeProcessed: true });
     this.reconcileWatchers(groups.dynamicRules);
-    this.scanActiveRules(document);
+    this.scanActiveRules(document, { includeProcessed: true });
   }
 
   private groupRulesByMode(rules: PageRule[]): RuleGroups {
@@ -180,13 +184,14 @@ export class PageInjector {
   private applyStaticRules(
     staticRules: ReturnType<typeof groupRulesByMode>["staticRules"],
     scope: ScanScope,
+    options: RuleSelectorOptions = {},
   ) {
     if (staticRules.length === 0) {
       this.scanScheduler.clearStaticRuleRetries();
       return;
     }
-    this.scanScheduler.scanRules(staticRules, scope, "static initial scan");
-    this.scanScheduler.scheduleStaticRuleRetries(staticRules, scope);
+    this.scanScheduler.scanRules(staticRules, scope, "static initial scan", options);
+    this.scanScheduler.scheduleStaticRuleRetries(staticRules, scope, options);
   }
 
   private reconcileWatchers(nextRules: DynamicPageRule[]) {
@@ -213,8 +218,12 @@ export class PageInjector {
     this.scanScheduler.scanRules(rules, scope, "matchByName rescan");
   }
 
-  private async scanAndInjectRule(rule: PageRule, scope: ScanScope) {
-    const selector = buildRuleSelector(rule);
+  private async scanAndInjectRule(
+    rule: PageRule,
+    scope: ScanScope,
+    options: RuleSelectorOptions = {},
+  ) {
+    const selector = buildRuleSelector(rule, options);
     if (!selector) return;
 
     const scanStart = __IS_DEBUG__ ? performance.now() : 0;

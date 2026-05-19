@@ -5,6 +5,7 @@ import type {
 } from "@/core/rules/rule-types";
 import { requestIdle } from "@/utils/scheduler";
 import type { ScanScope } from "./scan-scope";
+import type { RuleSelectorOptions } from "./rule-runtime";
 import {
   getScopeType,
   recordFlowDiagnostic,
@@ -19,7 +20,11 @@ export class RuleScanScheduler {
   >();
 
   constructor(
-    private readonly processRule: (rule: PageRule, scope: ScanScope) => Promise<void>,
+    private readonly processRule: (
+      rule: PageRule,
+      scope: ScanScope,
+      options?: RuleSelectorOptions,
+    ) => Promise<void>,
     private readonly isActive: () => boolean,
   ) {}
 
@@ -30,7 +35,12 @@ export class RuleScanScheduler {
     }
   }
 
-  public scanRules(rules: PageRule[], scope: ScanScope, source = "scan rules") {
+  public scanRules(
+    rules: PageRule[],
+    scope: ScanScope,
+    source = "scan rules",
+    options: RuleSelectorOptions = {},
+  ) {
     if (rules.length === 0) return;
 
     const queue = [...rules];
@@ -41,7 +51,7 @@ export class RuleScanScheduler {
         while (queue.length > 0 && deadline.timeRemaining() > 1) {
           const rule = queue.shift();
           if (!rule) continue;
-          await this.processRule(rule, scope);
+          await this.processRule(rule, scope, options);
           processedRules += 1;
         }
 
@@ -66,7 +76,11 @@ export class RuleScanScheduler {
     requestIdle(runChunk);
   }
 
-  public scheduleStaticRuleRetries(staticRules: StaticPageRule[], scope: ScanScope) {
+  public scheduleStaticRuleRetries(
+    staticRules: StaticPageRule[],
+    scope: ScanScope,
+    options: RuleSelectorOptions = {},
+  ) {
     this.clearStaticRuleRetries();
     if (staticRules.length === 0) return;
 
@@ -76,7 +90,7 @@ export class RuleScanScheduler {
     retryDelays.forEach((delay) => {
       const timerId = window.setTimeout(() => {
         if (!this.isActive() || token !== this.staticRetryToken) return;
-        this.scanRules(staticRules, scope, `static retry ${delay}ms`);
+        this.scanRules(staticRules, scope, `static retry ${delay}ms`, options);
       }, delay);
       this.staticRetryTimers.push(timerId);
     });

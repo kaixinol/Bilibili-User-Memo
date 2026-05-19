@@ -27,9 +27,9 @@
 .bili-memo-tag,
 .bili-memo-input {
   box-sizing: border-box;
-  height: 21px;
-  line-height: 19px;
-  min-height: 21px;
+  height: max(21px, calc(1em + 6px));
+  line-height: max(19px, calc(1em + 4px));
+  min-height: max(21px, calc(1em + 6px));
 }
 
 /* hover 状态 - 使用 color-mix 动态提亮背景色，适配所有主题 */

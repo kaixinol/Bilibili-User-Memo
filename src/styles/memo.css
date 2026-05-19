@@ -1,6 +1,7 @@
 .editable-textarea {
   font-size: var(--auto-detected-font-size, 13px);
-  min-width: 2ch;
+  min-width: 4ic;
+  width: fit-content;
   color: var(--memo-textarea-color);
   margin-right: 8px;
   padding: 0 6px;

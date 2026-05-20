@@ -23,6 +23,7 @@ export function enterEditMode(targetElement: HTMLElement, user: BiliUser) {
   input.className = "bili-memo-input";
   input.translate = false;
   input.maxLength = 24;
+  input.title = "Enter 保存，Shift+Enter 保存当前昵称，Esc 取消";
   const detectedFontSize = targetElement.style.getPropertyValue('--auto-detected-font-size');
   if (detectedFontSize) {
     input.style.setProperty('--auto-detected-font-size', detectedFontSize);
@@ -39,7 +40,7 @@ export function enterEditMode(targetElement: HTMLElement, user: BiliUser) {
   // 3. 状态保存闭包let exited = false;
 
   let exited = false;
-  const saveAndExit = (shouldSave: boolean) => {
+  const saveAndExit = (shouldSave: boolean, forceSave = false) => {
     if (exited) return;
     exited = true;
 
@@ -48,7 +49,7 @@ export function enterEditMode(targetElement: HTMLElement, user: BiliUser) {
     input.remove();
     targetElement.style.display = "";
 
-    if (shouldSave && newValue !== currentMemo) {
+    if (shouldSave && (forceSave || newValue !== currentMemo)) {
       userStore.updateUserMemo(user.id, newValue, originalName);
       syncRenderedNodeState(
         targetElement,
@@ -68,7 +69,7 @@ export function enterEditMode(targetElement: HTMLElement, user: BiliUser) {
     if (e.isComposing) return; // 输入法状态中不处理
     if (e.key === "Enter") {
       e.preventDefault();
-      saveAndExit(true);
+      saveAndExit(true, e.shiftKey);
     } else if (e.key === "Escape") {
       e.preventDefault();
       saveAndExit(false);

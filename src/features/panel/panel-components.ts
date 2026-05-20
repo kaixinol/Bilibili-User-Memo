@@ -77,13 +77,6 @@ function registerPanelBindings() {
     "@click": "userList.refreshData()",
   }));
 
-  Alpine.bind("panelSearchClearBtn", () => ({
-    type: "button",
-    class: "panel-search-clear",
-    "x-show": "draftSearchQuery || userList.searchQuery",
-    "@click": "clearSearch()",
-  }));
-
   Alpine.bind("panelExportBtn", () => ({
     type: "button",
     class: "panel-btn",
@@ -230,9 +223,12 @@ export function registerPanelComponents() {
     commitSearch() {
       this.userList.searchQuery = this.draftSearchQuery.trim();
     },
-    clearSearch() {
-      this.draftSearchQuery = "";
-      this.userList.searchQuery = "";
+    handleSearchInput(event: Event) {
+      const value = (event.target as HTMLInputElement).value;
+      this.draftSearchQuery = value;
+      if (!value.trim()) {
+        this.userList.searchQuery = "";
+      }
     },
     toggleFuzzySearch(event: Event) {
       const checked = (event.target as HTMLInputElement).checked;

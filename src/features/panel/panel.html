@@ -149,21 +149,21 @@
           >)
         </span>
       </button>
-      <form class="panel-search-box" role="search" @submit.prevent="commitSearch()">
-        <input
-          id="searchInput"
-          type="search"
-          name="bilibili-user-memo-panel-search"
-          autocomplete="on"
-          placeholder="按回车搜索……"
-          title="搜索昵称、备注或ID..."
-          class="panel-search-input"
-          x-model="draftSearchQuery"
-        />
-        <button x-bind="panelSearchClearBtn" x-transition.opacity>
-          ×
-        </button>
-      </form>
+      <search class="panel-search-box">
+        <form class="panel-search-form" @submit.prevent="commitSearch()">
+          <input
+            id="searchInput"
+            type="search"
+            name="bilibili-user-memo-panel-search"
+            autocomplete="on"
+            placeholder="按回车搜索……"
+            title="搜索昵称、备注或ID..."
+            class="panel-search-input"
+            x-model="draftSearchQuery"
+            @input="handleSearchInput($event)"
+          />
+        </form>
+      </search>
       <label class="panel-fuzzy-search-toggle" title="模糊匹配：支持子序列/部分匹配">
         <input
           type="checkbox"

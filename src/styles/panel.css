@@ -344,6 +344,13 @@
   box-shadow: 0 0 0 2px var(--primary-alpha);
 }
 
+.panel-search-form {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin: 0;
+}
+
 .panel-search-input {
   border: none;
   outline: none;
@@ -351,19 +358,6 @@
   font-size: 14px;
   background: transparent;
   color: var(--text-main);
-}
-
-.panel-search-clear {
-  color: var(--border-main);
-  font-size: 14px;
-  cursor: pointer;
-  border: none;
-  background: none;
-  padding: 0 4px;
-}
-
-.panel-search-clear:hover {
-  color: var(--primary-color);
 }
 
 /* Fuzzy Search Toggle */
@@ -466,10 +460,6 @@
 
 .memo-container-dark-theme .panel-search-input {
   color: var(--text-main);
-}
-
-.memo-container-dark-theme .panel-search-clear {
-  color: var(--text-sub);
 }
 
 .memo-container-dark-theme .panel-users-container::-webkit-scrollbar-thumb {

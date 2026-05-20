@@ -80,7 +80,7 @@ function registerPanelBindings() {
   Alpine.bind("panelSearchClearBtn", () => ({
     type: "button",
     class: "panel-search-clear",
-    "x-show": "userList.searchQuery",
+    "x-show": "draftSearchQuery || userList.searchQuery",
     "@click": "clearSearch()",
   }));
 
@@ -217,13 +217,21 @@ export function registerPanelComponents() {
   }));
 
   Alpine.data("panelActions", () => ({
+    draftSearchQuery: "",
     get userList(): UserListStore {
       return getUserListStore();
     },
     get fuzzySearchEnabled(): boolean {
       return this.userList.fuzzySearchEnabled;
     },
+    init() {
+      this.draftSearchQuery = this.userList.searchQuery;
+    },
+    commitSearch() {
+      this.userList.searchQuery = this.draftSearchQuery.trim();
+    },
     clearSearch() {
+      this.draftSearchQuery = "";
       this.userList.searchQuery = "";
     },
     toggleFuzzySearch(event: Event) {

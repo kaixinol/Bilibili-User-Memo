@@ -44,7 +44,7 @@
             title="左键自定义颜色&#10;右键自定义样式&#10;中键清除自定义样式"
             >自定义备注颜色</span
           >
-          <div 
+          <div
             class="color-preview"
             @click.stop="$refs.panelColorInput?.click()"
           ></div>
@@ -104,7 +104,7 @@
 
     <div class="panel-control-bar" x-data="panelActions">
       <button x-bind="panelImportBtn">导入</button>
-      <button class="panel-btn" @click="$store.addUserDialog.open()">添加</button>
+      <button class="panel-btn" @click="$store.addUserDialog.open()" title="手动添加用户">添加</button>
       <button x-bind="panelMultiSelectBtn">
         <span x-show="!userList.isMultiSelect">多选用户</span>
         <span x-show="userList.isMultiSelect">退出多选</span>
@@ -149,17 +149,21 @@
           >)
         </span>
       </button>
-      <div class="panel-search-box">
+      <form class="panel-search-box" role="search" @submit.prevent="commitSearch()">
         <input
           id="searchInput"
-          placeholder="搜索昵称、备注或ID..."
+          type="search"
+          name="bilibili-user-memo-panel-search"
+          autocomplete="on"
+          placeholder="按回车搜索……"
+          title="搜索昵称、备注或ID..."
           class="panel-search-input"
-          x-model.debounce.200ms="userList.searchQuery"
+          x-model="draftSearchQuery"
         />
         <button x-bind="panelSearchClearBtn" x-transition.opacity>
           ×
         </button>
-      </div>
+      </form>
       <label class="panel-fuzzy-search-toggle" title="模糊匹配：支持子序列/部分匹配">
         <input
           type="checkbox"

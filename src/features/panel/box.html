@@ -46,7 +46,7 @@
       :class="{ 'is-deleted': currentUser?.isDeleted }"
       x-text="currentUser?.nickname || user.id"
       x-data="uidFixLink(user.id, currentUser?.isDeleted)"
-      x-init="!$el.dataset.biliFixApiProcessed && init()"
+      x-init="init()"
       :title="currentUser?.isDeleted ? '该用户已标注为已注销' : (currentUser?.nickname || user.id)"
     ></a>
   </div>

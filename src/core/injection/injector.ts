@@ -34,7 +34,7 @@ import {
   recordRuleScanDiagnostic,
 } from "@/utils/perf-diagnostics";
 
-export class PageInjector {
+ class PageInjector {
   private domReady = false;
   private lastUrl = "";
   private readonly pendingRemoteChanges = new RemoteChangeBuffer();

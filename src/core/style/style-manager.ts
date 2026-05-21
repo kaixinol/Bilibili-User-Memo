@@ -17,15 +17,15 @@ const MEMO_STYLE_TARGET_SELECTOR =
  * 确保目标 Root (Document 或 ShadowRoot) 包含我们的样式表
  * @param root Document 或 ShadowRoot
  */
-export function ensureMemoStyleSheets(root: Document | ShadowRoot) {
+ function ensureMemoStyleSheets(root: Document | ShadowRoot) {
   const sheets = root.adoptedStyleSheets;
   const hasGlobal = sheets.includes(GLOBAL_STYLE_SHEET);
-  
+
   // 只有在有自定义 CSS 时才检查/插入自定义样式表
-  const hasCustom = CUSTOM_MEMO_STYLE_SHEET 
+  const hasCustom = CUSTOM_MEMO_STYLE_SHEET
     ? sheets.includes(CUSTOM_MEMO_STYLE_SHEET)
     : true; // 如果没有自定义样式表，视为已满足
-  
+
   if (hasGlobal && hasCustom) return;
 
   // 使用 slice 创建副本以避免副作用，然后推入缺失的样式表
@@ -58,18 +58,18 @@ export function setCustomMemoCss(css: string): {
   ruleCount: number;
 } {
   const nextCss = css ?? "";
-  
+
   // 如果 CSS 为空且之前没有创建过样式表，直接返回
   if (!nextCss.trim() && !CUSTOM_MEMO_STYLE_SHEET) {
     return { ok: true, ruleCount: 0 };
   }
-  
+
   try {
     // 如果还没有创建样式表，先创建
     if (!CUSTOM_MEMO_STYLE_SHEET) {
       CUSTOM_MEMO_STYLE_SHEET = new CSSStyleSheet();
     }
-    
+
     CUSTOM_MEMO_STYLE_SHEET.replaceSync(nextCss);
   } catch (error) {
     const message =

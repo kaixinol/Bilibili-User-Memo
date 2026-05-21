@@ -409,7 +409,7 @@ export function registerPanelComponents() {
 
       const api = await biliFixAPIReady();
 
-      if (!api || !this.isDeleted === true) return;
+      if (!api || !this.isDeleted) return;
 
       api.annotateElements([el]);
     },

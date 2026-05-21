@@ -1,4 +1,4 @@
-export const BILI_MEMO_OWNED_ATTR = "data-bili-memo-owned";
+const BILI_MEMO_OWNED_ATTR = "data-bili-memo-owned";
 const BILI_MEMO_OWNED_SELECTOR = `[${BILI_MEMO_OWNED_ATTR}]`;
 
 function isOwnedElement(element: Element | null): boolean {
@@ -10,7 +10,7 @@ export function markOwnedElement<T extends HTMLElement>(element: T): T {
   return element;
 }
 
-export function isOwnedNode(node: Node | null): boolean {
+ function isOwnedNode(node: Node | null): boolean {
   if (!node) return false;
   if (node instanceof Element) return isOwnedElement(node);
   if (node instanceof ShadowRoot) return isOwnedElement(node.host);

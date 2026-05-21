@@ -17,7 +17,7 @@ function getUserEntries(raw: unknown): unknown[] {
   return [];
 }
 
-export function normalizeUserRecord(
+ function normalizeUserRecord(
   raw: unknown,
   {
     requireMemo = false,

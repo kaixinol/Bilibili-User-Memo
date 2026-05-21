@@ -4,19 +4,19 @@ export function delay(ms: number): Promise<void> {
   });
 }
 
-export function nextFrame(): Promise<void> {
+ function nextFrame(): Promise<void> {
   return new Promise((resolve) => {
     window.requestAnimationFrame(() => resolve());
   });
 }
 
-export async function nextFrames(count: number): Promise<void> {
+ async function nextFrames(count: number): Promise<void> {
   for (let index = 0; index < count; index += 1) {
     await nextFrame();
   }
 }
 
-export function whenIdle(timeout = 1000): Promise<void> {
+ function whenIdle(timeout = 1000): Promise<void> {
   return new Promise((resolve) => {
     const requestIdleCallback =
       (window as Window & {

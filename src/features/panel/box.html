@@ -33,7 +33,7 @@
       @click="copy()"
       @mouseenter="handleMouseEnter()"
       @mouseleave="handleMouseLeave()"
-      :class="{ 'copied-status': copied }"
+      :class="{ 'copied-status': copied, 'can-expand': canExpand }"
       :title="copied ? '' : '点击复制 ID'"
     ></div>
   </div>

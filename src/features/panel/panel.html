@@ -160,7 +160,7 @@
             title="输入实时搜索，按 Enter 记录搜索历史"
             class="panel-search-input"
             x-model="draftSearchQuery"
-            @input="handleSearchInput($event)"
+            @input="if (!$el.value.trim()) userList.searchQuery = ''"
             @input.debounce.200ms="applySearchQuery()"
           />
         </form>
@@ -168,7 +168,7 @@
       <label class="panel-fuzzy-search-toggle" title="模糊匹配：支持子序列/部分匹配">
         <input
           type="checkbox"
-          :checked="fuzzySearchEnabled"
+          :checked="userList.fuzzySearchEnabled"
           @change="toggleFuzzySearch($event)"
         />
         <span>模糊搜索</span>
@@ -246,6 +246,7 @@
   x-data
   class="add-user-dialog"
   :open="$store.addUserDialog.isOpen"
+  x-effect="if ($store.addUserDialog.isOpen) $nextTick(() => $refs.addUserUid?.focus())"
   @keydown.escape.window="$store.addUserDialog.close()"
 >
   <div class="add-user-dialog-backdrop" @click.self="$store.addUserDialog.close()">
@@ -271,6 +272,7 @@
               pattern="[0-9]+"
               title="UID 只能包含数字"
               required
+              x-ref="addUserUid"
               x-model.trim="$store.addUserDialog.uid"
               placeholder="请输入用户 UID"
               :disabled="$store.addUserDialog.isLoading"

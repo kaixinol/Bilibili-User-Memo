@@ -29,10 +29,6 @@ export function registerAddUserDialog() {
     open(this: AddUserDialogStore) {
       this.resetForm();
       this.isOpen = true;
-      setTimeout(() => {
-        const input = document.querySelector<HTMLInputElement>("#add-user-uid");
-        input?.focus();
-      }, 50);
     },
 
     close(this: AddUserDialogStore) {

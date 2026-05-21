@@ -214,22 +214,11 @@ export function registerPanelComponents() {
     get userList(): UserListStore {
       return getUserListStore();
     },
-    get fuzzySearchEnabled(): boolean {
-      return this.userList.fuzzySearchEnabled;
-    },
     init() {
       this.draftSearchQuery = this.userList.searchQuery;
     },
     commitSearch() {
       this.applySearchQuery();
-    },
-    handleSearchInput(event: Event) {
-      const value = (event.target as HTMLInputElement).value;
-      this.draftSearchQuery = value;
-
-      if (!value.trim()) {
-        this.userList.searchQuery = "";
-      }
     },
     applySearchQuery() {
       this.userList.searchQuery = this.draftSearchQuery.trim();
@@ -292,6 +281,7 @@ export function registerPanelComponents() {
   Alpine.data("copyableUid", (uid: string) => ({
     uid,
     copied: false,
+    canExpand: false,
     get isMultiSelect(): boolean {
       return getUserListStore().isMultiSelect;
     },
@@ -302,14 +292,14 @@ export function registerPanelComponents() {
       runOnNextTick(this, () => {
         const element = getCurrentElement(this);
         if (!element) return;
-        element.classList.toggle("can-expand", element.scrollWidth > element.clientWidth);
+        this.canExpand = element.scrollWidth > element.clientWidth;
       });
     },
     handleMouseEnter() {
       this.refreshOverflow();
     },
     handleMouseLeave() {
-      getCurrentElement(this)?.classList.remove("can-expand");
+      this.canExpand = false;
     },
     copy() {
       if (this.isMultiSelect) return;

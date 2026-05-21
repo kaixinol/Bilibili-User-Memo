@@ -156,11 +156,12 @@
             type="search"
             name="bilibili-user-memo-panel-search"
             autocomplete="on"
-            placeholder="按回车搜索……"
-            title="搜索昵称、备注或ID..."
+            placeholder="搜索昵称、备注或ID..."
+            title="输入实时搜索，按 Enter 记录搜索历史"
             class="panel-search-input"
             x-model="draftSearchQuery"
             @input="handleSearchInput($event)"
+            @input.debounce.200ms="applySearchQuery()"
           />
         </form>
       </search>

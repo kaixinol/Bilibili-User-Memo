@@ -221,14 +221,18 @@ export function registerPanelComponents() {
       this.draftSearchQuery = this.userList.searchQuery;
     },
     commitSearch() {
-      this.userList.searchQuery = this.draftSearchQuery.trim();
+      this.applySearchQuery();
     },
     handleSearchInput(event: Event) {
       const value = (event.target as HTMLInputElement).value;
       this.draftSearchQuery = value;
+
       if (!value.trim()) {
         this.userList.searchQuery = "";
       }
+    },
+    applySearchQuery() {
+      this.userList.searchQuery = this.draftSearchQuery.trim();
     },
     toggleFuzzySearch(event: Event) {
       const checked = (event.target as HTMLInputElement).checked;

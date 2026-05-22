@@ -28,7 +28,6 @@ export function enterEditMode(targetElement: HTMLElement, user: BiliUser) {
   if (detectedFontSize) {
     input.style.setProperty('--auto-detected-font-size', detectedFontSize);
   }
-  input.style.width = `${targetElement.getBoundingClientRect().width}px`;
   // 2. 挂载
   // 为了不破坏布局，我们隐藏目标元素，在同级插入 input
   const parent = targetElement.parentElement;

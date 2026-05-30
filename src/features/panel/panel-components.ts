@@ -3,7 +3,7 @@ import type { BiliUser } from "@/core/types";
 import type { PanelPrefsStore } from "./panel-prefs";
 import type { UserListStore } from "./user-list-store";
 import { confirmDialog, promptText, showAlert } from "./dialogs";
-import { biliFixAPIReady } from "./bili-fix-api";
+import { biliFixAPIReady } from "./bili-api";
 import { registerAddUserDialog } from "./add-user-dialog";
 import { isNoFaceAvatar } from "@/core/dom/dom-utils";
 import { AVATAR_URL_INVALID_MESSAGE, isValidAvatarUrl } from "./avatar-url";

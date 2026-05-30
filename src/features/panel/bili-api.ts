@@ -4,6 +4,9 @@ import { userStore } from "@/core/store/store";
 export type BiliFixAPI = {
     annotateElements(elements: Iterable<HTMLElement>): void;
 };
+export type BiliMemoAPI = {
+    getUserMemo(uid: string): string | null;
+};
 
 export const biliFixAPIReady = (() => {
     // 这里的两个 null 含义不同：

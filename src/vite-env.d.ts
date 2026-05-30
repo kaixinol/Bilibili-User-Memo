@@ -30,7 +30,7 @@ declare global {
   }
   interface WindowEventMap {
     "biliFix:request-api": CustomEvent<(api: BiliFixAPI) => void>;
-    "biliMemo:request-api": CustomEvent<(api: { getUserMemo: (uid: string) => string | null })=> void>;
+    "biliMemo:request-api": CustomEvent<(api: BiliMemoAPI) => void>;
   }
   interface VueInstance {
     $data: Record<string, any>;

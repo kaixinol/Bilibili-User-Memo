@@ -266,6 +266,16 @@ class UserStore {
   }
 
   /**
+   * 获取备注名；找不到或备注为空时返回 null
+   */
+  public getUserMemo(uid: string): string | null {
+    const user = this.users.find((u) => u.id === uid);
+    if (!user) return null;
+    const memo = String(user.memo ?? "").trim();
+    return memo === "" ? null : memo;
+  }
+
+  /**
    * 更新或创建用户记录
    */
   public updateUser(

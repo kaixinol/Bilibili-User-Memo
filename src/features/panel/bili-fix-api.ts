@@ -1,4 +1,5 @@
 import { logger } from "@/utils/logger";
+import { userStore } from "@/core/store/store";
 
 export type BiliFixAPI = {
     annotateElements(elements: Iterable<HTMLElement>): void;
@@ -37,3 +38,8 @@ export const biliFixAPIReady = (() => {
         return p;
     };
 })();
+window.addEventListener("biliMemo:request-api", (e: any) => {
+    e.detail?.({
+        getUserMemo: (uid: string) => userStore.getUserMemo(uid)
+    });
+});

@@ -12,7 +12,7 @@
   <div
     class="user-avatar-wrapper"
     x-data="avatarEditor(user.id)"
-    @contextmenu.prevent="editAvatar()"
+    @contextmenu="editAvatar($event)"
     :title="avatarTitle"
   >
     <img

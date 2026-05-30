@@ -40,7 +40,10 @@ function runOnNextTick(context: object, callback: () => void) {
   (context as AlpineMagicContext).$nextTick?.(callback);
 }
 
-function getRef<T extends Element>(context: object, key: string): T | undefined {
+function getRef<T extends Element>(
+  context: object,
+  key: string,
+): T | undefined {
   return (context as AlpineMagicContext).$refs?.[key] as T | undefined;
 }
 
@@ -333,8 +336,11 @@ export function registerPanelComponents() {
       if (this.canEditAvatar) return "右键修改头像";
       return this.currentUser?.nickname || this.userId;
     },
-    editAvatar() {
-      if (this.userList.isMultiSelect || !this.canEditAvatar) return;
+    editAvatar(event: MouseEvent) {
+      if (this.userList.isMultiSelect || !this.canEditAvatar) {
+        return;
+      }
+      event.preventDefault();
 
       const nextAvatar = promptText("请输入头像 URL");
       if (!nextAvatar) return;
@@ -375,10 +381,9 @@ export function registerPanelComponents() {
     },
     commit() {
       this.isEditing = false;
-      const nextMemo =
-        typeof this.memoDraft === "string"
-          ? this.memoDraft
-          : String(this.memoDraft ?? "");
+      const nextMemo = typeof this.memoDraft === "string"
+        ? this.memoDraft
+        : String(this.memoDraft ?? "");
       this.userList.updateUser(this.userId, { memo: nextMemo });
     },
     cancel() {
@@ -395,7 +400,7 @@ export function registerPanelComponents() {
       } else {
         input.setCustomValidity("");
       }
-    }
+    },
   }));
 
   Alpine.data("uidFixLink", (uid: string, isDeleted?: boolean) => ({

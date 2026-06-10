@@ -1,6 +1,6 @@
 {
   "name": "bili-user-memo",
-  "version": "2.8.1",
+  "version": "2.8.2",
   "description": "B站UP主一键备注 | B站一键备注 Rev 的重写版本",
   "main": "src/main.ts",
   "scripts": {

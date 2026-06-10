@@ -175,6 +175,10 @@ input {
   padding-right: 4px;
   min-height: 0;
   min-width: 0;
+
+  /* 兼容 Firefox 滚动条 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-main) transparent;
 }
 
 .debugger-scroll::-webkit-scrollbar {
@@ -194,6 +198,10 @@ input {
   max-height: 180px;
   overflow-y: auto;
   padding-right: 4px;
+
+  /* 兼容 Firefox 滚动条 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-main) transparent;
 }
 
 .debugger-query-list::-webkit-scrollbar {
@@ -560,4 +568,9 @@ input {
 
 .memo-container-dark-theme .debugger-scroll::-webkit-scrollbar-thumb {
   background: var(--border-main);
+}
+
+.memo-container-dark-theme .debugger-scroll {
+  /* 兼容 Firefox 滚动条 */
+  scrollbar-color: var(--border-main) transparent;
 }

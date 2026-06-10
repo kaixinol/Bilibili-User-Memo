@@ -397,6 +397,10 @@
   overflow-y: auto;
   margin-top: 10px;
   padding-right: 8px;
+
+  /* 兼容 Firefox 滚动条 */
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-main) transparent;
 }
 
 /* Scrollbar - 更加轻量化 */
@@ -465,6 +469,12 @@
 .memo-container-dark-theme .panel-users-container::-webkit-scrollbar-thumb {
   background: var(--border-main);
 }
+
+.memo-container-dark-theme .panel-users-container {
+  /* 兼容 Firefox 滚动条 */
+  scrollbar-color: var(--border-main) transparent;
+}
+
 .memo-container-dark-theme .panel-title {
   color: var(--text-inverse);
 }

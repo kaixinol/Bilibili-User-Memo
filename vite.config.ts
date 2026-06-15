@@ -33,45 +33,45 @@ export default defineConfig(({ mode }) => {
         return null;
       }
     },
-      monkey({
-        entry: "src/main.ts",
-        userscript: {
-          name: isDebug ? "【调试】B站一键备注 Rev" : "B站一键备注 Rev",
-          namespace: "https://github.com/kaixinol/",
-          website: "https://github.com/kaixinol/Bilibili-User-Memo",
-          icon: "https://www.bilibili.com/favicon.ico",
-          match: ["https://*.bilibili.com/*"],
-          exclude: ["https://*.hdslb.com/*", "https://live.bilibili.com/*", "https://www.bilibili.com/match/*","https://app.bilibili.com/*"],
-          noframes: true,
-          grant: [
-            "GM_setValue",
-            "GM_getValue",
-            "GM.xmlHttpRequest",
-            "GM_addValueChangeListener",
-            "unsafeWindow",
-            "GM_registerMenuCommand",
-          ],
-          connect: ["api.bilibili.com"],
-          "run-at": "document-body",
-          supportURL: "https://github.com/kaixinol/Bilibili-User-Memo/issues",
-          contributionURL: "https://s2.loli.net/2025/08/04/1hjKA5qwXHS8Glu.webp",
-          contributionAmount: "10￥",
+    monkey({
+      entry: "src/main.ts",
+      userscript: {
+        name: isDebug ? "【调试】B站一键备注 Rev" : "B站一键备注 Rev",
+        namespace: "https://github.com/kaixinol/",
+        website: "https://github.com/kaixinol/Bilibili-User-Memo",
+        icon: "https://www.bilibili.com/favicon.ico",
+        match: ["https://*.bilibili.com/*"],
+        exclude: ["https://*.hdslb.com/*", "https://live.bilibili.com/*", "https://www.bilibili.com/match/*", "https://app.bilibili.com/*", "https://member.bilibili.com/*", "https://pay.bilibili.com/*", "https://show.bilibili.com/*", "https://link.bilibili.com/*", "https://account.bilibili.com/*", "https://link.bilibili.com/*","https://edu.bilibili.com/*"],
+        noframes: true,
+        grant: [
+          "GM_setValue",
+          "GM_getValue",
+          "GM.xmlHttpRequest",
+          "GM_addValueChangeListener",
+          "unsafeWindow",
+          "GM_registerMenuCommand",
+        ],
+        connect: ["api.bilibili.com"],
+        "run-at": "document-body",
+        supportURL: "https://github.com/kaixinol/Bilibili-User-Memo/issues",
+        contributionURL: "https://s2.loli.net/2025/08/04/1hjKA5qwXHS8Glu.webp",
+        contributionAmount: "10￥",
+      },
+      build: {
+        metaFileName: true, // Generate .meta.js for efficient update checks
+        externalGlobals: {
+          alpinejs: cdn.jsdelivr("Alpine", "dist/cdn.min.js"),
+          "opencc-js": cdn.jsdelivr("OpenCC", "dist/umd/full.js"),
+          "query-selector-shadow-dom": cdn.jsdelivr(
+            "querySelectorShadowDom",
+            "dist/querySelectorShadowDom.js",
+          ),
         },
-        build: {
-          metaFileName: true, // Generate .meta.js for efficient update checks
-          externalGlobals: {
-            alpinejs: cdn.jsdelivr("Alpine", "dist/cdn.min.js"),
-            "opencc-js": cdn.jsdelivr("OpenCC", "dist/umd/full.js"),
-            "query-selector-shadow-dom": cdn.jsdelivr(
-              "querySelectorShadowDom",
-              "dist/querySelectorShadowDom.js",
-            ),
-          },
-        },
-        server: {
-          mountGmApi: false,
-        },
-      }),
+      },
+      server: {
+        mountGmApi: false,
+      },
+    }),
     ],
     define: {
       "process.env.NODE_ENV": JSON.stringify(mode),

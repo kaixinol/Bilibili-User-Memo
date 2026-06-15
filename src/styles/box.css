@@ -143,6 +143,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  line-height: normal;
 }
 .user-nickname-link.is-deleted {
   color: var(--text-secondary);

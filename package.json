@@ -1,6 +1,6 @@
 {
   "name": "bili-user-memo",
-  "version": "2.8.2",
+  "version": "2.8.3",
   "description": "B站UP主一键备注 | B站一键备注 Rev 的重写版本",
   "main": "src/main.ts",
   "scripts": {
@@ -18,28 +18,28 @@
   ],
   "author": "Kaesinol",
   "license": "AGPL-3.0-or-later",
-  "packageManager": "pnpm@11.5.2",
+  "packageManager": "pnpm@11.7.0",
   "devDependencies": {
     "@types/alpinejs": "^3.13.11",
     "@types/alpinejs__persist": "^3.13.4",
-    "@types/node": "^25.9.1",
+    "@types/node": "^25.9.3",
     "@types/opencc-js": "^1.0.3",
     "@types/query-selector-shadow-dom": "^1.0.4",
     "@types/tampermonkey": "^5.0.5",
-    "@typescript-eslint/eslint-plugin": "^8.59.4",
-    "@typescript-eslint/parser": "^8.59.4",
+    "@typescript-eslint/eslint-plugin": "^8.61.1",
+    "@typescript-eslint/parser": "^8.61.1",
     "browserslist": "^4.28.2",
-    "eslint": "^10.4.0",
+    "eslint": "^10.5.0",
     "eslint-plugin-compat": "^7.0.2",
     "lightningcss": "^1.32.0",
-    "stylelint": "^17.12.0",
+    "stylelint": "^17.13.0",
     "stylelint-config-standard": "^40.0.0",
     "stylelint-no-unsupported-browser-features": "^8.1.1",
-    "terser": "^5.47.1",
+    "terser": "^5.48.0",
     "typescript": "^6.0.3",
-    "vite": "^8.0.14",
-    "vite-plugin-monkey": "^8.0.5",
-    "vitest": "^4.1.7"
+    "vite": "^8.0.16",
+    "vite-plugin-monkey": "^8.0.6",
+    "vitest": "^4.1.9"
   },
   "dependencies": {
     "@alpinejs/persist": "^3.15.12",
@@ -49,7 +49,7 @@
     "opencc-js": "^1.3.1",
     "p-limit": "^7.3.0",
     "query-selector-shadow-dom": "^1.0.1",
-    "valibot": "^1.4.0"
+    "valibot": "^1.4.1"
   },
   "browserslist": [
     "last 2 Chrome versions",

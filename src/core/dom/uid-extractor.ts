@@ -84,8 +84,8 @@ function readUidFromDynamicItemRoot(el: Element): string | null {
   );
 }
 
-function readUidFromHrefOrLocation(el: Element): string | null {
-  const href = el.getAttribute("href") || location.href;
+function readUidFromHref(el: Element): string | null {
+  const href = el.getAttribute("href");
   if (!href) return null;
   const match = href.match(SPACE_UID_REGEX);
   return normalizeUid(match?.[1]);
@@ -93,24 +93,47 @@ function readUidFromHrefOrLocation(el: Element): string | null {
 
 type UidStrategy = (el: Element) => string | null;
 
-const UID_STRATEGIES: readonly UidStrategy[] = [
+const UID_STRATEGIES_WITHOUT_LOCATION: readonly UidStrategy[] = [
   readUidFromOwnAttributes,
   readUidFromDynamicItemRoot,
-  readUidFromHrefOrLocation,
+  readUidFromHref,
 ];
+
+const UID_STRATEGIES: readonly UidStrategy[] = [
+  ...UID_STRATEGIES_WITHOUT_LOCATION,
+  () => {
+    const match = location.href.match(SPACE_UID_REGEX);
+    return normalizeUid(match?.[1]);
+  },
+];
+
+interface ExtractUidOptions {
+  silent?: boolean;
+  allowLocationFallback?: boolean;
+}
 
 /**
  * 尝试从 DOM 元素中提取 B站 UID。
  * @param el 目标元素
- * @param silent 为 true 时，找不到 UID 不输出警告（用于启用 matchByName 的规则）
+ * @param options.silent 为 true 时，找不到 UID 不输出警告（用于启用 matchByName 的规则）
+ * @param options.allowLocationFallback 为 false 时，不从当前页面 URL 兜底取 UID
  */
-export function extractUid(el: Element, silent = false): string | null {
-  for (const strategy of UID_STRATEGIES) {
+export function extractUid(
+  el: Element,
+  options: boolean | ExtractUidOptions = false,
+): string | null {
+  const normalizedOptions =
+    typeof options === "boolean" ? { silent: options } : options;
+  const strategies = normalizedOptions.allowLocationFallback === false
+    ? UID_STRATEGIES_WITHOUT_LOCATION
+    : UID_STRATEGIES;
+
+  for (const strategy of strategies) {
     const uid = strategy(el);
     if (uid) return uid;
   }
 
-  if (!silent) {
+  if (!normalizedOptions.silent) {
     logger.warn("⚠️ 无法从元素中提取 UID:", el);
   }
   return null;

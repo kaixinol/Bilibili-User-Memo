@@ -318,7 +318,10 @@ import {
       });
     }
 
-    const uid = extractUid(el, Boolean(rule.matchByName));
+    const uid = extractUid(el, {
+      silent: Boolean(rule.matchByName),
+      allowLocationFallback: !rule.matchByName,
+    });
     if (uid) return uid;
 
     if (rule.matchByName && originalName) {

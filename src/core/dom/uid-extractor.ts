@@ -1,4 +1,4 @@
-import { logger } from "../../utils/logger";
+import { logger } from "@/utils/logger.ts";
 
 const DIRECT_UID_ATTRS = [
   "data-user-profile-id",
@@ -115,6 +115,7 @@ interface ExtractUidOptions {
 /**
  * 尝试从 DOM 元素中提取 B站 UID。
  * @param el 目标元素
+ * @param options
  * @param options.silent 为 true 时，找不到 UID 不输出警告（用于启用 matchByName 的规则）
  * @param options.allowLocationFallback 为 false 时，不从当前页面 URL 兜底取 UID
  */

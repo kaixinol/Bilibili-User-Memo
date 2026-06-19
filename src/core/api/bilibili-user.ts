@@ -1,4 +1,4 @@
-// rewritten from SocialSisterYi/bilibili-API-collect/docs/misc/sign/wbi.md#javascript
+// Rewritten from SocialSisterYi/bilibili-API-collect/docs/misc/sign/wbi.md#javascript
 import GM_fetch from "@trim21/gm-fetch";
 import { logger } from "@/utils/logger";
 import { withLimit } from "./request-limiter";

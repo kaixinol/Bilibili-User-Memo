@@ -1,5 +1,5 @@
 import type { BiliUser } from "../types";
-import { getGmValue, setGmValue } from "../../utils/gm-storage";
+import { getGmValue, setGmValue } from "@/utils/gm-storage.ts";
 import { normalizeUserCollection } from "./user-normalization";
 
 export const USERS_KEY = "biliUsers";

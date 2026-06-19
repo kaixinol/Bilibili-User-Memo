@@ -1,4 +1,4 @@
-import { getGmValue, setGmValue } from "../../utils/gm-storage";
+import { getGmValue, setGmValue } from "@/utils/gm-storage.ts";
 
 const DISABLED_PAGE_SCOPES_KEY = "disabledPageScopes";
 

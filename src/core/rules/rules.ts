@@ -75,7 +75,7 @@ const rawConfig: RawConfig[] = [
     })
   },
   {
-    urlPattern: /^https:\/\/search\.bilibili\.com\/(?:all|video|bangumi|pgc|live|article|user)(?:\?[^#]*)?(?:#.*)?$/,
+    urlPattern: /^https:\/\/search\.bilibili\.com\/(all|video|article)/,
     rule: r({
       name: "搜索",
       styleScope: StyleScope.Minimal,
@@ -304,7 +304,7 @@ const rawConfig: RawConfig[] = [
       dynamicWatch: true,
     })
   }, {
-    urlPattern: /^https:\/\/search\.bilibili\.com\/(all|live|upuser）?.+)/,
+    urlPattern: /^https:\/\/search\.bilibili\.com\/(all|live|upuser)/,
     rule: r({
       name: "搜索页面-UP主",
       styleScope: StyleScope.Editable,

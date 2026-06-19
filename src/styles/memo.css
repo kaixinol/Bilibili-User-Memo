@@ -49,6 +49,10 @@
   padding: 0 6px;
 }
 
+a.bili-memo-tag {
+  color: var(--Lb7, #58B1D4);
+}
+
 .bili-memo-input {
   background: var(--bg-main);
   border: 1px solid var(--primary-color);

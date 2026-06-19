@@ -114,19 +114,24 @@ export function formatDisplayName(
 ): string {
   const nickname = (user?.nickname || fallbackName || "").trim();
   const memo = (user?.memo || "").trim();
+  const mentionPrefix = fallbackName.trim().startsWith("@") ? "@" : "";
+  const withMentionPrefix = (value: string) =>
+    mentionPrefix && !value.startsWith(mentionPrefix)
+      ? `${mentionPrefix}${value}`
+      : value;
 
-  if (!memo) return nickname;
+  if (!memo) return withMentionPrefix(nickname);
 
   switch (displayMode) {
     case 0:
-      return nickname;
+      return withMentionPrefix(nickname);
     case 1:
-      return `${memo}(${nickname})`;
+      return `${withMentionPrefix(memo)}(${nickname})`;
     case 2:
-      return `${nickname}(${memo})`;
+      return `${withMentionPrefix(nickname)}(${memo})`;
     case 3:
-      return memo;
+      return withMentionPrefix(memo);
     default:
-      return nickname;
+      return withMentionPrefix(nickname);
   }
 }

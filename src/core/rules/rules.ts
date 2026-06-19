@@ -199,6 +199,17 @@ const rawConfig: RawConfig[] = [
       }
     })
   },
+  {
+    urlPattern: COMMON_REG,
+    rule: r({
+      name: "动态正文-提及",
+      styleScope: StyleScope.Minimal,
+      aSelector:
+        ".dyn-card-opus__summary .opus-paragraph-children p a[href*='space.bilibili.com']",
+      trigger: { watch: "div.bili-dyn-item__main", interval: 1000 },
+      dynamicWatch: true,
+    })
+  },
   // 弹出层规则
   {
     urlPattern: COMMON_REG,

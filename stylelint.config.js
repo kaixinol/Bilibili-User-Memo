@@ -3,6 +3,7 @@ export default {
   extends: ["stylelint-config-standard"],
   plugins: ["stylelint-no-unsupported-browser-features"],
   rules: {
+    "custom-property-pattern": null,
     // 允许现代伪类
     "selector-pseudo-class-no-unknown": [
       true,

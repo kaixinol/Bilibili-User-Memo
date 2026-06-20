@@ -312,11 +312,14 @@ class UserStore {
       return false;
     }
 
+    const nicknameChanged = existing.nickname !== nextNickname;
     existing.memo = nextMemo;
     existing.nickname = nextNickname || uid;
     existing.avatar = nextAvatar;
-    this.commitUsers("update", [uid]);
-    logger.info(`📝 备注已更新 | UID:${uid} -> ${nextMemo}`);
+    this.commitUsers("update", [uid], nicknameChanged);
+    if (updates.memo !== undefined) {
+      logger.info(`📝 备注已更新 | UID:${uid} -> ${nextMemo}`);
+    }
     return true;
   }
 

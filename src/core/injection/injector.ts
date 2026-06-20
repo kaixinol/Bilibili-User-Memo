@@ -34,7 +34,9 @@ import {
   recordRuleScanDiagnostic,
 } from "@/utils/perf-diagnostics";
 
- class PageInjector {
+const SPACE_PROFILE_NICKNAME_SELECTOR = ".upinfo-detail div.nickname";
+
+class PageInjector {
   private domReady = false;
   private lastUrl = "";
   private readonly pendingRemoteChanges = new RemoteChangeBuffer();
@@ -170,6 +172,8 @@ import {
   private handleUrlChange() {
     if (!this.domReady) return;
 
+    void this.syncSpaceProfileNickname();
+
     const matchedRules = getMatchedRules();
     const groups = this.groupRulesByMode(matchedRules);
     this.applyStaticRules(groups.staticRules, document, { includeProcessed: true });
@@ -252,6 +256,32 @@ import {
     elements.forEach((el) => {
       void this.applyRuleToElement(el, rule);
     });
+  }
+
+  private async syncSpaceProfileNickname() {
+    if (location.hostname !== "space.bilibili.com") return;
+
+    const uid = extractUid(document.body, { silent: true });
+    if (!uid) return;
+
+    await waitUntil(
+      () => Boolean(document.querySelector(SPACE_PROFILE_NICKNAME_SELECTOR)),
+      {
+        intervalMs: 200,
+        timeoutMs: 5000,
+      },
+    );
+
+    const nicknameEl = document.querySelector(
+      SPACE_PROFILE_NICKNAME_SELECTOR,
+    ) as HTMLElement | null;
+    const nickname =
+      nicknameEl?.dataset.biliOriginal?.trim() ||
+      nicknameEl?.textContent?.trim() ||
+      "";
+    if (!nickname || uid !== extractUid(document.body, { silent: true })) return;
+
+    userStore.updateUser(uid, { nickname }, nickname);
   }
 
   private async applyRuleToElement(el: HTMLElement, rule: PageRule) {

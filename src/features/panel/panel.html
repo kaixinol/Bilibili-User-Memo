@@ -16,7 +16,8 @@
       @contextmenu.prevent="editToggleText()"
       x-text="isOpen ? openText : closeText"
       :style="isOpen ? 'opacity: 1;' : 'opacity: 0.3;'"
-    ></button>
+    >
+    </button>
     <div class="panel-mode-section">
       <div class="panel-mode-label">昵称显示模式：</div>
       <template x-for="mode in displayModes" :key="mode.value">
@@ -28,7 +29,10 @@
             :id="`panel-memo-mode-${mode.value}`"
             x-model.number="displayModeProxy"
           />
-          <label :for="`panel-memo-mode-${mode.value}`" x-text="mode.label"></label>
+          <label
+            :for="`panel-memo-mode-${mode.value}`"
+            x-text="mode.label"
+          ></label>
         </div>
       </template>
 
@@ -38,16 +42,16 @@
           @click="closeAdvancedCss()"
           @contextmenu="handleColorSettingContextMenu($event)"
           @mousedown="handleColorSettingMouseDown($event)"
+          title="左键自定义颜色&#10;右键自定义样式&#10;中键清除自定义样式"
         >
           <span
             class="setting-text"
-            title="左键自定义颜色&#10;右键自定义样式&#10;中键清除自定义样式"
-            >自定义备注颜色</span
-          >
+          >自定义备注颜色</span>
           <div
             class="color-preview"
             @click.stop="$refs.panelColorInput?.click()"
-          ></div>
+          >
+          </div>
 
           <input
             x-ref="panelColorInput"
@@ -104,7 +108,13 @@
 
     <div class="panel-control-bar" x-data="panelActions">
       <button x-bind="panelImportBtn">导入</button>
-      <button class="panel-btn" @click="$store.addUserDialog.open()" title="手动添加用户">添加</button>
+      <button
+        class="panel-btn"
+        @click="$store.addUserDialog.open()"
+        title="手动添加用户"
+      >
+        添加
+      </button>
       <button x-bind="panelMultiSelectBtn">
         <span x-show="!userList.isMultiSelect">多选用户</span>
         <span x-show="userList.isMultiSelect">退出多选</span>
@@ -132,21 +142,23 @@
           <path d="M3 6h18" />
           <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
         </svg>
-        <span class="panel-icon-text" x-show="userList.isMultiSelect"
-          >已选 <span x-text="userList.selectedIds.length"></span
-        ></span>
+        <span class="panel-icon-text" x-show="userList.isMultiSelect">已选
+          <span x-text="userList.selectedIds.length"></span></span>
       </button>
       <div class="panel-title">备注列表</div>
       <button x-bind="panelRefreshBtn">
-        <span x-show="!userList.isRefreshing && (!userList.isMultiSelect || userList.selectedIds.length === 0)">⚡一键刷新数据</span>
-        <span x-show="!userList.isRefreshing && userList.isMultiSelect && userList.selectedIds.length > 0">⚡刷新所选</span>
+        <span
+          x-show="!userList.isRefreshing && (!userList.isMultiSelect || userList.selectedIds.length === 0)"
+        >⚡️一键刷新数据</span>
+        <span
+          x-show="!userList.isRefreshing && userList.isMultiSelect && userList.selectedIds.length > 0"
+        >⚡️刷新所选</span>
 
         <span x-show="userList.isRefreshing" class="refresh-content">
           <span class="loading-spinner">⏳</span>
           正在刷新 (<span x-text="userList.refreshCurrent"></span>/<span
             x-text="userList.refreshTotal"
-          ></span
-          >)
+          ></span>)
         </span>
       </button>
       <search class="panel-search-box">
@@ -165,7 +177,10 @@
           />
         </form>
       </search>
-      <label class="panel-fuzzy-search-toggle" title="模糊匹配：支持子序列/部分匹配">
+      <label
+        class="panel-fuzzy-search-toggle"
+        title="模糊匹配：支持子序列/部分匹配"
+      >
         <input
           type="checkbox"
           :checked="userList.fuzzySearchEnabled"
@@ -191,7 +206,7 @@
           @click="closeAdvancedCss()"
           aria-label="关闭自定义备注样式"
         >
-          &times;
+          ×
         </button>
       </div>
       <textarea
@@ -209,9 +224,11 @@
         role="status"
         aria-live="polite"
         x-text="cssStatus"
-      ></div>
+      >
+      </div>
       <div class="panel-custom-css-hint">
-        这里支持完整 CSS 选择器。只影响备注相关元素时，建议用 .bili-memo-tag /
+        这里支持完整 CSS
+        选择器。只影响备注相关元素时，建议用 .bili-memo-tag /
         .editable-textarea / .bili-memo-input
       </div>
     </dialog>
@@ -228,11 +245,17 @@
           x-show="$store.userList.hasLoadedUsers"
           class="panel-users-list"
         >
-          <template x-for="user in $store.userList.filteredUsers" :key="user.id">
+          <template
+            x-for="user in $store.userList.filteredUsers"
+            :key="user.id"
+          >
             ${boxTemplate}
           </template>
 
-          <div x-show="$store.userList.filteredUsers.length === 0" class="panel-empty-state">
+          <div
+            x-show="$store.userList.filteredUsers.length === 0"
+            class="panel-empty-state"
+          >
             没有找到用户
           </div>
         </div>
@@ -249,7 +272,10 @@
   x-effect="if ($store.addUserDialog.isOpen) $nextTick(() => $refs.addUserUid?.focus())"
   @keydown.escape.window="$store.addUserDialog.close()"
 >
-  <div class="add-user-dialog-backdrop" @click.self="$store.addUserDialog.close()">
+  <div
+    class="add-user-dialog-backdrop"
+    @click.self="$store.addUserDialog.close()"
+  >
     <div class="add-user-dialog-content">
       <div class="add-user-dialog-header">
         <h3>添加用户</h3>
@@ -258,13 +284,17 @@
           class="add-user-dialog-close"
           @click="$store.addUserDialog.close()"
         >
-          &times;
+          ×
         </button>
       </div>
-      <form class="add-user-dialog-form" @submit.prevent="$store.addUserDialog.submit()">
+      <form
+        class="add-user-dialog-form"
+        @submit.prevent="$store.addUserDialog.submit()"
+      >
         <div class="add-user-dialog-body">
           <div class="add-user-field">
-            <label for="add-user-uid">UID <span class="required">*</span></label>
+            <label for="add-user-uid">UID <span class="required"
+              >*</span></label>
             <input
               id="add-user-uid"
               type="text"
@@ -279,7 +309,8 @@
             />
           </div>
           <div class="add-user-field">
-            <label for="add-user-memo">备注 <span class="required">*</span></label>
+            <label for="add-user-memo">备注 <span class="required"
+              >*</span></label>
             <input
               id="add-user-memo"
               type="text"

@@ -7,6 +7,8 @@ import { biliFixAPIReady } from "./bili-api";
 import { registerAddUserDialog } from "./add-user-dialog";
 import { isNoFaceAvatar } from "@/core/dom/dom-utils";
 import { AVATAR_URL_INVALID_MESSAGE, isValidAvatarUrl } from "./avatar-url";
+import { isFakeNoFaceAvatar } from "./perceptual-hash";
+import { logger } from "@/utils/logger";
 interface DisplayModeOption {
   value: number;
   label: string;
@@ -320,6 +322,7 @@ export function registerPanelComponents() {
 
   Alpine.data("avatarEditor", (userId: string) => ({
     userId,
+    fakeNoFace: false,
     get userList(): UserListStore {
       return getUserListStore();
     },
@@ -333,8 +336,15 @@ export function registerPanelComponents() {
       return isNoFaceAvatar(this.currentAvatar);
     },
     get avatarTitle(): string {
+      if (this.fakeNoFace) return "⚠️该头像疑似为用户自己上传的默认头像";
       if (this.canEditAvatar) return "右键修改头像";
       return this.currentUser?.nickname || this.userId;
+    },
+    async checkFakeNoFace() {
+      logger.debug(`[avatarEditor] checkFakeNoFace 触发: userId=${this.userId}, avatar=${this.currentAvatar}, alreadyFake=${this.fakeNoFace}`);
+      if (this.fakeNoFace || isNoFaceAvatar(this.currentAvatar)) return;
+      this.fakeNoFace = await isFakeNoFaceAvatar(this.currentAvatar);
+      logger.debug(`[avatarEditor] 检测结果: userId=${this.userId}, fakeNoFace=${this.fakeNoFace}`);
     },
     editAvatar(event: MouseEvent) {
       if (this.userList.isMultiSelect || !this.canEditAvatar) {

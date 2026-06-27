@@ -41,7 +41,7 @@ export default defineConfig(({ mode }) => {
         website: "https://github.com/kaixinol/Bilibili-User-Memo",
         icon: "https://www.bilibili.com/favicon.ico",
         match: ["https://*.bilibili.com/*"],
-        exclude: ["https://*.hdslb.com/*", "https://live.bilibili.com/*", "https://www.bilibili.com/match/*", "https://app.bilibili.com/*", "https://member.bilibili.com/*", "https://pay.bilibili.com/*", "https://show.bilibili.com/*", "https://link.bilibili.com/*", "https://account.bilibili.com/*", "https://link.bilibili.com/*","https://edu.bilibili.com/*"],
+        exclude: ["https://*.hdslb.com/*", "https://live.bilibili.com/*", "https://www.bilibili.com/match/*", "https://app.bilibili.com/*", "https://member.bilibili.com/*", "https://pay.bilibili.com/*", "https://show.bilibili.com/*", "https://link.bilibili.com/*", "https://account.bilibili.com/*", "https://link.bilibili.com/*", "https://edu.bilibili.com/*"],
         noframes: true,
         grant: [
           "GM_setValue",
@@ -51,7 +51,7 @@ export default defineConfig(({ mode }) => {
           "unsafeWindow",
           "GM_registerMenuCommand",
         ],
-        connect: ["api.bilibili.com"],
+        connect: ["api.bilibili.com", "hdslb.com"],
         "run-at": "document-body",
         supportURL: "https://github.com/kaixinol/Bilibili-User-Memo/issues",
         contributionURL: "https://s2.loli.net/2025/08/04/1hjKA5qwXHS8Glu.webp",
@@ -69,7 +69,7 @@ export default defineConfig(({ mode }) => {
         },
       },
       server: {
-        mountGmApi: false,
+        mountGmApi: true,
       },
     }),
     ],

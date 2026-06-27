@@ -1,12 +1,11 @@
 import GM_fetch from "@trim21/gm-fetch";
-import { DEFAULT_AVATAR_URL, isNoFaceAvatar } from "@/core/dom/dom-utils";
+import { DEFAULT_AVATAR_URL } from "@/core/dom/dom-utils";
 import { logger } from "@/utils/logger";
 
 const HASH_SIZE = 16;
 const DISTANCE_THRESHOLD = 20;
 const IMAGE_SCALE = 64;
 
-console.debug(GM.xmlHttpRequest)
 function bmvbhash(
   { data, width, height }: { data: Uint8ClampedArray | Uint8Array; width: number; height: number },
   bits = HASH_SIZE,
@@ -110,6 +109,21 @@ async function loadImageHash(url: string): Promise<string | null> {
   }
 }
 
+function hashFromImage(img: HTMLImageElement): string | null {
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = IMAGE_SCALE;
+    canvas.height = IMAGE_SCALE;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.drawImage(img, 0, 0, IMAGE_SCALE, IMAGE_SCALE);
+    return bmvbhash(ctx.getImageData(0, 0, IMAGE_SCALE, IMAGE_SCALE));
+  } catch (error) {
+    logger.debug("[perceptual-hash] DOM图片读取失败(可能canvas被污染)", error);
+    return null;
+  }
+}
+
 async function getNofaceHash(): Promise<string | null> {
   if (nofaceHash) return nofaceHash;
   const hash = await loadImageHash(DEFAULT_AVATAR_URL);
@@ -117,9 +131,9 @@ async function getNofaceHash(): Promise<string | null> {
   return hash;
 }
 
-export async function isFakeNoFaceAvatar(avatarUrl: string): Promise<boolean> {
-  if (!avatarUrl || isNoFaceAvatar(avatarUrl)) {
-    logger.debug(`[perceptual-hash] 跳过: 空URL或真noface, url=${avatarUrl}`);
+export async function isFakeNoFaceAvatarFromImg(img: HTMLImageElement): Promise<boolean> {
+  if (!img || !img.complete || !img.naturalWidth) {
+    logger.debug("[perceptual-hash] 图片未加载完成");
     return false;
   }
   const refHash = await getNofaceHash();
@@ -127,13 +141,13 @@ export async function isFakeNoFaceAvatar(avatarUrl: string): Promise<boolean> {
     logger.debug("[perceptual-hash] noface参考哈希获取失败");
     return false;
   }
-  const avatarHash = await loadImageHash(avatarUrl);
+  const avatarHash = hashFromImage(img);
   if (!avatarHash) {
-    logger.debug(`[perceptual-hash] 用户头像哈希获取失败: ${avatarUrl}`);
+    logger.debug("[perceptual-hash] 用户头像哈希获取失败");
     return false;
   }
   const distance = hammingDistance(refHash, avatarHash);
   const isFake = distance <= DISTANCE_THRESHOLD;
-  logger.debug(`[perceptual-hash] 比对结果: distance=${distance}, threshold=${DISTANCE_THRESHOLD}, isFake=${isFake}, url=${avatarUrl}`);
+  logger.debug(`[perceptual-hash] 比对结果: distance=${distance}, threshold=${DISTANCE_THRESHOLD}, isFake=${isFake}, src=${img.src}`);
   return isFake;
 }

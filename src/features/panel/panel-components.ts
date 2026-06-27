@@ -7,7 +7,7 @@ import { biliFixAPIReady } from "./bili-api";
 import { registerAddUserDialog } from "./add-user-dialog";
 import { isNoFaceAvatar } from "@/core/dom/dom-utils";
 import { AVATAR_URL_INVALID_MESSAGE, isValidAvatarUrl } from "./avatar-url";
-import { isFakeNoFaceAvatar } from "./perceptual-hash";
+import { isFakeNoFaceAvatarFromImg } from "./perceptual-hash";
 import { logger } from "@/utils/logger";
 interface DisplayModeOption {
   value: number;
@@ -341,10 +341,14 @@ export function registerPanelComponents() {
       return this.currentUser?.nickname || this.userId;
     },
     async checkFakeNoFace() {
-      logger.debug(`[avatarEditor] checkFakeNoFace 触发: userId=${this.userId}, avatar=${this.currentAvatar}, alreadyFake=${this.fakeNoFace}`);
       if (this.fakeNoFace || isNoFaceAvatar(this.currentAvatar)) return;
-      this.fakeNoFace = await isFakeNoFaceAvatar(this.currentAvatar);
-      logger.debug(`[avatarEditor] 检测结果: userId=${this.userId}, fakeNoFace=${this.fakeNoFace}`);
+      const wrapper = getCurrentElement(this);
+      const img = wrapper?.querySelector<HTMLImageElement>("img.user-avatar");
+      if (!img) {
+        logger.debug("[avatarEditor] 未找到头像img元素");
+        return;
+      }
+      this.fakeNoFace = await isFakeNoFaceAvatarFromImg(img);
     },
     editAvatar(event: MouseEvent) {
       if (this.userList.isMultiSelect || !this.canEditAvatar) {

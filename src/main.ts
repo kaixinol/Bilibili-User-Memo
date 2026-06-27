@@ -14,8 +14,17 @@ import {
   isCurrentPageDisabled,
 } from "@/core/store/page-disable-storage";
 import { showAlert } from "@/features/panel/dialogs";
+import { logger } from "./utils/logger";
 
 (async () => {
+  const isPureTag = !__VERSION__.includes('-dev.');
+
+  if (isPureTag) {
+    logger.info(`当前是正式 Tag 版本: ${__VERSION__}`);
+  } else {
+    const commitsAhead = __VERSION__.split('-dev.')[1];
+    logger.info(`当前比上个 Tag 超前了 ${commitsAhead} 个提交 (版本: ${__VERSION__})`);
+  }
   Alpine.plugin(persist);
 
   // 👉 统一 Alpine 实例（很关键）

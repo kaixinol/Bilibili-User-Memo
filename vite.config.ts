@@ -1,4 +1,6 @@
 import { defineConfig } from "vite";
+import { execSync } from "node:child_process";
+
 import monkey, { cdn } from "vite-plugin-monkey";
 import { browserslistToTargets } from 'lightningcss';
 import browserslist from 'browserslist';
@@ -6,11 +8,24 @@ import { fileURLToPath, URL } from "node:url";
 export default defineConfig(({ mode }) => {
   const isDebug = mode === "debug";
   const lightningCssTargets = browserslistToTargets(browserslist());
-
-  if (isDebug) {
-    console.log('LightningCSS Targets:', lightningCssTargets);
+  // 在文件顶部添加这个转换函数
+  function unpackVersion(versionTarget: number) {
+    const major = (versionTarget >> 16) & 0xff;
+    const minor = (versionTarget >> 8) & 0xff;
+    const patch = versionTarget & 0xff;
+    return patch === 0 ? `${major}.${minor}` : `${major}.${minor}.${patch}`;
   }
 
+  // 在你的 config 内部：
+  if (isDebug) {
+    const readableTargets = Object.fromEntries(
+      Object.entries(lightningCssTargets).map(([browser, targetNum]) => [
+        browser,
+        unpackVersion(targetNum as number)
+      ])
+    );
+    console.log('LightningCSS Targets (Readable):', readableTargets);
+  }
   return {
     plugins: [{
       name: 'minify-html-raw',
@@ -76,6 +91,10 @@ export default defineConfig(({ mode }) => {
     define: {
       "process.env.NODE_ENV": JSON.stringify(mode),
       __IS_DEBUG__: JSON.stringify(isDebug),
+      __VERSION__: (() => {
+        const gitDesc = execSync("git describe --tags --always").toString().trim();
+        return JSON.stringify(gitDesc.includes("-") ? `${gitDesc.split("-")[0]}-dev.${gitDesc.split("-")[1]}` : gitDesc);
+      })(),
     },
     resolve: {
       alias: {

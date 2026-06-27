@@ -24,6 +24,7 @@ type InitialState = {
 declare global {
   // 全局常量（来自打包替换或 define）
   const __IS_DEBUG__: boolean;
+  const __VERSION__: string;
   interface Window {
     Alpine: typeof Alpine;
     __INITIAL_STATE__?: InitialState;

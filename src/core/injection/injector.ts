@@ -6,6 +6,7 @@ import {
 } from "@/core/rules/rule-types";
 import { logger } from "@/utils/logger";
 import { extractUid, isDeletedUserSpace } from "../dom/uid-extractor";
+import { isNoFaceAvatar, parseSrcsetUrl } from "../dom/dom-utils";
 import { getElementDisplayName } from "../dom/text-utils";
 import { refreshRenderedMemoNodes } from "../render/dom-refresh";
 import { injectMemoRenderer } from "../render/renderer";
@@ -35,6 +36,7 @@ import {
 } from "@/utils/perf-diagnostics";
 
 const SPACE_PROFILE_NICKNAME_SELECTOR = ".upinfo-detail div.nickname";
+const SPACE_AVATAR_SELECTOR = "div.avatar source";
 
 class PageInjector {
   private domReady = false;
@@ -173,6 +175,7 @@ class PageInjector {
     if (!this.domReady) return;
 
     void this.syncSpaceProfileNickname();
+    void this.addSpaceProfilePicture();
 
     const matchedRules = getMatchedRules();
     const groups = this.groupRulesByMode(matchedRules);
@@ -257,7 +260,31 @@ class PageInjector {
       void this.applyRuleToElement(el, rule);
     });
   }
+  private async addSpaceProfilePicture() {
+    if (location.hostname !== "space.bilibili.com") return;
 
+    const uid = extractUid(document.body, { silent: true });
+    if (!uid) return;
+
+    const storedUser = userStore.getUsers().find((u) => u.id === uid);
+    if (!storedUser || !isNoFaceAvatar(storedUser.avatar)) return;
+
+    await waitUntil(
+      () => Boolean(document.querySelector(SPACE_AVATAR_SELECTOR)),
+      { intervalMs: 200, timeoutMs: 5000 },
+    );
+
+    const avatarEl = document.querySelector(SPACE_AVATAR_SELECTOR);
+    const srcset = avatarEl?.getAttribute("srcset");
+    if (!srcset) return;
+
+    const avatarUrl = parseSrcsetUrl(srcset);
+    if (!avatarUrl || isNoFaceAvatar(avatarUrl)) return;
+
+    if (uid !== extractUid(document.body, { silent: true })) return;
+
+    userStore.updateUser(uid, { avatar: avatarUrl });
+  }
   private async syncSpaceProfileNickname() {
     if (location.hostname !== "space.bilibili.com") return;
 

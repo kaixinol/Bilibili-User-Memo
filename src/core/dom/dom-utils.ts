@@ -9,6 +9,10 @@ export function isNoFaceAvatar(url: string): boolean {
   return url.includes("noface.jpg");
 }
 
+export function parseSrcsetUrl(srcset: string): string {
+  return srcset.split(",")[0].trim().split(/\s+/)[0];
+}
+
 /**
  * 获取用户头像 URL
  * 尝试从 DOM 中查找现有的头像元素，找不到则使用默认图

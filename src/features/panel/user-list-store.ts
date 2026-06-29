@@ -17,6 +17,7 @@ export interface UserListStore {
   readonly filteredUsers: BiliUser[];
   isDark: boolean;
   fuzzySearchEnabled: boolean;
+  silentAvatarUpdate: boolean;
   preloadAllCards: boolean;
   isUsersLoading: boolean;
   hasLoadedUsers: boolean;
@@ -37,6 +38,7 @@ export interface UserListStore {
   getRefreshTargets(): BiliUser[];
   setDisplayMode(mode: number): void;
   setFuzzySearchEnabled(next: boolean): void;
+  setSilentAvatarUpdate(next: boolean): void;
   setOpen(next: boolean): void;
   setPreloadAllCards(next: boolean): void;
   ensureUsersLoaded(): Promise<void>;
@@ -54,6 +56,7 @@ interface InternalUserListStore extends UserListStore {
 
 const PRELOAD_ALL_CARDS_KEY = "panelPreloadAllCards";
 const FUZZY_SEARCH_KEY = "panelFuzzySearch";
+const SILENT_AVATAR_UPDATE_KEY = "panelSilentAvatarUpdate";
 
 export function getPanelPreloadAllCards(): boolean {
   return getGmValue<boolean>(PRELOAD_ALL_CARDS_KEY, true);
@@ -69,6 +72,14 @@ function getPanelFuzzySearch(): boolean {
 
 function setPanelFuzzySearch(value: boolean) {
   setGmValue(FUZZY_SEARCH_KEY, value);
+}
+
+export function getSilentAvatarUpdate(): boolean {
+  return getGmValue<boolean>(SILENT_AVATAR_UPDATE_KEY, true);
+}
+
+export function setSilentAvatarUpdate(value: boolean) {
+  setGmValue(SILENT_AVATAR_UPDATE_KEY, value);
 }
 
 function syncUsersSnapshot(store: InternalUserListStore, users: BiliUser[]) {
@@ -135,6 +146,7 @@ export function registerUserStore() {
     },
     isDark: getGmValue<boolean>("isDark", false),
     fuzzySearchEnabled: getPanelFuzzySearch(),
+    silentAvatarUpdate: getSilentAvatarUpdate(),
     preloadAllCards,
     isUsersLoading: false,
     hasLoadedUsers: shouldPreloadImmediately,
@@ -218,6 +230,12 @@ export function registerUserStore() {
       if (shouldEnable === this.fuzzySearchEnabled) return;
       this.fuzzySearchEnabled = shouldEnable;
       setPanelFuzzySearch(shouldEnable);
+    },
+    setSilentAvatarUpdate(next: boolean) {
+      const shouldEnable = Boolean(next);
+      if (shouldEnable === this.silentAvatarUpdate) return;
+      this.silentAvatarUpdate = shouldEnable;
+      setSilentAvatarUpdate(shouldEnable);
     },
 
     setOpen(next: boolean) {

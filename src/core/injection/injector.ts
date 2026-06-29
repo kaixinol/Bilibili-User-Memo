@@ -7,6 +7,7 @@ import {
 import { logger } from "@/utils/logger";
 import { extractUid, isDeletedUserSpace } from "../dom/uid-extractor";
 import { isNoFaceAvatar, parseSrcsetUrl } from "../dom/dom-utils";
+import { getSilentAvatarUpdate } from "@/features/panel/user-list-store";
 import { getElementDisplayName } from "../dom/text-utils";
 import { refreshRenderedMemoNodes } from "../render/dom-refresh";
 import { injectMemoRenderer } from "../render/renderer";
@@ -262,6 +263,7 @@ class PageInjector {
   }
   private async addSpaceProfilePicture() {
     if (location.hostname !== "space.bilibili.com") return;
+    if (!getSilentAvatarUpdate()) return;
 
     const uid = extractUid(document.body, { silent: true });
     if (!uid) return;

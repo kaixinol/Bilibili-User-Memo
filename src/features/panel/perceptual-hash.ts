@@ -1,10 +1,10 @@
-import GM_fetch from "@trim21/gm-fetch";
-import { DEFAULT_AVATAR_URL } from "@/core/dom/dom-utils";
 import { logger } from "@/utils/logger";
 
 const HASH_SIZE = 16;
 const DISTANCE_THRESHOLD = 20;
 const IMAGE_SCALE = 64;
+
+const NOFACE_HASH = "fffffffffffffddff81fe007eff7edb7e997ee77eff7e007fc3ff81ff81ff80f";
 
 function bmvbhash(
   { data, width, height }: { data: Uint8ClampedArray | Uint8Array; width: number; height: number },
@@ -53,62 +53,6 @@ function hammingDistance(h1: string, h2: string): number {
     : [...h1].reduce((dist, char, i) => dist + (char !== h2[i] ? 1 : 0), 0);
 }
 
-function normalizeUrl(url: string): string {
-  if (url.startsWith("//")) return `https:${url}`;
-  return url;
-}
-
-function stripImageSuffix(url: string): string {
-  const atIdx = url.indexOf("@");
-  return atIdx !== -1 ? url.slice(0, atIdx) : url;
-}
-
-const urlHashCache = new Map<string, string | null>();
-let nofaceHash: string | null = null;
-
-async function loadImageHash(url: string): Promise<string | null> {
-  const cached = urlHashCache.get(url);
-  if (cached !== undefined) {
-    logger.debug(`[perceptual-hash] 缓存命中: ${url} -> ${cached}`);
-    return cached;
-  }
-
-  try {
-    const fetchUrl = normalizeUrl(stripImageSuffix(url));
-    logger.debug(`[perceptual-hash] 请求图片: ${url} -> ${fetchUrl}`);
-    const response = await GM_fetch(fetchUrl);
-    if (!response.ok) {
-      logger.debug(`[perceptual-hash] 请求失败: ${fetchUrl} status=${response.status}`);
-      return null;
-    }
-    const blob = await response.blob();
-    const objectUrl = URL.createObjectURL(blob);
-    try {
-      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const image = new Image();
-        image.onload = () => resolve(image);
-        image.onerror = () => reject(new Error("Image load failed"));
-        image.src = objectUrl;
-      });
-      const canvas = document.createElement("canvas");
-      canvas.width = IMAGE_SCALE;
-      canvas.height = IMAGE_SCALE;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return null;
-      ctx.drawImage(img, 0, 0, IMAGE_SCALE, IMAGE_SCALE);
-      const hash = bmvbhash(ctx.getImageData(0, 0, IMAGE_SCALE, IMAGE_SCALE));
-      logger.debug(`[perceptual-hash] 计算完成: ${url} -> ${hash}`);
-      urlHashCache.set(url, hash);
-      return hash;
-    } finally {
-      URL.revokeObjectURL(objectUrl);
-    }
-  } catch (error) {
-    logger.debug(`[perceptual-hash] 加载异常: ${url}`, error);
-    return null;
-  }
-}
-
 function hashFromImage(img: HTMLImageElement): string | null {
   try {
     const canvas = document.createElement("canvas");
@@ -124,21 +68,9 @@ function hashFromImage(img: HTMLImageElement): string | null {
   }
 }
 
-async function getNofaceHash(): Promise<string | null> {
-  if (nofaceHash) return nofaceHash;
-  const hash = await loadImageHash(DEFAULT_AVATAR_URL);
-  if (hash) nofaceHash = hash;
-  return hash;
-}
-
-export async function isFakeNoFaceAvatarFromImg(img: HTMLImageElement): Promise<boolean> {
+export function isFakeNoFaceAvatarFromImg(img: HTMLImageElement): boolean {
   if (!img || !img.complete || !img.naturalWidth) {
     logger.debug("[perceptual-hash] 图片未加载完成");
-    return false;
-  }
-  const refHash = await getNofaceHash();
-  if (!refHash) {
-    logger.debug("[perceptual-hash] noface参考哈希获取失败");
     return false;
   }
   const avatarHash = hashFromImage(img);
@@ -146,7 +78,7 @@ export async function isFakeNoFaceAvatarFromImg(img: HTMLImageElement): Promise<
     logger.debug("[perceptual-hash] 用户头像哈希获取失败");
     return false;
   }
-  const distance = hammingDistance(refHash, avatarHash);
+  const distance = hammingDistance(NOFACE_HASH, avatarHash);
   const isFake = distance <= DISTANCE_THRESHOLD;
   logger.debug(`[perceptual-hash] 比对结果: distance=${distance}, threshold=${DISTANCE_THRESHOLD}, isFake=${isFake}, src=${img.src}`);
   return isFake;

@@ -323,6 +323,7 @@ export function registerPanelComponents() {
   Alpine.data("avatarEditor", (userId: string) => ({
     userId,
     fakeNoFace: false,
+    checked: false,
     get userList(): UserListStore {
       return getUserListStore();
     },
@@ -340,15 +341,16 @@ export function registerPanelComponents() {
       if (this.canEditAvatar) return "右键修改头像";
       return this.currentUser?.nickname || this.userId;
     },
-    async checkFakeNoFace() {
-      if (this.fakeNoFace || isNoFaceAvatar(this.currentAvatar)) return;
+    checkFakeNoFace() {
+      if (this.checked || isNoFaceAvatar(this.currentAvatar)) return;
       const wrapper = getCurrentElement(this);
       const img = wrapper?.querySelector<HTMLImageElement>("img.user-avatar");
       if (!img) {
         logger.debug("[avatarEditor] 未找到头像img元素");
         return;
       }
-      this.fakeNoFace = await isFakeNoFaceAvatarFromImg(img);
+      this.fakeNoFace = isFakeNoFaceAvatarFromImg(img);
+      this.checked = true;
     },
     editAvatar(event: MouseEvent) {
       if (this.userList.isMultiSelect || !this.canEditAvatar) {

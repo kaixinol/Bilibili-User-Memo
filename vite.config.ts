@@ -76,6 +76,7 @@ export default defineConfig(({ mode }) => {
         metaFileName: true, // Generate .meta.js for efficient update checks
         externalGlobals: {
           alpinejs: cdn.jsdelivr("Alpine", "dist/cdn.min.js"),
+          "@alpinejs/persist": cdn.jsdelivr("AlpinePersist", "dist/cdn.min.js"),
           "opencc-js": cdn.jsdelivr("OpenCC", "dist/umd/full.js"),
           "query-selector-shadow-dom": cdn.jsdelivr(
             "querySelectorShadowDom",

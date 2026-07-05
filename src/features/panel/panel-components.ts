@@ -232,10 +232,6 @@ export function registerPanelComponents() {
       const checked = (event.target as HTMLInputElement).checked;
       this.userList.setFuzzySearchEnabled(checked);
     },
-    toggleSilentAvatarUpdate(event: Event) {
-      const checked = (event.target as HTMLInputElement).checked;
-      this.userList.setSilentAvatarUpdate(checked);
-    },
     confirmRemoveSelected() {
       const count = this.userList.selectedIds.length;
       if (count === 0) return;

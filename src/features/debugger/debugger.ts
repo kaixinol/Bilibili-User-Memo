@@ -14,6 +14,7 @@ import "@/styles/debugger.css";
 import debuggerHtml from "./debugger.html?raw";
 import highlightCss from "@/styles/debugger-highlight.css?raw";
 import { logger } from "@/utils/logger";
+import { setShowOriginalInDebug } from "@/core/render/renderer";
 import {
   getPerfDiagnosticsSnapshot,
   recordLongTaskDiagnostic,
@@ -95,6 +96,7 @@ interface MonkeyApp {
   perf: PerfStats;
   displayLongTaskEvents: LongTaskDiagnostic[];
   scanTimer: number | null;
+  showOriginalName: boolean;
   init(): void;
   refreshRuleList(): void;
   scan(): void;
@@ -108,6 +110,7 @@ interface MonkeyApp {
   onPointerUp(event: PointerEvent): void;
   startPerformanceMonitor(): void;
   toggleExpand(id: number): void;
+  toggleShowOriginalName(event: Event): void;
   injectModeLabel(mode: InjectionMode): string;
   styleScopeLabel(scope: StyleScope): string;
   formatMs(value: number): string;
@@ -174,6 +177,7 @@ export function initDebugger() {
       showUnrelatedTasks: false,
       relatedLongTaskCount: 0,
       scanTimer: null,
+      showOriginalName: false,
       perf: {
         fps: 0,
         longTasks: 0,
@@ -451,6 +455,12 @@ export function initDebugger() {
 
       toggleExpand(id) {
         this.expandedRuleId = this.expandedRuleId === id ? null : id;
+      },
+
+      toggleShowOriginalName(event) {
+        const checked = (event.target as HTMLInputElement).checked;
+        this.showOriginalName = checked;
+        setShowOriginalInDebug(checked);
       },
 
       injectModeLabel(mode) {

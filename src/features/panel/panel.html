@@ -188,17 +188,6 @@
         />
         <span>模糊搜索</span>
       </label>
-      <label
-        class="panel-fuzzy-search-toggle"
-        title="访问空间页时自动更新 noface 用户的头像"
-      >
-        <input
-          type="checkbox"
-          :checked="userList.silentAvatarUpdate"
-          @change="toggleSilentAvatarUpdate($event)"
-        />
-        <span>静默更新头像</span>
-      </label>
       <button x-bind="panelExportBtn">导出</button>
     </div>
 

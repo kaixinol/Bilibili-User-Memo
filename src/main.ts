@@ -8,6 +8,10 @@ import {
   setPanelPreloadAllCards,
 } from "@/features/panel/user-list-store";
 import {
+  getSilentAvatarUpdate,
+  setSilentAvatarUpdate,
+} from "@/features/panel/user-list-store";
+import {
   disablePageScope,
   enablePageScope,
   getCurrentPageScopePattern,
@@ -74,6 +78,27 @@ import { logger } from "./utils/logger";
         next
           ? "已开启默认预注入全部卡片。当前页面会尽量立即生效。"
           : "已关闭默认预注入全部卡片。未打开面板前将延后加载列表。",
+      );
+    },
+  );
+
+  const silentAvatarUpdate = getSilentAvatarUpdate();
+  GM_registerMenuCommand(
+    `${silentAvatarUpdate ? "✅" : "⬜"}静默更新头像`,
+    () => {
+      const next = !getSilentAvatarUpdate();
+      setSilentAvatarUpdate(next);
+
+      const userList = Alpine.store("userList") as
+        | { setSilentAvatarUpdate?: (value: boolean) => void }
+        | undefined;
+
+      userList?.setSilentAvatarUpdate?.(next);
+
+      showAlert(
+        next
+          ? "已开启静默更新头像。访问空间页时将自动更新 noface 用户的头像。"
+          : "已关闭静默更新头像。",
       );
     },
   );

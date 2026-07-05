@@ -13,6 +13,16 @@ import { fontSizeCache } from "@/utils/cache";
 // 使用 WeakMap 建立 "B站原元素" -> "我们注入的元素" 的映射
 const wrapperCache = new WeakMap<HTMLElement, HTMLElement>();
 
+let showOriginalInDebug = false;
+const trackedOriginalElements = new Set<HTMLElement>();
+
+export function setShowOriginalInDebug(value: boolean) {
+  showOriginalInDebug = value;
+  trackedOriginalElements.forEach((el) => {
+    el.style.display = value ? "" : "none";
+  });
+}
+
 export async function injectMemoRenderer(
   el: HTMLElement,
   user: BiliUser,
@@ -91,8 +101,9 @@ function renderEditable(
     });
 
     // 插入 DOM（非调试模式隐藏原元素）
-    if (!__IS_DEBUG__)
+    if (!__IS_DEBUG__ || !showOriginalInDebug)
       el.style.display = "none";
+    trackedOriginalElements.add(el);
     el.insertAdjacentElement("afterend", wrapper);
 
     // 存入缓存

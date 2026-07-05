@@ -92,7 +92,7 @@ interface WbiCache {
   timestamp: number;
 }
 
-interface UserInfo {
+export interface UserInfo {
   readonly avatar: string;
   readonly nickname: string;
   readonly isDeleted?: boolean;
@@ -144,9 +144,6 @@ async function getWbiKeys(): Promise<{ img_key: string; sub_key: string }> {
   }
 }
 
-/**
- * 为请求参数进行 wbi 签名
- */
 /**
  * 为请求参数进行 wbi 签名
  */

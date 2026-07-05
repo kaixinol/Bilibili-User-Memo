@@ -45,7 +45,6 @@
           title="左键自定义颜色&#10;右键自定义样式&#10;中键清除自定义样式"
         >
           <span
-            class="setting-text"
           >自定义备注颜色</span>
           <div
             class="color-preview"
@@ -154,7 +153,7 @@
           x-show="!userList.isRefreshing && userList.isMultiSelect && userList.selectedIds.length > 0"
         >⚡️刷新所选</span>
 
-        <span x-show="userList.isRefreshing" class="refresh-content">
+        <span x-show="userList.isRefreshing">
           <span class="loading-spinner">⏳</span>
           正在刷新 (<span x-text="userList.refreshCurrent"></span>/<span
             x-text="userList.refreshTotal"
@@ -290,7 +289,6 @@
         </button>
       </div>
       <form
-        class="add-user-dialog-form"
         @submit.prevent="$store.addUserDialog.submit()"
       >
         <div class="add-user-dialog-body">
@@ -338,7 +336,7 @@
         <div class="add-user-dialog-footer">
           <button
             type="submit"
-            class="panel-btn add-user-submit"
+            class="panel-btn"
             :disabled="$store.addUserDialog.isLoading"
           >
             <span x-show="$store.addUserDialog.isLoading">添加中...</span>

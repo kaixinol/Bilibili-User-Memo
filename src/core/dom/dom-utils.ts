@@ -56,20 +56,3 @@ export function getUserAvatarFromDOM(userID: string): string {
 
   return DEFAULT_AVATAR_URL;
 }
-
-// function findAvatarAncestor(el: HTMLElement): HTMLElement | null {
-//   let depth = 0;
-//   let cur: HTMLElement | null = el.parentElement;
-
-//   while (cur) {
-//     depth++;
-
-//     if (depth >= 3 && cur.classList.contains("avatar")) {
-//       return cur;
-//     }
-
-//     cur = cur.parentElement;
-//   }
-
-//   return null;
-// }

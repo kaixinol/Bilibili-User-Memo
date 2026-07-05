@@ -2,16 +2,11 @@ import { validateEitherJSON } from "@/core/rules/schema";
 import type { BiliUser } from "@/core/types";
 import { normalizeUserCollection } from "@/core/store/user-normalization";
 import { logger } from "@/utils/logger";
-import { getUserInfo } from "@/core/api/bilibili-user";
+import { getUserInfo, type UserInfo } from "@/core/api/bilibili-user";
 import { isNoFaceAvatar } from "@/core/dom/dom-utils";
 import pLimit from "p-limit";
 
-interface UserProfile {
-  id: string;
-  nickname: string;
-  avatar: string;
-  isDeleted?: boolean;
-}
+type UserProfile = UserInfo & { id: string };
 
 const REFRESH_PROFILE_CONCURRENCY = 4;
 
@@ -131,9 +126,4 @@ export async function fetchLatestProfiles(
   await Promise.allSettled(tasks);
   return profiles;
 }
-
-
-
-
-
 

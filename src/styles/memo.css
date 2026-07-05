@@ -49,6 +49,7 @@
   padding: 0 6px;
 }
 
+/* 提及场景下 bili-memo-tag 可能渲染为 <a> 标签 */
 a.bili-memo-tag {
   color: var(--Lb7, #58B1D4);
 }

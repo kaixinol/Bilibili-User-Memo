@@ -28,13 +28,6 @@ export class RuleScanScheduler {
     private readonly isActive: () => boolean,
   ) {}
 
-  public dispose() {
-    this.clearStaticRuleRetries();
-    for (const rule of this.ruleDebounceTimers.keys()) {
-      this.clearRuleDebounceTimers(rule);
-    }
-  }
-
   public scanRules(
     rules: PageRule[],
     scope: ScanScope,

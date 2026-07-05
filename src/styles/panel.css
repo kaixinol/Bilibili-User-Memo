@@ -31,15 +31,23 @@
   box-sizing: border-box;
 }
 
-/* Toggle Button - 优化外观，使其看起来像一个 Tab */
 .panel-toggle-btn {
+  --btn-cursor: help;
+
+  @supports (cursor: context-menu) {
+    --btn-cursor: context-menu;
+  }
+
   position: absolute;
   top: -34px;
   left: 20px;
-  width: 70px; /* 固定宽度，防止表情切换时按钮抖动 */
+  width: 70px;
   height: 34px;
   border-radius: 8px 8px 0 0;
-  cursor: context-menu;
+  
+  /* 3. 最终使用这个变量 */
+  cursor: var(--btn-cursor);
+
   font-size: 18px;
   color: var(--text-inverse);
   background: var(--primary-color);
@@ -47,14 +55,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition:
-    opacity 0.3s ease,
-    background 0.2s ease,
-    top 0.2s ease;
-
+  transition: opacity 0.3s ease, background 0.2s ease, top 0.2s ease;
   user-select: none;
 }
-
 .panel-toggle-btn:hover {
   opacity: 1 !important; /* 鼠标悬停时强制不透明 */
   background: var(--primary-color);

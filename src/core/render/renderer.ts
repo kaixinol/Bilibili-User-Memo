@@ -100,6 +100,17 @@ function renderEditable(
       enterEditMode(wrapper!, latestUser);
     });
 
+    const originalHref = (el as HTMLAnchorElement).href;
+    if (originalHref?.includes("/list/")) {
+      wrapper.title = "发现注销用户！右键可跳转";
+      wrapper.style.cursor = "pointer";
+      wrapper.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        window.open(originalHref, "_blank");
+      });
+    }
+
     // 插入 DOM（非调试模式隐藏原元素）
     if (!__IS_DEBUG__ || !showOriginalInDebug)
       el.style.display = "none";

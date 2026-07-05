@@ -117,6 +117,12 @@ export function registerPanelComponents() {
   }));
 
   Alpine.data("panelToggleBtn", () => ({
+    init() {
+      const ua = navigator.userAgent;
+      if (ua.includes("Windows") && ua.includes("Chrome")) {
+        getCurrentElement(this)?.classList.add("is-windows-chrome");
+      }
+    },
     get prefs(): PanelPrefsStore {
       return getPanelPrefsStore();
     },

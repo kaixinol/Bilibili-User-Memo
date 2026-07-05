@@ -32,22 +32,13 @@
 }
 
 .panel-toggle-btn {
-  --btn-cursor: help;
-
-  @supports (cursor: context-menu) {
-    --btn-cursor: context-menu;
-  }
-
   position: absolute;
   top: -34px;
   left: 20px;
   width: 70px;
   height: 34px;
   border-radius: 8px 8px 0 0;
-  
-  /* 3. 最终使用这个变量 */
-  cursor: var(--btn-cursor);
-
+  cursor: context-menu;
   font-size: 18px;
   color: var(--text-inverse);
   background: var(--primary-color);
@@ -59,8 +50,12 @@
   user-select: none;
 }
 .panel-toggle-btn:hover {
-  opacity: 1 !important; /* 鼠标悬停时强制不透明 */
+  opacity: 1; /* 鼠标悬停时强制不透明 */
   background: var(--primary-color);
+}
+
+.panel-toggle-btn.is-windows-chrome {
+  cursor: help;
 }
 
 /* Mode Selection Section - 增强层级感 */

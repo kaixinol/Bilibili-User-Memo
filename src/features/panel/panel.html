@@ -191,48 +191,6 @@
       <button x-bind="panelExportBtn">导出</button>
     </div>
 
-    <dialog
-      x-ref="memoCssDialog"
-      class="panel-custom-css-section"
-      x-effect="syncAdvancedCssDialog()"
-      @close="closeAdvancedCss()"
-      @click.self="closeAdvancedCss()"
-    >
-      <div class="panel-custom-css-header">
-        <div class="panel-custom-css-title">自定义备注样式（CSS）</div>
-        <button
-          type="button"
-          class="panel-custom-css-close"
-          @click="closeAdvancedCss()"
-          aria-label="关闭自定义备注样式"
-        >
-          ×
-        </button>
-      </div>
-      <textarea
-        x-ref="memoCssInput"
-        class="panel-custom-css-input"
-        x-model="customMemoCss"
-        @input.debounce.700ms="applyMemoCss()"
-        @blur="applyMemoCss()"
-        placeholder="示例：&#10;.bili-memo-tag {&#10;&#32;&#32;font-style: italic;&#10;&#32;&#32;letter-spacing: 0.5px;&#10;}&#10;.editable-textarea {&#10;&#32;&#32;background: rgba(0,0,0,0.08);&#10;&#32;&#32;border-bottom: 2px solid currentColor;&#10;}"
-      ></textarea>
-      <div
-        class="panel-custom-css-status"
-        x-show="cssStatus"
-        x-transition.opacity
-        role="status"
-        aria-live="polite"
-        x-text="cssStatus"
-      >
-      </div>
-      <div class="panel-custom-css-hint">
-        这里支持完整 CSS
-        选择器。只影响备注相关元素时，建议用 .bili-memo-tag /
-        .editable-textarea / .bili-memo-input
-      </div>
-    </dialog>
-
     <div class="panel-users-container">
       <div>
         <div
@@ -263,6 +221,50 @@
     </div>
   </div>
 </div>
+
+<!-- 自定义备注样式对话框 -->
+<dialog
+  x-data="panelSettings"
+  x-ref="memoCssDialog"
+  class="panel-custom-css-section"
+  x-effect="syncAdvancedCssDialog()"
+  @close="closeAdvancedCss()"
+  @click.self="closeAdvancedCss()"
+>
+  <div class="panel-custom-css-header">
+    <div class="panel-custom-css-title">自定义备注样式（CSS）</div>
+    <button
+      type="button"
+      class="panel-custom-css-close"
+      @click="closeAdvancedCss()"
+      aria-label="关闭自定义备注样式"
+    >
+      ×
+    </button>
+  </div>
+  <textarea
+    x-ref="memoCssInput"
+    class="panel-custom-css-input"
+    x-model="customMemoCss"
+    @input.debounce.700ms="applyMemoCss()"
+    @blur="applyMemoCss()"
+    placeholder="示例：&#10;.bili-memo-tag {&#10;&#32;&#32;font-style: italic;&#10;&#32;&#32;letter-spacing: 0.5px;&#10;}&#10;.editable-textarea {&#10;&#32;&#32;background: rgba(0,0,0,0.08);&#10;&#32;&#32;border-bottom: 2px solid currentColor;&#10;}"
+  ></textarea>
+  <div
+    class="panel-custom-css-status"
+    x-show="cssStatus"
+    x-transition.opacity
+    role="status"
+    aria-live="polite"
+    x-text="cssStatus"
+  >
+  </div>
+  <div class="panel-custom-css-hint">
+    这里支持完整 CSS
+    选择器。只影响备注相关元素时，建议用 .bili-memo-tag /
+    .editable-textarea / .bili-memo-input
+  </div>
+</dialog>
 
 <!-- 添加用户对话框 -->
 <dialog

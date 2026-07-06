@@ -21,7 +21,7 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - `src/core/render/renderer.ts` — `renderMinimal` (class injection) vs `renderEditable` (wrapper span)
 - `src/core/store/store.ts` — `UserStore` singleton with listener pattern, GM_addValueChangeListener for cross-tab sync
 - `src/core/style/style-manager.ts` — Constructable Stylesheets API for Shadow DOM style injection
-- `src/features/panel/` — Alpine.js panel UI (box.html, panel.html, panel-components.ts)
+- `src/features/panel/` — Alpine.js panel UI (box.html, panel.html, panel-core.ts, panel-settings.ts, item-components.ts)
 - `src/features/panel/perceptual-hash.ts` — bmvbhash for fake noface avatar detection (hardcoded reference hash, reads from DOM img)
 
 ## Conventions

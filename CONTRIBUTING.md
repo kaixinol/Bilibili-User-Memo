@@ -88,7 +88,7 @@ import { UserType, createUser } from './utils'
 src/
 ├── core/              # 核心业务逻辑
 │   ├── api/           # Bilibili API 接口与请求限流
-│   ├── dom/           # DOM 操作工具（节点所有权、文本处理、UID 提取）
+│   ├── dom/           # DOM 操作工具（节点所有权、文本处理、UID 提取、头像提取）
 │   ├── injection/     # 注入引擎（规则运行时、扫描调度、MutationObserver 监听）
 │   ├── render/        # 渲染引擎（Minimal/Editable 两种模式）
 │   ├── rules/         # 规则系统（URL 匹配 + 样式作用域 + UID 解析）
@@ -97,8 +97,11 @@ src/
 │   └── types.ts       # 核心类型（BiliUser, ElementMeta）
 ├── features/          # 功能模块
 │   ├── debugger/      # 调试器（仅 __IS_DEBUG__ 模式加载）
-│   └── panel/         # Alpine.js 控制面板 UI
-│       ├── panel-components.ts  # Alpine.data() 组件定义
+│   └── panel/         # Alpine.js 控制面板 UI（扁平结构）
+│       ├── panel-components.ts  # 组件注册入口
+│       ├── panel-core.ts        # 共享 helpers + shell/toggle/actions
+│       ├── panel-settings.ts    # 设置组件
+│       ├── item-components.ts   # 用户卡片、UID、头像、备注编辑器
 │       ├── perceptual-hash.ts   # 感知哈希检测假 noface 头像
 │       ├── box.html / panel.html # Alpine 模板
 │       └── ...

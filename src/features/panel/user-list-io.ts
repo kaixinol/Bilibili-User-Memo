@@ -3,7 +3,7 @@ import type { BiliUser } from "@/core/types";
 import { normalizeUserCollection } from "@/core/store/user-normalization";
 import { logger } from "@/utils/logger";
 import { getUserInfo, type UserInfo } from "@/core/api/bilibili-user";
-import { isNoFaceAvatar } from "@/core/dom/dom-utils";
+import { isNoFaceAvatar } from "@/core/dom/avatar-utils";
 import pLimit from "p-limit";
 
 type UserProfile = UserInfo & { id: string };

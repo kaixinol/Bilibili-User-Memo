@@ -1,5 +1,5 @@
 import { extractUid } from "../dom/uid-extractor";
-import { isNoFaceAvatar, parseSrcsetUrl } from "../dom/dom-utils";
+import { isNoFaceAvatar, parseSrcsetUrl } from "../dom/avatar-utils";
 import { userStore } from "../store/store";
 import { getSilentAvatarUpdate } from "@/features/panel/user-list-store";
 import { waitUntil } from "@/utils/scheduler";

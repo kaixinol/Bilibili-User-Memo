@@ -1,7 +1,7 @@
 import Alpine from "alpinejs";
-import type { PanelPrefsStore } from "../panel-prefs";
-import type { UserListStore } from "../user-list-store";
-import { confirmDialog } from "../dialogs";
+import type { PanelPrefsStore } from "./panel-prefs";
+import type { UserListStore } from "./user-list-store";
+import { confirmDialog } from "./dialogs";
 
 interface AlpineMagicContext {
   $el?: HTMLElement;

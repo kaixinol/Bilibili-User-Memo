@@ -1,11 +1,11 @@
 import Alpine from "alpinejs";
 import type { BiliUser } from "@/core/types";
-import type { UserListStore } from "../user-list-store";
-import { confirmDialog, promptText, showAlert } from "../dialogs";
-import { biliFixAPIReady } from "../bili-api";
-import { isNoFaceAvatar } from "@/core/dom/dom-utils";
-import { AVATAR_URL_INVALID_MESSAGE, isValidAvatarUrl } from "../avatar-url";
-import { isFakeNoFaceAvatarFromImg } from "../perceptual-hash";
+import type { UserListStore } from "./user-list-store";
+import { confirmDialog, promptText, showAlert } from "./dialogs";
+import { biliFixAPIReady } from "@/core/api/bili-api";
+import { isNoFaceAvatar } from "@/core/dom/avatar-utils";
+import { AVATAR_URL_INVALID_MESSAGE, isValidAvatarUrl } from "./avatar-url";
+import { isFakeNoFaceAvatarFromImg } from "./perceptual-hash";
 import { logger } from "@/utils/logger";
 import {
   getUserListStore,

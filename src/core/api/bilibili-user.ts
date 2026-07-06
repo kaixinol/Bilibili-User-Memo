@@ -2,7 +2,7 @@
 import GM_fetch from "@trim21/gm-fetch";
 import { logger } from "@/utils/logger";
 import { withLimit } from "./request-limiter";
-import { DEFAULT_AVATAR_URL } from "@/core/dom/dom-utils";
+import { DEFAULT_AVATAR_URL } from "@/core/dom/avatar-utils";
 import {
   getFreshGmCache,
   setTimestampedGmCache,

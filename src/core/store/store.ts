@@ -1,6 +1,6 @@
 import { logger } from "@/utils/logger.ts";
 import type { BiliUser } from "../types";
-import { getUserAvatarFromDOM, isNoFaceAvatar, DEFAULT_AVATAR_URL } from "../dom/dom-utils";
+import { getUserAvatarFromDOM, isNoFaceAvatar, DEFAULT_AVATAR_URL } from "../dom/avatar-utils";
 import { GM_addValueChangeListener } from "$";
 import {
   DEFAULT_DISPLAY_MODE,

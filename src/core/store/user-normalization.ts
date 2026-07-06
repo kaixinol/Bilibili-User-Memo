@@ -1,5 +1,5 @@
 import type { BiliUser } from "../types";
-import { DEFAULT_AVATAR_URL } from "../dom/dom-utils";
+import { DEFAULT_AVATAR_URL } from "../dom/avatar-utils";
 
 type RawUserRecord = Partial<BiliUser> & { bid?: unknown };
 

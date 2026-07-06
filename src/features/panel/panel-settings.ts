@@ -1,6 +1,6 @@
 import Alpine from "alpinejs";
-import type { PanelPrefsStore } from "../panel-prefs";
-import type { UserListStore } from "../user-list-store";
+import type { PanelPrefsStore } from "./panel-prefs";
+import type { UserListStore } from "./user-list-store";
 import {
   DISPLAY_MODE_OPTIONS,
   getUserListStore,

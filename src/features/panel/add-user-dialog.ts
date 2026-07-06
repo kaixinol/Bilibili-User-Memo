@@ -1,6 +1,6 @@
 import Alpine from "alpinejs";
 import { getUserInfo } from "@/core/api/bilibili-user";
-import { DEFAULT_AVATAR_URL } from "@/core/dom/dom-utils";
+import { DEFAULT_AVATAR_URL } from "@/core/dom/avatar-utils";
 import { userStore } from "@/core/store/store";
 import type { BiliUser } from "@/core/types";
 import { showAlert } from "./dialogs";

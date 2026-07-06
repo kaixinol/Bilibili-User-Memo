@@ -50,7 +50,7 @@ export interface UserListStore {
 interface InternalUserListStore extends UserListStore {
   _usersMap: Map<string, BiliUser>;
   _usersList: BiliUser[];
-  syncUsersSnapshot(users: BiliUser[]): void;
+  syncUsersSnapshot(users: readonly BiliUser[]): void;
   resetUsersSnapshot(): void;
 }
 
@@ -82,7 +82,7 @@ export function setSilentAvatarUpdate(value: boolean) {
   setGmValue(SILENT_AVATAR_UPDATE_KEY, value);
 }
 
-function syncUsersSnapshot(store: InternalUserListStore, users: BiliUser[]) {
+function syncUsersSnapshot(store: InternalUserListStore, users: readonly BiliUser[]) {
   const nextIds = new Set(users.map((user) => user.id));
 
   for (const id of Array.from(store._usersMap.keys())) {
@@ -327,7 +327,7 @@ export function registerUserStore() {
     reactiveStore.syncUsersSnapshot(userStore.getUsers());
   }
 
-  const syncUsers = (users: BiliUser[]) => {
+  const syncUsers = (users: readonly BiliUser[]) => {
     if (!reactiveStore.hasLoadedUsers) return;
     reactiveStore.syncUsersSnapshot(users);
   };

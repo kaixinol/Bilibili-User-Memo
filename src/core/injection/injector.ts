@@ -138,7 +138,7 @@ class PageInjector {
   }
 
   private refreshRenderedNodes(
-    users: BiliUser[],
+    users: readonly BiliUser[],
     displayMode: number,
     changedIds?: string[],
   ) {
@@ -156,13 +156,22 @@ class PageInjector {
 
   private startUrlMonitor() {
     this.lastUrl = unsafeWindow.location.href;
-    window.setInterval(() => {
-      const currentUrl = unsafeWindow.location.href;
-      if (currentUrl === this.lastUrl) return;
-      this.lastUrl = currentUrl;
-      logger.debug(`🌏 URL 变更检测: ${currentUrl}`);
-      this.handleUrlChange();
-    }, 1000);
+
+    navigation.addEventListener("navigate", (e) => {
+      const nextUrl = e.destination.url;
+      if (!nextUrl) return;
+      queueMicrotask(() => this.handleUrlDetected(nextUrl));
+    });
+
+    window.setInterval(() => this.handleUrlDetected(), 5000);
+  }
+
+  private handleUrlDetected(forcedUrl?: string) {
+    const currentUrl = forcedUrl ?? unsafeWindow.location.href;
+    if (currentUrl === this.lastUrl) return;
+    this.lastUrl = currentUrl;
+    logger.debug(`🌏 URL 变更检测: ${currentUrl}`);
+    this.handleUrlChange();
   }
 
   private handleUrlChange() {

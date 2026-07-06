@@ -26,7 +26,7 @@ type ChangeReason =
 export type UserStoreChange =
   | {
       type: "users";
-      users: BiliUser[];
+      users: readonly BiliUser[];
       reason: ChangeReason;
       changedIds?: string[];
       rescanMatchByName?: boolean;
@@ -38,7 +38,7 @@ export type UserStoreChange =
     }
   | {
       type: "full";
-      users: BiliUser[];
+      users: readonly BiliUser[];
       displayMode: number;
       reason: ChangeReason;
     };
@@ -51,10 +51,6 @@ interface UserDiffResult {
   hasContentChanges: boolean;
   orderOnly: boolean;
   rescanMatchByName: boolean;
-}
-
-function cloneUsers(users: BiliUser[]): BiliUser[] {
-  return users.map((u) => ({ ...u }));
 }
 
 function usersEqual(a: BiliUser[], b: BiliUser[]): boolean {
@@ -222,8 +218,8 @@ class UserStore {
     return this._displayMode;
   }
 
-  public getUsers(): BiliUser[] {
-    return cloneUsers(this.users);
+  public getUsers(): readonly BiliUser[] {
+    return this.users;
   }
 
   public subscribe(listener: StoreListener): () => void {

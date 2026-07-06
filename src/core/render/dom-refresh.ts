@@ -22,7 +22,7 @@ function refreshTag(
 }
 
 export function refreshRenderedMemoNodes(
-  users: BiliUser[],
+  users: readonly BiliUser[],
   displayMode: number,
   changedIds?: string[],
 ) {

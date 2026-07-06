@@ -66,7 +66,7 @@ export default defineConfig(({ mode }) => {
           "unsafeWindow",
           "GM_registerMenuCommand",
         ],
-        connect: ["api.bilibili.com", "hdslb.com"],
+        connect: ["api.bilibili.com"],
         "run-at": "document-body",
         supportURL: "https://github.com/kaixinol/Bilibili-User-Memo/issues",
         contributionURL: "https://s2.loli.net/2025/08/04/1hjKA5qwXHS8Glu.webp",

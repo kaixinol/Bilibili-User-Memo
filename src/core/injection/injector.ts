@@ -6,12 +6,12 @@ import {
 } from "@/core/rules/rule-types";
 import { logger } from "@/utils/logger";
 import { extractUid, isDeletedUserSpace } from "../dom/uid-extractor";
-import { isNoFaceAvatar, parseSrcsetUrl } from "../dom/dom-utils";
-import { getSilentAvatarUpdate } from "@/features/panel/user-list-store";
 import { getElementDisplayName } from "../dom/text-utils";
 import { refreshRenderedMemoNodes } from "../render/dom-refresh";
 import { injectMemoRenderer } from "../render/renderer";
 import { userStore, type UserStoreChange } from "../store/store";
+import { createUrlMonitor, type UrlMonitor } from "./url-monitor";
+import { syncSpaceProfile } from "./space-profile";
 import type { BiliUser } from "../types";
 import { DynamicRuleWatcher } from "./watchers";
 import { unsafeWindow } from "$";
@@ -36,12 +36,9 @@ import {
   recordRuleScanDiagnostic,
 } from "@/utils/perf-diagnostics";
 
-const SPACE_PROFILE_NICKNAME_SELECTOR = ".upinfo-detail div.nickname";
-const SPACE_AVATAR_SELECTOR = "div.avatar source";
-
 class PageInjector {
   private domReady = false;
-  private lastUrl = "";
+  private readonly urlMonitor: UrlMonitor;
   private readonly pendingRemoteChanges = new RemoteChangeBuffer();
   private readonly scanScheduler = new RuleScanScheduler(
     (rule, scope, options) => this.scanAndInjectRule(rule, scope, options),
@@ -57,7 +54,8 @@ class PageInjector {
       this.handleVisibilityChange(),
     );
 
-    this.startUrlMonitor();
+    this.urlMonitor = createUrlMonitor(() => this.handleUrlChange());
+    this.urlMonitor.start();
     this.onDomReady(async () => {
       await this.waitForBiliEnvironment();
       await delay(100);
@@ -113,12 +111,7 @@ class PageInjector {
     const pendingState = this.pendingRemoteChanges.consume();
     if (!pendingState) return;
 
-    const currentUrl = unsafeWindow.location.href;
-    if (currentUrl !== this.lastUrl) {
-      this.lastUrl = currentUrl;
-      logger.debug(`🌏 可见性恢复，先同步 URL: ${currentUrl}`);
-      this.handleUrlChange();
-    }
+    this.urlMonitor.syncUrl();
 
     const users = userStore.getUsers();
     const displayMode = userStore.displayMode;
@@ -154,31 +147,10 @@ class PageInjector {
     this.scanScheduler.scanRules(activeRules, scope, "refresh active rules", options);
   }
 
-  private startUrlMonitor() {
-    this.lastUrl = unsafeWindow.location.href;
-
-    navigation.addEventListener("navigate", (e) => {
-      const nextUrl = e.destination.url;
-      if (!nextUrl) return;
-      queueMicrotask(() => this.handleUrlDetected(nextUrl));
-    });
-
-    window.setInterval(() => this.handleUrlDetected(), 5000);
-  }
-
-  private handleUrlDetected(forcedUrl?: string) {
-    const currentUrl = forcedUrl ?? unsafeWindow.location.href;
-    if (currentUrl === this.lastUrl) return;
-    this.lastUrl = currentUrl;
-    logger.debug(`🌏 URL 变更检测: ${currentUrl}`);
-    this.handleUrlChange();
-  }
-
   private handleUrlChange() {
     if (!this.domReady) return;
 
-    void this.syncSpaceProfileNickname();
-    void this.addSpaceProfilePicture();
+    void syncSpaceProfile();
 
     const matchedRules = getMatchedRules();
     const groups = this.groupRulesByMode(matchedRules);
@@ -262,57 +234,6 @@ class PageInjector {
     elements.forEach((el) => {
       void this.applyRuleToElement(el, rule);
     });
-  }
-  private async addSpaceProfilePicture() {
-    if (location.hostname !== "space.bilibili.com") return;
-    if (!getSilentAvatarUpdate()) return;
-
-    const uid = extractUid(document.body, { silent: true });
-    if (!uid) return;
-
-    const storedUser = userStore.getUsers().find((u) => u.id === uid);
-    if (!storedUser || !isNoFaceAvatar(storedUser.avatar)) return;
-
-    await waitUntil(
-      () => Boolean(document.querySelector(SPACE_AVATAR_SELECTOR)),
-      { intervalMs: 200, timeoutMs: 5000 },
-    );
-
-    const avatarEl = document.querySelector(SPACE_AVATAR_SELECTOR);
-    const srcset = avatarEl?.getAttribute("srcset");
-    if (!srcset) return;
-
-    const avatarUrl = parseSrcsetUrl(srcset);
-    if (!avatarUrl || isNoFaceAvatar(avatarUrl)) return;
-
-    if (uid !== extractUid(document.body, { silent: true })) return;
-
-    userStore.updateUser(uid, { avatar: avatarUrl });
-  }
-  private async syncSpaceProfileNickname() {
-    if (location.hostname !== "space.bilibili.com") return;
-
-    const uid = extractUid(document.body, { silent: true });
-    if (!uid) return;
-
-    await waitUntil(
-      () => Boolean(document.querySelector(SPACE_PROFILE_NICKNAME_SELECTOR)),
-      {
-        intervalMs: 200,
-        timeoutMs: 5000,
-      },
-    );
-
-    const nicknameEl = document.querySelector(
-      SPACE_PROFILE_NICKNAME_SELECTOR,
-    ) as HTMLElement | null;
-    const nickname =
-      nicknameEl?.dataset.biliOriginal?.trim() ||
-      nicknameEl?.textContent?.trim() ||
-      "";
-    if (!nickname || uid !== extractUid(document.body, { silent: true })) return;
-
-    userStore.updateUser(uid, { nickname }, nickname);
   }
 
   private async applyRuleToElement(el: HTMLElement, rule: PageRule) {

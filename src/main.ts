@@ -21,6 +21,7 @@ import { showAlert } from "@/features/panel/dialogs";
 import { logger } from "./utils/logger";
 
 (async () => {
+  const isFF = navigator.userAgent.includes("Firefox");   // UPSTREAM: see Tampermonkey/tampermonkey#2828 FF不支持SMP emoji菜單問題
   const isPureTag = !__VERSION__.includes('-dev.');
 
   if (isPureTag) {
@@ -36,34 +37,33 @@ import { logger } from "./utils/logger";
 
   const currentScopePattern = getCurrentPageScopePattern();
   const pageDisabled = isCurrentPageDisabled();
-
   if (pageDisabled) {
-    GM_registerMenuCommand("✅在此页面启用", () => {
+    GM_registerMenuCommand(isFF ? "✓在此页面启用" : "✅在此页面启用", () => {
       enablePageScope(currentScopePattern);
       location.reload();
     });
   } else {
-    GM_registerMenuCommand("❌在此页面禁用", () => {
+    GM_registerMenuCommand(isFF ? "✗在此页面禁用" : "❌在此页面禁用", () => {
       disablePageScope(currentScopePattern);
       location.reload();
     });
   }
 
-  GM_registerMenuCommand("❓帮助", () => {
+  GM_registerMenuCommand(isFF ? "？帮助" : "❓帮助", () => {
     window.open(
       "https://github.com/kaixinol/Bilibili-User-Memo?tab=readme-ov-file#bilibili-%E7%94%A8%E6%88%B7%E5%A4%87%E6%B3%A8-ui-%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E",
     );
   });
-  GM_registerMenuCommand("❤️给作者一杯咖啡☕", () => {
+  GM_registerMenuCommand(isFF ? "♥给作者一杯咖啡" : "❤️给作者一杯咖啡☕", () => {
     window.open("https://s2.loli.net/2025/08/04/1hjKA5qwXHS8Glu.webp");
   });
-  GM_registerMenuCommand("🐛反馈", () => {
+  GM_registerMenuCommand(isFF ? "✐反馈" : "🐛反馈", () => {
     window.open("https://github.com/kaixinol/Bilibili-User-Memo/issues");
   });
 
   const preloadAllCards = getPanelPreloadAllCards();
   GM_registerMenuCommand(
-    `${preloadAllCards ? "✅" : "⬜"}默认预注入全部卡片`,
+    `${isFF ? (preloadAllCards ? "✓" : "□") : (preloadAllCards ? "✅" : "⬜")}默认预注入全部卡片`,
     () => {
       const next = !getPanelPreloadAllCards();
       setPanelPreloadAllCards(next);
@@ -84,7 +84,7 @@ import { logger } from "./utils/logger";
 
   const silentAvatarUpdate = getSilentAvatarUpdate();
   GM_registerMenuCommand(
-    `${silentAvatarUpdate ? "✅" : "⬜"}静默更新头像`,
+    `${isFF ? (silentAvatarUpdate ? "✓" : "□") : (silentAvatarUpdate ? "✅" : "⬜")}静默更新头像`,
     () => {
       const next = !getSilentAvatarUpdate();
       setSilentAvatarUpdate(next);

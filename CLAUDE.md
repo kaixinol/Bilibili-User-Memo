@@ -36,6 +36,8 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - CSS uses LightningCSS with browserslist targets; shared styles use Constructable Stylesheets
 - Dead code = any function/class not imported anywhere under `src/`
 
+- Debug builds expose `window.__biliMemoTest` for MCP/automated testing — use this API for non-DOM tests (store queries, search, selection, export, refresh) instead of manipulating DOM directly
+
 ## Rule system
 - `StyleScope.Minimal` → adds CSS classes to the original DOM element (no wrapper)
 - `StyleScope.Editable` → creates a `<span class="editable-textarea">` wrapper after the original element, hides original

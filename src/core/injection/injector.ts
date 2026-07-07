@@ -2,6 +2,7 @@ import { querySelectorAllDeep } from "@/utils/query-dom";
 import {
   type PageRule,
   type DynamicPageRule,
+  getInjectMode,
   isDynamicMode,
 } from "@/core/rules/rule-types";
 import { logger } from "@/utils/logger";
@@ -221,7 +222,7 @@ class PageInjector {
     if (__IS_DEBUG__) {
       recordRuleScanDiagnostic({
         ruleName: rule.name,
-        mode: rule.injectMode,
+        mode: getInjectMode(rule),
         selector,
         scopeType: getScopeType(scope),
         matchCount: elements.length,
@@ -266,7 +267,7 @@ class PageInjector {
       if (__IS_DEBUG__) {
         recordRuleApplyDiagnostic({
           ruleName: rule.name,
-          mode: rule.injectMode,
+          mode: getInjectMode(rule),
           element,
           uidResolved,
           applied,

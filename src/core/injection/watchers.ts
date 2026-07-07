@@ -1,4 +1,4 @@
-import { type DynamicPageRule } from "@/core/rules/rule-types";
+import { type DynamicPageRule, getInjectMode } from "@/core/rules/rule-types";
 import { logger } from "@/utils/logger";
 import {
   getScopeType,
@@ -214,7 +214,7 @@ export class DynamicRuleWatcher {
         recordFlowDiagnostic({
           source: "dynamic shadow bridge",
           ruleName: this.rule.name,
-          mode: this.rule.injectMode,
+          mode: getInjectMode(this.rule),
           scopeType: getScopeType(watchScope),
         });
       }
@@ -231,7 +231,7 @@ export class DynamicRuleWatcher {
       recordFlowDiagnostic({
         source: "dynamic attach",
         ruleName: this.rule.name,
-        mode: this.rule.injectMode,
+        mode: getInjectMode(this.rule),
         scopeType: getScopeType(scope),
       });
     }
@@ -293,7 +293,7 @@ export class DynamicRuleWatcher {
       recordFlowDiagnostic({
         source: "dynamic legacy attach",
         ruleName: this.rule.name,
-        mode: this.rule.injectMode,
+        mode: getInjectMode(this.rule),
         scopeType: getScopeType(scope),
       });
     }
@@ -314,7 +314,7 @@ export class DynamicRuleWatcher {
           recordFlowDiagnostic({
             source: "dynamic legacy idle",
             ruleName: this.rule.name,
-            mode: this.rule.injectMode,
+            mode: getInjectMode(this.rule),
             scopeType: getScopeType(scope),
           });
         }

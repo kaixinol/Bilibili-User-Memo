@@ -7,6 +7,7 @@ import {
   type DynamicTriggerConfig,
   type PageRule,
   type RuleConfigEntry,
+  getInjectMode,
   isStaticMode,
 } from "@/core/rules/rule-types";
 import "@/styles/global.css";
@@ -234,7 +235,7 @@ export function initDebugger() {
           return {
             id: index + 1,
             name: rule.name,
-            mode: rule.injectMode,
+            mode: getInjectMode(rule),
             styleScope: rule.styleScope,
             selector,
             trigger: getRuleTrigger(rule),

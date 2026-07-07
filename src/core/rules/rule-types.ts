@@ -4,13 +4,9 @@ export type InjectionMode = typeof InjectionMode[keyof typeof InjectionMode];
 export const StyleScope = { Minimal: 1, Editable: 2 } as const;
 export type StyleScope = typeof StyleScope[keyof typeof StyleScope];
 
-export class RawRule {
-  constructor(init: Partial<PageRule>) {
-    Object.assign(this, init);
-  }
-
-  name!: string;
-  styleScope!: StyleScope;
+export interface RawRule {
+  name: string;
+  styleScope: StyleScope;
   aSelector?: string;
   textSelector?: string;
   trigger?: { watch: string; interval: number };
@@ -19,11 +15,12 @@ export class RawRule {
   dynamicWatch?: boolean;
   uidResolver?: UidResolverFn;
   originalNameResolver?: OriginalNameResolverFn;
-  get injectMode(): InjectionMode {
-    if (!this.trigger) return InjectionMode.Static;
-    return InjectionMode.Dynamic;
-  }
 }
+
+export const getInjectMode = (rule: RawRule): InjectionMode => {
+  if (!rule.trigger) return InjectionMode.Static;
+  return InjectionMode.Dynamic;
+};
 
 export interface RawConfig {
   urlPattern: RegExp;
@@ -48,5 +45,5 @@ export type PageRule = StaticPageRule | DynamicPageRule;
 export type RuleConfigEntry = RawConfig;
 export type DynamicTriggerConfig = NonNullable<RawRule["trigger"]>;
 
-export const isStaticMode = (rule: RawRule): rule is StaticPageRule => rule.injectMode === InjectionMode.Static;
-export const isDynamicMode = (rule: RawRule): rule is DynamicPageRule => rule.injectMode === InjectionMode.Dynamic;
+export const isStaticMode = (rule: RawRule): rule is StaticPageRule => getInjectMode(rule) === InjectionMode.Static;
+export const isDynamicMode = (rule: RawRule): rule is DynamicPageRule => getInjectMode(rule) === InjectionMode.Dynamic;

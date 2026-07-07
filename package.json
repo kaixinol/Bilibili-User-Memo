@@ -1,6 +1,6 @@
 {
   "name": "bili-user-memo",
-  "version": "2.8.7",
+  "version": "2.9.0",
   "description": "B站UP主一键备注 | B站一键备注 Rev 的重写版本",
   "main": "src/main.ts",
   "scripts": {
@@ -18,7 +18,7 @@
   ],
   "author": "Kaesinol",
   "license": "AGPL-3.0-or-later",
-  "packageManager": "pnpm@11.9.0",
+  "packageManager": "pnpm@11.10.0",
   "devDependencies": {
     "@types/alpinejs": "^3.13.11",
     "@types/alpinejs__persist": "^3.13.4",

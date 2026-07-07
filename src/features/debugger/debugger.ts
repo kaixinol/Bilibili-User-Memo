@@ -16,6 +16,7 @@ import debuggerHtml from "./debugger.html?raw";
 import highlightCss from "@/styles/debugger-highlight.css?raw";
 import { logger } from "@/utils/logger";
 import { setShowOriginalInDebug } from "@/core/render/renderer";
+import { initTestApi } from "./test-api";
 import {
   getPerfDiagnosticsSnapshot,
   recordLongTaskDiagnostic,
@@ -497,4 +498,5 @@ export function initDebugger() {
   );
 
   renderDebuggerUI("monkeyApp");
+  initTestApi();
 }

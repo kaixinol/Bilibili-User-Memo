@@ -102,9 +102,9 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
+      target: "esnext",
+      sourcemap: isDebug ? "inline" : false,
       minify: isDebug ? false : "terser",
-
-      modulePreload: false,
       terserOptions: isDebug
         ? {
           compress: false,
@@ -116,35 +116,13 @@ export default defineConfig(({ mode }) => {
         }
         : {
           compress: {
-            // 基础清理
-            unused: true,
-            dead_code: true,
-            drop_debugger: true,
+            ecma: 2025,
+            toplevel: true,
             passes: 3,
-
-            // 安全结构优化
-            hoist_funs: true, // 函数提升
-            hoist_vars: false, // 避免影响可读性
-            collapse_vars: true,
-            reduce_vars: true,
-            evaluate: true,
-            booleans: true,
-            conditionals: true,
-            sequences: false, // ❗ 保持语句可读
-            inline: true, // 仅简单内联
-            pure_getters: true,
-            comparisons: true,
           },
-
-          mangle: false, // GF 友好：保留变量名
-
-          format: {
-            beautify: false,
-          },
+          mangle: false,
         },
-
       cssMinify: isDebug ? false : "lightningcss",
-      cssCodeSplit: false,
     },
     css: {
       transformer: 'lightningcss',
@@ -153,10 +131,6 @@ export default defineConfig(({ mode }) => {
         drafts: {
           customMedia: true
         },
-        minify: true,
-        nonStandardKeepWhitespace: false,
-        cssModules: false,
-        unusedSymbols: [],
       }
     }
   };

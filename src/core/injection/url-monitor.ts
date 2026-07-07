@@ -1,4 +1,3 @@
-import { unsafeWindow } from "$";
 import { logger } from "@/utils/logger";
 
 export interface UrlMonitor {
@@ -12,7 +11,7 @@ export function createUrlMonitor(onChange: () => void): UrlMonitor {
   let intervalId: number | null = null;
 
   function handleUrlDetected(forcedUrl?: string) {
-    const currentUrl = forcedUrl ?? unsafeWindow.location.href;
+    const currentUrl = forcedUrl ?? location.href;
     if (currentUrl === lastUrl) return;
     lastUrl = currentUrl;
     logger.debug(`🌏 URL 变更检测: ${currentUrl}`);
@@ -21,7 +20,7 @@ export function createUrlMonitor(onChange: () => void): UrlMonitor {
 
   return {
     start() {
-      lastUrl = unsafeWindow.location.href;
+      lastUrl = location.href;
 
       navigation.addEventListener("navigate", (e) => {
         const nextUrl = e.destination.url;

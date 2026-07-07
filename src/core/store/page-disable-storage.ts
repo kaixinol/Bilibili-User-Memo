@@ -42,7 +42,7 @@ function saveDisabledPageScopes(patterns: string[]) {
   setGmValue(DISABLED_PAGE_SCOPES_KEY, patterns);
 }
 
-export function getCurrentPageScopePattern(rawUrl = window.location.href): string {
+export function getCurrentPageScopePattern(rawUrl = location.href): string {
   const url = new URL(rawUrl);
   const firstPathSegment = url.pathname.split("/").filter(Boolean)[0];
 
@@ -52,7 +52,7 @@ export function getCurrentPageScopePattern(rawUrl = window.location.href): strin
   return `${url.origin}/${firstPathSegment}/*`;
 }
 
-export function isCurrentPageDisabled(rawUrl = window.location.href): boolean {
+export function isCurrentPageDisabled(rawUrl = location.href): boolean {
   const target = normalizeTargetUrl(rawUrl);
   const patterns = loadDisabledPageScopes();
   return patterns.some((pattern) => wildcardToRegExp(pattern).test(target));

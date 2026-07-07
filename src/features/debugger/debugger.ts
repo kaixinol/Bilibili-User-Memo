@@ -137,7 +137,7 @@ function getRuleTrigger(rule: PageRule): string | undefined {
 }
 
 function getMatchedRuleEntries(): RuleConfigEntry[] {
-  const currentUrl = window.location.href;
+  const currentUrl = location.href;
   return defaultRules.filter((entry) => entry.urlPattern.test(currentUrl));
 }
 

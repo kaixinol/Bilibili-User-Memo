@@ -151,9 +151,9 @@ const rawConfig: RawConfig[] = [
             textSelector: 'div[class^="_ContactName_"]',
             trigger: { watch: 'div[class^="_ChatHeader_"]', interval: 1000 },
             markProcessed: false,
-            uidResolver: () => window.location.href.match(/#\/whisper\/mid(\d+)/)?.[1] || null,
+            uidResolver: () => location.href.match(/#\/whisper\/mid(\d+)/)?.[1] || null,
             originalNameResolver: () => {
-                const uid = window.location.href.match(/#\/whisper\/mid(\d+)/)?.[1];
+                const uid = location.href.match(/#\/whisper\/mid(\d+)/)?.[1];
                 if (!uid) return null;
                 const sessionName = document
                     .querySelector(`[data-id="contact_${uid}"] div[class*="_SessionItem__Name"]`) as

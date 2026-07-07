@@ -1,4 +1,3 @@
-import { unsafeWindow } from "$";
 import {
   isDynamicMode,
   isStaticMode,
@@ -16,7 +15,7 @@ export interface RuleGroups {
   dynamicRules: DynamicPageRule[];
 }
 
-export function getMatchedRules(currentUrl = unsafeWindow.location.href): PageRule[] {
+export function getMatchedRules(currentUrl = location.href): PageRule[] {
   return config
     .filter((entry) => entry.urlPattern.test(currentUrl))
     .map((entry) => entry.rule);

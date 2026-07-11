@@ -95,8 +95,8 @@ type UidStrategy = (el: Element) => string | null;
 
 const UID_STRATEGIES_WITHOUT_LOCATION: readonly UidStrategy[] = [
   readUidFromOwnAttributes,
-  readUidFromDynamicItemRoot,
   readUidFromHref,
+  readUidFromDynamicItemRoot,
 ];
 
 const UID_STRATEGIES: readonly UidStrategy[] = [

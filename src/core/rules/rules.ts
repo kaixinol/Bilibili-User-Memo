@@ -318,12 +318,12 @@ const rawConfig: RawConfig[] = [
         urlPattern: COMMON_REG,
         rule: { name: "全站-提及", styleScope: StyleScope.Minimal, aSelector: 'a[data-type="mention"]' }
     }, {
-        urlPattern: /https:\/\/www\.bilibili.com\/history/,
+        urlPattern: /https:\/\/www\.bilibili\.com\/history/,
         rule: {
             name: "历史记录",
             styleScope: StyleScope.Minimal,
             aSelector: 'a.bili-video-card__author',
-            textSelector: "div.bili-video-card__text span"
+            textSelector: "div.bili-video-card__text span:not(:empty)"
         }
     }
 ];

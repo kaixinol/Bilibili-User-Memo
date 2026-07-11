@@ -56,7 +56,7 @@ export default defineConfig(({ mode }) => {
         website: "https://github.com/kaixinol/Bilibili-User-Memo",
         icon: "https://www.bilibili.com/favicon.ico",
         match: ["https://*.bilibili.com/*"],
-        exclude: ["https://*.hdslb.com/*", "https://live.bilibili.com/*", "https://www.bilibili.com/match/*", "https://app.bilibili.com/*", "https://member.bilibili.com/*", "https://pay.bilibili.com/*", "https://show.bilibili.com/*", "https://link.bilibili.com/*", "https://account.bilibili.com/*", "https://link.bilibili.com/*", "https://edu.bilibili.com/*"],
+        exclude: ["https://*.hdslb.com/*", "https://live.bilibili.com/*", "https://www.bilibili.com/match/*", "https://app.bilibili.com/*", "https://member.bilibili.com/*", "https://pay.bilibili.com/*", "https://show.bilibili.com/*", "https://account.bilibili.com/*", "https://link.bilibili.com/*", "https://edu.bilibili.com/*"],
         noframes: true,
         grant: [
           "GM_setValue",

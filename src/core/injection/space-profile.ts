@@ -44,7 +44,7 @@ async function addSpaceProfilePicture() {
   if (!uid) return;
 
   const storedUser = userStore.getUsers().find((u) => u.id === uid);
-  if (!storedUser || !isNoFaceAvatar(storedUser.avatar)) return;
+  if (!storedUser) return;
 
   await waitUntil(
     () => Boolean(document.querySelector(SPACE_AVATAR_SELECTOR)),

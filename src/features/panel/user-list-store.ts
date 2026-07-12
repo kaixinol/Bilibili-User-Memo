@@ -52,7 +52,7 @@ export function setPanelPreloadAllCards(value: boolean) {
 }
 
 export function getSilentAvatarUpdate(): boolean {
-  return getGmValue<boolean>(SILENT_AVATAR_UPDATE_KEY, true);
+  return getGmValue<boolean>(SILENT_AVATAR_UPDATE_KEY, false);
 }
 
 export function setSilentAvatarUpdate(value: boolean) {

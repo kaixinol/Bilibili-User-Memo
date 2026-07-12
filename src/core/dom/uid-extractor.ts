@@ -6,7 +6,7 @@ const DIRECT_UID_ATTRS = [
   "data-oid",
 ] as const;
 const DYNAMIC_ITEM_SELECTOR = "div.bili-dyn-item__main";
-const SPACE_UID_REGEX = /(?:space\.bilibili\.com|www\.bilibili\.com\/list)\/(\d+)/;
+export const SPACE_UID_REGEX = /(?:space\.bilibili\.com|www\.bilibili\.com\/list)\/(\d+)/;
 
 /**
  * 检查 URL 是否为已注销用户的 B站 空间

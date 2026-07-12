@@ -1,4 +1,4 @@
-import { extractUid } from "../dom/uid-extractor";
+import { SPACE_UID_REGEX } from "../dom/uid-extractor";
 import { isNoFaceAvatar, parseSrcsetUrl } from "../dom/avatar-utils";
 import { userStore } from "../store/store";
 import { getSilentAvatarUpdate } from "@/features/panel/user-list-store";
@@ -7,6 +7,10 @@ import { waitUntil } from "@/utils/scheduler";
 const SPACE_PROFILE_NICKNAME_SELECTOR = ".upinfo-detail div.nickname";
 const SPACE_AVATAR_SELECTOR = "div.avatar source";
 
+function getUidFromUrl(): string | null {
+  return location.href.match(SPACE_UID_REGEX)?.[1] ?? null;
+}
+
 export async function syncSpaceProfile() {
   if (location.hostname !== "space.bilibili.com") return;
   await syncSpaceProfileNickname();
@@ -14,7 +18,7 @@ export async function syncSpaceProfile() {
 }
 
 async function syncSpaceProfileNickname() {
-  const uid = extractUid(document.body, { silent: true });
+  const uid = getUidFromUrl();
   if (!uid) return;
 
   await waitUntil(
@@ -32,7 +36,7 @@ async function syncSpaceProfileNickname() {
     nicknameEl?.dataset.biliOriginal?.trim() ||
     nicknameEl?.textContent?.trim() ||
     "";
-  if (!nickname || uid !== extractUid(document.body, { silent: true })) return;
+  if (!nickname || uid !== getUidFromUrl()) return;
 
   userStore.updateUser(uid, { nickname }, nickname);
 }
@@ -40,7 +44,7 @@ async function syncSpaceProfileNickname() {
 async function addSpaceProfilePicture() {
   if (!getSilentAvatarUpdate()) return;
 
-  const uid = extractUid(document.body, { silent: true });
+  const uid = getUidFromUrl();
   if (!uid) return;
 
   const storedUser = userStore.getUsers().find((u) => u.id === uid);
@@ -58,7 +62,7 @@ async function addSpaceProfilePicture() {
   const avatarUrl = parseSrcsetUrl(srcset);
   if (!avatarUrl || isNoFaceAvatar(avatarUrl)) return;
 
-  if (uid !== extractUid(document.body, { silent: true })) return;
+  if (uid !== getUidFromUrl()) return;
 
   userStore.updateUser(uid, { avatar: avatarUrl });
 }

@@ -97,7 +97,7 @@ import { logger } from "./utils/logger";
 
       showAlert(
         next
-          ? "已开启静默更新头像。访问空间页时将自动更新 noface 用户的头像。"
+          ? "已开启静默更新头像。访问空间页时将自动更新用户的头像。"
           : "已关闭静默更新头像。",
       );
     },

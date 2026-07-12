@@ -117,9 +117,9 @@ export function registerAvatarEditor() {
       return isNoFaceAvatar(this.currentAvatar);
     },
     get avatarTitle(): string {
-      if (this.fakeNoFace) return "⚠️该头像疑似为用户自己上传的默认头像";
+      if (this.fakeNoFace) return "\u26a0\ufe0f该头像疑似为用户自己上传的默认头像";
       if (this.canEditAvatar) return "右键修改头像";
-      return this.currentUser?.nickname || this.userId;
+      return `${this.currentUser?.nickname || this.userId}（中键修改头像）`;
     },
     checkFakeNoFace() {
       if (this.checked || isNoFaceAvatar(this.currentAvatar)) return;
@@ -131,6 +131,32 @@ export function registerAvatarEditor() {
       }
       this.fakeNoFace = isFakeNoFaceAvatarFromImg(img);
       this.checked = true;
+    },
+    handleMiddleClick(event: MouseEvent) {
+      if (event.button !== 1) return;
+      if (this.userList.isMultiSelect) return;
+      if (isNoFaceAvatar(this.currentAvatar)) return;
+
+      event.preventDefault();
+
+      if (this.userList.silentAvatarUpdate) {
+        const disableSilent = confirmDialog(
+          "是否同时关闭静默更新头像功能？\n关闭后访问空间页将不再自动更新此用户头像。",
+        );
+        if (disableSilent) {
+          this.userList.setSilentAvatarUpdate(false);
+        }
+      }
+
+      const nextAvatar = promptText("请输入头像 URL");
+      if (!nextAvatar) return;
+
+      if (!isValidAvatarUrl(nextAvatar)) {
+        showAlert(AVATAR_URL_INVALID_MESSAGE);
+        return;
+      }
+
+      this.userList.updateUser(this.userId, { avatar: nextAvatar });
     },
     editAvatar(event: MouseEvent) {
       if (this.userList.isMultiSelect || !this.canEditAvatar) {

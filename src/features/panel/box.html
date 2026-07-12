@@ -13,6 +13,7 @@
     class="user-avatar-wrapper"
     x-data="avatarEditor(user.id)"
     @contextmenu="editAvatar($event)"
+    @mousedown="handleMiddleClick($event)"
     @mouseenter="checkFakeNoFace()"
     :class="{ 'fake-noface': fakeNoFace }"
     :title="avatarTitle"

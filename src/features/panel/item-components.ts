@@ -228,10 +228,7 @@ export function registerMemoEditor() {
   }));
 }
 
-export async function registerUidFixLink() {
-  const api = await biliFixAPIReady();
-  if (!api) return;
-
+export function registerUidFixLink() {
   Alpine.data("uidFixLink", (uid: string, isDeleted?: boolean) => ({
     uid,
     isDeleted,
@@ -242,6 +239,9 @@ export async function registerUidFixLink() {
 
       if (processedUID.has(el)) return;
       processedUID.add(el);
+
+      const api = await biliFixAPIReady();
+      if (!api) return;
 
       api.annotateElements([el]);
     },

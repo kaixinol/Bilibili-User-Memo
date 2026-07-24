@@ -49,7 +49,9 @@ export function enterEditMode(targetElement: HTMLElement, user: BiliUser) {
     targetElement.style.display = "";
 
     if (shouldSave && (forceSave || newValue !== currentMemo)) {
-      userStore.updateUserMemo(user.id, newValue, originalName);
+      const prevHref = targetElement.previousElementSibling?.getAttribute("href");
+      const isDeleted = prevHref?.includes("/list/") ? true : undefined;
+      userStore.updateUserMemo(user.id, newValue, originalName, isDeleted);
       syncRenderedNodeState(
         targetElement,
         { ...user, memo: newValue },

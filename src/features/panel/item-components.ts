@@ -229,12 +229,18 @@ export function registerMemoEditor() {
 }
 
 export function registerUidFixLink() {
-  Alpine.data("uidFixLink", (uid: string, isDeleted?: boolean) => ({
+  Alpine.data("uidFixLink", (uid: string) => ({
     uid,
-    isDeleted,
+    get isDeleted(): boolean | undefined {
+      return getUserListStore().getUserById(this.uid)?.isDeleted;
+    },
     async init() {
-      if (!this.isDeleted) return;
-
+      this.$watch("isDeleted", async (value: boolean | undefined) => {
+        if (value) await this.applyFix();
+      });
+      if (this.isDeleted) await this.applyFix();
+    },
+    async applyFix() {
       const el = this.$el;
 
       if (processedUID.has(el)) return;

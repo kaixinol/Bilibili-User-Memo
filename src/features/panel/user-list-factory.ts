@@ -51,6 +51,7 @@ function syncUsersSnapshot(store: InternalUserListStore, users: readonly BiliUse
       existing.nickname = user.nickname;
       existing.avatar = user.avatar;
       existing.memo = user.memo;
+      existing.isDeleted = user.isDeleted;
       nextList.push(existing);
       return;
     }

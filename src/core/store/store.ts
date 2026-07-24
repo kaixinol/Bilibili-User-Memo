@@ -44,7 +44,7 @@ export type UserStoreChange =
     };
 
 type StoreListener = (change: UserStoreChange) => void;
-type UserUpdates = Partial<Pick<BiliUser, "nickname" | "avatar" | "memo">>;
+type UserUpdates = Partial<Pick<BiliUser, "nickname" | "avatar" | "memo" | "isDeleted">>;
 
 interface UserDiffResult {
   changedIds: string[];
@@ -323,8 +323,9 @@ class UserStore {
     uid: string,
     newMemo: string,
     fallbackName = "",
+    isDeleted?: boolean,
   ): boolean {
-    return this.updateUser(uid, { memo: newMemo }, fallbackName);
+    return this.updateUser(uid, { memo: newMemo, isDeleted }, fallbackName);
   }
 
   private findUserIndex(uid: string): number {
@@ -349,6 +350,7 @@ class UserStore {
       nickname: (updates.nickname || fallbackName || uid).trim(),
       avatar: updates.avatar ?? getUserAvatarFromDOM(uid),
       memo: nextMemo,
+      ...(updates.isDeleted !== undefined && { isDeleted: updates.isDeleted }),
     });
     this.commitUsers("update", [uid]);
     logger.info(`📝 备注已更新 | UID:${uid} -> ${nextMemo}`);

@@ -3,7 +3,6 @@ import {
   type PageRule,
   type DynamicPageRule,
   getInjectMode,
-  isDynamicMode,
 } from "@/core/rules/rule-types";
 import { logger } from "@/utils/logger";
 import { extractUid } from "../dom/uid-extractor";
@@ -229,15 +228,11 @@ class PageInjector {
     elements.forEach((el) => {
       if (el.classList.contains("editable-textarea")) return;
 
-      // DOM 复用检测：已处理元素如果 UID 变了，清标记重处理
-      if (el.hasAttribute("data-bili-processed")) {
-        const storedUid = el.getAttribute("data-bili-uid");
+      // DOM 复用检测：UID 没变则跳过，变了则清旧数据重处理
+      const storedUid = el.getAttribute("data-bili-uid");
+      if (storedUid) {
         const currentUid = extractUid(el, { silent: true, allowLocationFallback: false });
-        if (storedUid && currentUid && storedUid === currentUid) {
-          return; // 同一个用户，跳过
-        }
-        // UID 不同或提取失败 → DOM 被复用 → 清除旧标记
-        el.removeAttribute("data-bili-processed");
+        if (currentUid && storedUid === currentUid) return;
         el.removeAttribute("data-bili-uid");
         el.removeAttribute("data-bili-original");
       }
@@ -253,11 +248,6 @@ class PageInjector {
     let applied = false;
 
     try {
-      if (el.classList.contains("editable-textarea")) {
-        el.setAttribute("data-bili-processed", "true");
-        return;
-      }
-
       const originalName =
         rule.originalNameResolver?.(el, rule) || getElementDisplayName(el, rule);
       const uid = await this.resolveElementUid(el, rule, originalName);
@@ -266,9 +256,6 @@ class PageInjector {
 
       const user = userStore.ensureUser(uid, originalName);
       applied = await injectMemoRenderer(el, user, rule, { uid, originalName });
-      if (applied && this.shouldMarkProcessed(rule)) {
-        el.setAttribute("data-bili-processed", "true");
-      }
     } finally {
       if (__IS_DEBUG__) {
         recordRuleApplyDiagnostic({
@@ -318,11 +305,6 @@ class PageInjector {
     }
 
     return null;
-  }
-
-  private shouldMarkProcessed(rule: PageRule): boolean {
-    if (!isDynamicMode(rule)) return true;
-    return rule.markProcessed !== false;
   }
 
   private onDomReady(callback: () => void) {

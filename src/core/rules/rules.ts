@@ -150,7 +150,6 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Minimal,
             textSelector: 'div[class^="_ContactName_"]',
             trigger: { watch: 'div[class^="_ChatHeader_"]', interval: 1000 },
-            markProcessed: false,
             uidResolver: () => location.href.match(/#\/whisper\/mid(\d+)/)?.[1] || null,
             originalNameResolver: () => {
                 const uid = location.href.match(/#\/whisper\/mid(\d+)/)?.[1];

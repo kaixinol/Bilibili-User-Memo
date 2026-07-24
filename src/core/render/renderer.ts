@@ -88,7 +88,6 @@ function renderEditable(
     // 初始化 wrapper（第一次渲染）
     wrapper = markOwnedElement(document.createElement("span"));
     wrapper.classList.add("editable-textarea");
-    wrapper.setAttribute("data-bili-processed", "true");
     if(__IS_DEBUG__){
       wrapper.style.position = "relative";
       wrapper.style.zIndex = "10000";

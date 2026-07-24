@@ -10,7 +10,6 @@ export interface RawRule {
   aSelector?: string;
   textSelector?: string;
   trigger?: { watch: string; interval: number };
-  markProcessed?: boolean;
   matchByName?: boolean;
   dynamicWatch?: boolean;
   uidResolver?: UidResolverFn;
@@ -39,7 +38,6 @@ export type OriginalNameResolverFn = (
 export type StaticPageRule = RawRule & { trigger?: never };
 export type DynamicPageRule = RawRule & {
   trigger: NonNullable<RawRule["trigger"]>;
-  markProcessed?: boolean;
 };
 export type PageRule = StaticPageRule | DynamicPageRule;
 export type RuleConfigEntry = RawConfig;

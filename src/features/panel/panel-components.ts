@@ -12,6 +12,7 @@ import {
   registerAvatarEditor,
   registerMemoEditor,
   registerUidFixLink,
+  registerMemoDetailDialog,
 } from "./item-components";
 
 let panelComponentsRegistered = false;
@@ -22,6 +23,7 @@ export function registerPanelComponents() {
 
   registerPanelBindings();
   registerAddUserDialog();
+  registerMemoDetailDialog();
   registerPanelShell();
   registerPanelToggleBtn();
   registerPanelSettings();

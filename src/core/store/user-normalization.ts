@@ -45,6 +45,7 @@ function getUserEntries(raw: unknown): unknown[] {
     nickname,
     avatar: String(record.avatar || DEFAULT_AVATAR_URL),
     memo,
+    memoDetail: record.memoDetail ? String(record.memoDetail) : undefined,
     isDeleted: record.isDeleted === true ? true : undefined,
   };
 }

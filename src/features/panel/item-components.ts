@@ -16,6 +16,44 @@ import {
 
 const processedUID = new WeakSet<Element>();
 
+type MemoDetailDialogStore = {
+  isOpen: boolean;
+  uid: string;
+  detail: string;
+  open(uid: string): void;
+  close(): void;
+  submit(): void;
+};
+
+export function registerMemoDetailDialog() {
+  if (Alpine.store("memoDetailDialog")) return;
+
+  Alpine.store("memoDetailDialog", {
+    isOpen: false,
+    uid: "",
+    detail: "",
+
+    open(this: MemoDetailDialogStore, uid: string) {
+      const user = getUserListStore().getUserById(uid);
+      this.uid = uid;
+      this.detail = user?.memoDetail || "";
+      this.isOpen = true;
+    },
+
+    close(this: MemoDetailDialogStore) {
+      this.isOpen = false;
+    },
+
+    submit(this: MemoDetailDialogStore) {
+      const uid = this.uid;
+      if (!uid) return;
+      const detail = this.detail.trim();
+      getUserListStore().updateUser(uid, { memoDetail: detail || undefined });
+      this.close();
+    },
+  });
+}
+
 export function registerUserCard() {
   Alpine.data("userCard", (userId: string) => ({
     userId,

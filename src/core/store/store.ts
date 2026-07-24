@@ -44,7 +44,7 @@ export type UserStoreChange =
     };
 
 type StoreListener = (change: UserStoreChange) => void;
-type UserUpdates = Partial<Pick<BiliUser, "nickname" | "avatar" | "memo" | "isDeleted">>;
+type UserUpdates = Partial<Pick<BiliUser, "nickname" | "avatar" | "memo" | "memoDetail" | "isDeleted">>;
 
 interface UserDiffResult {
   changedIds: string[];
@@ -60,7 +60,8 @@ function usersEqual(a: BiliUser[], b: BiliUser[]): boolean {
       a[i].id !== b[i].id ||
       a[i].nickname !== b[i].nickname ||
       a[i].avatar !== b[i].avatar ||
-      a[i].memo !== b[i].memo
+      a[i].memo !== b[i].memo ||
+      a[i].memoDetail !== b[i].memoDetail
     ) {
       return false;
     }
@@ -73,7 +74,8 @@ function userContentEqual(a: BiliUser, b: BiliUser): boolean {
     a.id === b.id &&
     a.nickname === b.nickname &&
     a.avatar === b.avatar &&
-    a.memo === b.memo
+    a.memo === b.memo &&
+    a.memoDetail === b.memoDetail
   );
 }
 
@@ -299,11 +301,16 @@ class UserStore {
         : existing.nickname;
     const nextAvatar =
       updates.avatar !== undefined ? updates.avatar : existing.avatar;
+    const nextDetail =
+      updates.memoDetail !== undefined
+        ? updates.memoDetail
+        : existing.memoDetail;
 
     if (
       existing.memo === nextMemo &&
       existing.nickname === nextNickname &&
-      existing.avatar === nextAvatar
+      existing.avatar === nextAvatar &&
+      existing.memoDetail === nextDetail
     ) {
       return false;
     }
@@ -312,6 +319,7 @@ class UserStore {
     existing.memo = nextMemo;
     existing.nickname = nextNickname || uid;
     existing.avatar = nextAvatar;
+    existing.memoDetail = nextDetail;
     this.commitUsers("update", [uid], nicknameChanged);
     if (updates.memo !== undefined) {
       logger.info(`📝 备注已更新 | UID:${uid} -> ${nextMemo}`);
@@ -326,6 +334,14 @@ class UserStore {
     isDeleted?: boolean,
   ): boolean {
     return this.updateUser(uid, { memo: newMemo, isDeleted }, fallbackName);
+  }
+
+  public updateUserMemoDetail(
+    uid: string,
+    newDetail: string,
+    fallbackName = "",
+  ): boolean {
+    return this.updateUser(uid, { memoDetail: newDetail }, fallbackName);
   }
 
   private findUserIndex(uid: string): number {
@@ -350,6 +366,7 @@ class UserStore {
       nickname: (updates.nickname || fallbackName || uid).trim(),
       avatar: updates.avatar ?? getUserAvatarFromDOM(uid),
       memo: nextMemo,
+      ...(updates.memoDetail !== undefined && { memoDetail: updates.memoDetail }),
       ...(updates.isDeleted !== undefined && { isDeleted: updates.isDeleted }),
     });
     this.commitUsers("update", [uid]);
@@ -422,6 +439,7 @@ class UserStore {
         existing.nickname === incoming.nickname &&
         existing.avatar === finalAvatar &&
         existing.memo === incoming.memo &&
+        existing.memoDetail === incoming.memoDetail &&
         existing.isDeleted === incoming.isDeleted
       ) {
         return;
@@ -430,6 +448,9 @@ class UserStore {
       existing.nickname = incoming.nickname;
       existing.avatar = finalAvatar;
       existing.memo = incoming.memo;
+      if (incoming.memoDetail !== undefined) {
+        existing.memoDetail = incoming.memoDetail;
+      }
       if (incoming.isDeleted !== undefined) {
         existing.isDeleted = incoming.isDeleted;
       }

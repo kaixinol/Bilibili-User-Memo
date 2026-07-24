@@ -54,7 +54,7 @@
       :title="currentUser?.isDeleted ? '该用户已标注为已注销' : (currentUser?.nickname || user.id)"
     ></a>
   </div>
-  <div class="user-note-section" x-data="memoEditor(user.id, currentUser?.memo || '')" x-effect="syncDraft()">
+  <div class="user-note-section" x-data="memoEditor(user.id, currentUser?.memo || '')" x-effect="syncDraft()" @contextmenu.prevent="$store.memoDetailDialog.open(user.id)" :title="currentUser?.memoDetail || ''">
     <div class="user-info-label">备注</div>
     <input
       x-ref="memoInput"

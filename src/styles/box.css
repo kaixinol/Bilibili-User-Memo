@@ -189,6 +189,7 @@
   align-items: flex-start;
 
   /* 改为左对齐，视觉上紧跟昵称 */
+  cursor: help;
 }
 
 .user-info-label {

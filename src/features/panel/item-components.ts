@@ -273,20 +273,12 @@ export function registerUidFixLink() {
       return getUserListStore().getUserById(this.uid)?.isDeleted;
     },
     async init() {
-      this.$watch("isDeleted", async (value: boolean | undefined) => {
-        if (value) await this.applyFix();
-      });
-      if (this.isDeleted) await this.applyFix();
-    },
-    async applyFix() {
       const el = this.$el;
-
       if (processedUID.has(el)) return;
       processedUID.add(el);
 
       const api = await biliFixAPIReady();
-      if (!api) return;
-
+      if (!api || !this.isDeleted) return;
       api.annotateElements([el]);
     },
   }));

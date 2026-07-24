@@ -107,9 +107,9 @@ function renderEditable(
 
     const originalHref = (el as HTMLAnchorElement).href;
     if (originalHref?.includes("/list/")) {
-      wrapper.title = "发现注销用户！右键可跳转";
+      wrapper.title = el.title ? `${el.title}\n发现注销用户！右键可跳转`: "发现注销用户！右键可跳转";
       if (user.memoDetail) {
-        wrapper.title += `\n------\n${user.memoDetail}`;
+        wrapper.title += `\n---------\n详细备注：${user.memoDetail}`;
       }
       wrapper.style.cursor = "pointer";
       wrapper.addEventListener("contextmenu", (e) => {

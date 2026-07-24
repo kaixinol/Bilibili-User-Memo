@@ -8,33 +8,48 @@ export interface UrlMonitor {
 
 export function createUrlMonitor(onChange: () => void): UrlMonitor {
   let lastUrl = "";
-  let intervalId: number | null = null;
+  let throttleTimer: number | null = null;
 
-  function handleUrlDetected(forcedUrl?: string) {
+  function handleUrlDetected(forcedUrl?: string, source = "unknown") {
     const currentUrl = forcedUrl ?? location.href;
-    if (currentUrl === lastUrl) return;
+    if (currentUrl === lastUrl) {
+      logger.debug(`🌏 [${source}] URL 未变化, 跳过: ${currentUrl}`);
+      return;
+    }
+    const prevUrl = lastUrl;
     lastUrl = currentUrl;
-    logger.debug(`🌏 URL 变更检测: ${currentUrl}`);
+    logger.debug(
+      `🌏 [${source}] URL 变更检测: ${prevUrl} → ${currentUrl} (${performance.now().toFixed(0)}ms)`,
+    );
     onChange();
+  }
+
+  function throttledHandleUrlDetected() {
+    if (throttleTimer !== null) {
+      clearTimeout(throttleTimer);
+    }
+    throttleTimer = window.setTimeout(() => {
+      throttleTimer = null;
+      handleUrlDetected(undefined, "navigated节流");
+    }, 300);
   }
 
   return {
     start() {
       lastUrl = location.href;
 
-      navigation.addEventListener("navigate", (e) => {
-        const nextUrl = e.destination.url;
-        if (!nextUrl) return;
-        queueMicrotask(() => handleUrlDetected(nextUrl));
-      });
-
-      intervalId = window.setInterval(() => handleUrlDetected(), 5000);
+      // Navigation API (Chromium) — use "navigated" so DOM is already updated.
+      // Throttle to deduplicate rapid triggers from bilibili tracking scripts.
+      (globalThis as any).navigation?.addEventListener(
+        "navigated",
+        throttledHandleUrlDetected,
+      );
     },
 
     stop() {
-      if (intervalId !== null) {
-        clearInterval(intervalId);
-        intervalId = null;
+      if (throttleTimer !== null) {
+        clearTimeout(throttleTimer);
+        throttleTimer = null;
       }
     },
 

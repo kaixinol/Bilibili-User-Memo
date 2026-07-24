@@ -5,7 +5,6 @@ import type {
 } from "@/core/rules/rule-types";
 import { requestIdle } from "@/utils/scheduler";
 import type { ScanScope } from "./scan-scope";
-import type { RuleSelectorOptions } from "./rule-runtime";
 import {
   getScopeType,
   recordFlowDiagnostic,
@@ -23,7 +22,6 @@ export class RuleScanScheduler {
     private readonly processRule: (
       rule: PageRule,
       scope: ScanScope,
-      options?: RuleSelectorOptions,
     ) => Promise<void>,
     private readonly isActive: () => boolean,
   ) {}
@@ -32,7 +30,6 @@ export class RuleScanScheduler {
     rules: PageRule[],
     scope: ScanScope,
     source = "scan rules",
-    options: RuleSelectorOptions = {},
   ) {
     if (rules.length === 0) return;
 
@@ -44,7 +41,7 @@ export class RuleScanScheduler {
         while (queue.length > 0 && deadline.timeRemaining() > 1) {
           const rule = queue.shift();
           if (!rule) continue;
-          await this.processRule(rule, scope, options);
+          await this.processRule(rule, scope);
           processedRules += 1;
         }
 
@@ -72,7 +69,6 @@ export class RuleScanScheduler {
   public scheduleStaticRuleRetries(
     staticRules: StaticPageRule[],
     scope: ScanScope,
-    options: RuleSelectorOptions = {},
   ) {
     this.clearStaticRuleRetries();
     if (staticRules.length === 0) return;
@@ -83,7 +79,7 @@ export class RuleScanScheduler {
     retryDelays.forEach((delay) => {
       const timerId = window.setTimeout(() => {
         if (!this.isActive() || token !== this.staticRetryToken) return;
-        this.scanRules(staticRules, scope, `static retry ${delay}ms`, options);
+        this.scanRules(staticRules, scope, `static retry ${delay}ms`);
       }, delay);
       this.staticRetryTimers.push(timerId);
     });

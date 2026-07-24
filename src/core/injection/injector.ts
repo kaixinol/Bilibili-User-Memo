@@ -23,7 +23,6 @@ import {
   getMatchedRules,
   groupRulesByMode,
   logRuleScanResult,
-  type RuleSelectorOptions,
   type RuleGroups,
 } from "./rule-runtime";
 import { RemoteChangeBuffer } from "./remote-change-buffer";
@@ -42,7 +41,7 @@ class PageInjector {
   private readonly urlMonitor: UrlMonitor;
   private readonly pendingRemoteChanges = new RemoteChangeBuffer();
   private readonly scanScheduler = new RuleScanScheduler(
-    (rule, scope, options) => this.scanAndInjectRule(rule, scope, options),
+    (rule, scope) => this.scanAndInjectRule(rule, scope),
     () => this.domReady,
   );
 
@@ -139,13 +138,10 @@ class PageInjector {
     refreshRenderedMemoNodes(users, displayMode, changedIds);
   }
 
-  private scanActiveRules(
-    scope: ScanScope,
-    options: RuleSelectorOptions = {},
-  ) {
+  private scanActiveRules(scope: ScanScope) {
     const activeRules = [...this.activeWatchers.keys()];
     if (activeRules.length === 0) return;
-    this.scanScheduler.scanRules(activeRules, scope, "refresh active rules", options);
+    this.scanScheduler.scanRules(activeRules, scope, "refresh active rules");
   }
 
   private handleUrlChange() {
@@ -155,9 +151,9 @@ class PageInjector {
 
     const matchedRules = getMatchedRules();
     const groups = this.groupRulesByMode(matchedRules);
-    this.applyStaticRules(groups.staticRules, document, { includeProcessed: true });
+    this.applyStaticRules(groups.staticRules, document);
     this.reconcileWatchers(groups.dynamicRules);
-    this.scanActiveRules(document, { includeProcessed: true });
+    this.scanActiveRules(document);
   }
 
   private groupRulesByMode(rules: PageRule[]): RuleGroups {
@@ -167,13 +163,12 @@ class PageInjector {
   private applyStaticRules(
     staticRules: ReturnType<typeof groupRulesByMode>["staticRules"],
     scope: ScanScope,
-    options: RuleSelectorOptions = {},
   ) {
     if (staticRules.length === 0) {
       this.scanScheduler.clearStaticRuleRetries();
       return;
     }
-    this.scanScheduler.scanRules(staticRules, scope, "static initial scan", options);
+    this.scanScheduler.scanRules(staticRules, scope, "static initial scan");
     this.scanScheduler.scheduleStaticRuleRetries(staticRules, scope);
   }
 
@@ -204,9 +199,8 @@ class PageInjector {
   private async scanAndInjectRule(
     rule: PageRule,
     scope: ScanScope,
-    options: RuleSelectorOptions = {},
   ) {
-    const selector = buildRuleSelector(rule, options);
+    const selector = buildRuleSelector(rule);
     if (!selector) return;
 
     const scanStart = __IS_DEBUG__ ? performance.now() : 0;
@@ -233,6 +227,21 @@ class PageInjector {
     if (elements.length === 0) return;
 
     elements.forEach((el) => {
+      if (el.classList.contains("editable-textarea")) return;
+
+      // DOM 复用检测：已处理元素如果 UID 变了，清标记重处理
+      if (el.hasAttribute("data-bili-processed")) {
+        const storedUid = el.getAttribute("data-bili-uid");
+        const currentUid = extractUid(el, { silent: true, allowLocationFallback: false });
+        if (storedUid && currentUid && storedUid === currentUid) {
+          return; // 同一个用户，跳过
+        }
+        // UID 不同或提取失败 → DOM 被复用 → 清除旧标记
+        el.removeAttribute("data-bili-processed");
+        el.removeAttribute("data-bili-uid");
+        el.removeAttribute("data-bili-original");
+      }
+
       void this.applyRuleToElement(el, rule);
     });
   }

@@ -32,7 +32,6 @@
     <div
       class="user-id"
       x-data="copyableUid(user.id)"
-      x-init="init()"
       x-text="displayText"
       @click="copy()"
       @mouseenter="handleMouseEnter()"
@@ -50,7 +49,6 @@
       :class="{ 'is-deleted': currentUser?.isDeleted }"
       x-text="currentUser?.nickname || user.id"
       x-data="uidFixLink(user.id)"
-      x-init="init()"
       :title="currentUser?.isDeleted ? '该用户已标注为已注销' : (currentUser?.nickname || user.id)"
     ></a>
   </div>

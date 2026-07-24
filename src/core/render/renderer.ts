@@ -56,12 +56,12 @@ function renderMinimal(
   if (!element) return false;
 
   ensureStylesForElement(element);
-  const isFirstRender = !element.classList.contains("bili-memo-tag");
   syncRenderedNodeState(element, user, meta.originalName, displayMode);
   syncElementMeta(element, meta);
-
-  if (isFirstRender && user.memoDetail) {
-    element.title = user.memoDetail;
+  if (user.memoDetail && !element.title?.includes("详细备注：")) {
+    element.title = element.title
+      ? `${element.title}\n---------\n详细备注：${user.memoDetail}`
+      : `详细备注：${user.memoDetail}`;
   }
 
   return true;
@@ -108,7 +108,7 @@ function renderEditable(
     const originalHref = (el as HTMLAnchorElement).href;
     if (originalHref?.includes("/list/")) {
       wrapper.title = el.title ? `${el.title}\n发现注销用户！右键可跳转`: "发现注销用户！右键可跳转";
-      if (user.memoDetail) {
+      if (user.memoDetail && !wrapper.title?.includes("详细备注：")) {
         wrapper.title += `\n---------\n详细备注：${user.memoDetail}`;
       }
       wrapper.style.cursor = "pointer";
@@ -117,8 +117,8 @@ function renderEditable(
         e.stopPropagation();
         window.open(originalHref, "_blank");
       });
-    } else if (user.memoDetail) {
-      wrapper.title = user.memoDetail;
+    } else if (user.memoDetail && !wrapper.title?.includes("详细备注：")) {
+      wrapper.title = `详细备注：${user.memoDetail}`;
     }
 
     // 插入 DOM（非调试模式隐藏原元素）

@@ -174,7 +174,7 @@ class PageInjector {
       return;
     }
     this.scanScheduler.scanRules(staticRules, scope, "static initial scan", options);
-    this.scanScheduler.scheduleStaticRuleRetries(staticRules, scope, options);
+    this.scanScheduler.scheduleStaticRuleRetries(staticRules, scope);
   }
 
   private reconcileWatchers(nextRules: DynamicPageRule[]) {

@@ -54,7 +54,7 @@ export function buildRuleSelector(
   const baseSelector = rule.aSelector || rule.textSelector;
   if (!baseSelector) return null;
   if (options.includeProcessed) return baseSelector;
-  return `${baseSelector}:not([data-bili-processed])`;
+  return `:is(${baseSelector}):not([data-bili-processed])`;
 }
 
 export function logRuleScanResult(

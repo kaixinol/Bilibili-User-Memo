@@ -36,7 +36,7 @@
     "stylelint-config-standard": "^40.0.0",
     "stylelint-no-unsupported-browser-features": "^8.1.1",
     "terser": "^5.49.0",
-    "typescript": "^7.0.2",
+    "typescript": "^6.0.3",
     "vite": "^8.1.5",
     "vite-plugin-monkey": "^8.0.6",
     "vitest": "^4.1.10"

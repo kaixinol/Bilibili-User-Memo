@@ -495,7 +495,7 @@
   }
 }
 
-/* Add User Dialog */
+/* 详细备注 / 添加用户对话框（复用同一套类名） */
 .add-user-dialog {
   position: fixed;
   inset: 0;
@@ -614,6 +614,27 @@
   opacity: 0.7;
 }
 
+.add-user-field textarea {
+  padding: 10px 12px;
+  border: 1px solid var(--border-main);
+  border-radius: 8px;
+  background: var(--bg-sub);
+  color: var(--text-main);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.add-user-field textarea:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px var(--primary-alpha);
+}
+
+.add-user-field textarea::placeholder {
+  color: var(--text-sub);
+  opacity: 0.7;
+}
+
 .add-user-dialog-footer {
   display: flex;
   gap: 10px;
@@ -633,16 +654,11 @@
   color: var(--text-main);
 }
 
-/* Dark theme overrides */
-.memo-container-dark-theme .add-user-dialog-content {
-  background: var(--bg-main);
-}
-
-.memo-container-dark-theme .add-user-field input {
-  background: var(--bg-sub);
-  color: var(--text-main);
-}
-
+/* dialog 夜间模式：仅覆盖非变量硬编码的部分 */
 .memo-container-dark-theme .add-user-dialog-close:hover {
   background: var(--overlay);
+}
+
+.memo-container-dark-theme .add-user-field textarea {
+  color-scheme: dark;
 }

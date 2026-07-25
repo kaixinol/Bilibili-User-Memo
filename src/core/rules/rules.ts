@@ -7,6 +7,8 @@ export { StyleScope, InjectionMode } from "./rule-types";
 const COMMON_REG = /^https:\/\/[a-z0-9.]+\.bilibili\.com\/.*/;
 const VIDEO_REG = /^https:\/\/www\.bilibili\.com\/(video|list)\/.*/;
 
+const VIDEO_CARD_A_SELECTOR = ".bili-video-card__info--owner:not(:has(.bili-video-card__info--ad)), .bili-video-card__author, a.up-name";
+const VIDEO_CARD_TEXT_SELECTOR = ".bili-video-card__info--author, .bili-video-card__text span[title], .up-name__text";
 
 const rawConfig: RawConfig[] = [
     {
@@ -67,10 +69,8 @@ const rawConfig: RawConfig[] = [
         rule: {
             name: "首页",
             styleScope: StyleScope.Minimal,
-            aSelector:
-                ".bili-video-card__info--owner, .bili-video-card__author, a.up-name",
-            textSelector:
-                ".bili-video-card__info--author, .bili-video-card__text span[title], .up-name__text",
+            aSelector: VIDEO_CARD_A_SELECTOR,
+            textSelector: VIDEO_CARD_TEXT_SELECTOR,
             trigger: { watch: "#app", interval: 1000 },
         }
     },
@@ -79,10 +79,8 @@ const rawConfig: RawConfig[] = [
         rule: {
             name: "搜索",
             styleScope: StyleScope.Minimal,
-            aSelector:
-                ".bili-video-card__info--owner, .bili-video-card__author, a.up-name, a.flex_start.flex_inline",
-            textSelector:
-                ".bili-video-card__info--author, .bili-video-card__text span[title], .up-name__text, span.lh_xs",
+            aSelector: `${VIDEO_CARD_A_SELECTOR}, a.flex_start.flex_inline`,
+            textSelector: `${VIDEO_CARD_TEXT_SELECTOR}, span.lh_xs`,
         }
     },
     {
@@ -90,10 +88,8 @@ const rawConfig: RawConfig[] = [
         rule: {
             name: "热门",
             styleScope: StyleScope.Minimal,
-            aSelector:
-                ".bili-video-card__info--owner, .bili-video-card__author, a.up-name",
-            textSelector:
-                ".bili-video-card__info--author, .bili-video-card__text span[title], .up-name__text",
+            aSelector: VIDEO_CARD_A_SELECTOR,
+            textSelector: VIDEO_CARD_TEXT_SELECTOR,
             trigger: { watch: "#app", interval: 1000 },
         }
     },
@@ -102,10 +98,8 @@ const rawConfig: RawConfig[] = [
         rule: {
             name: "分区",
             styleScope: StyleScope.Minimal,
-            aSelector:
-                ".bili-video-card__info--owner, .bili-video-card__author, a.up-name",
-            textSelector:
-                ".bili-video-card__info--author, .bili-video-card__text span[title], .up-name__text",
+            aSelector: VIDEO_CARD_A_SELECTOR,
+            textSelector: VIDEO_CARD_TEXT_SELECTOR,
             trigger: { watch: "#app", interval: 1000 },
         }
     },
@@ -114,10 +108,8 @@ const rawConfig: RawConfig[] = [
         rule: {
             name: "频道",
             styleScope: StyleScope.Minimal,
-            aSelector:
-                ".bili-video-card__info--owner, .bili-video-card__author, a.up-name",
-            textSelector:
-                ".bili-video-card__info--author, .bili-video-card__text span[title], .up-name__text",
+            aSelector: VIDEO_CARD_A_SELECTOR,
+            textSelector: VIDEO_CARD_TEXT_SELECTOR,
             trigger: { watch: "#app", interval: 1000 },
         }
     },

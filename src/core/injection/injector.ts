@@ -9,6 +9,7 @@ import { extractUid } from "../dom/uid-extractor";
 import { getElementDisplayName } from "../dom/text-utils";
 import { refreshRenderedMemoNodes } from "../render/dom-refresh";
 import { injectMemoRenderer } from "../render/renderer";
+import { untrackRenderedElement } from "../render/render-index";
 import { userStore, type UserStoreChange } from "../store/store";
 import { createUrlMonitor, type UrlMonitor } from "./url-monitor";
 import { syncSpaceProfile } from "./space-profile";
@@ -230,6 +231,7 @@ class PageInjector {
         if (preResolvedUid && storedUid === preResolvedUid) return;
         el.removeAttribute("data-bilimemo-uid");
         el.removeAttribute("data-bilimemo-original");
+        untrackRenderedElement(el, storedUid);
       }
 
       void this.applyRuleToElement(el, rule, preResolvedUid);

@@ -1,5 +1,6 @@
 import type { BiliUser, ElementMeta } from "../types";
 import { formatDisplayName } from "../dom/text-utils";
+import { trackRenderedElement } from "./render-index";
 
 interface RenderedNodeOptions {
   isEditableWrapper?: boolean;
@@ -40,6 +41,7 @@ export function syncRenderedNodeState(
 export function syncElementMeta(el: HTMLElement, meta: ElementMeta) {
   if (el.dataset.bilimemoUid !== meta.uid) {
     el.dataset.bilimemoUid = meta.uid;
+    trackRenderedElement(el, meta.uid);
   }
   if (el.dataset.bilimemoOriginal !== meta.originalName) {
     el.dataset.bilimemoOriginal = meta.originalName;

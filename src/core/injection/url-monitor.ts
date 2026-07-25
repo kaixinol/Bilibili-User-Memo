@@ -38,10 +38,12 @@ export function createUrlMonitor(onChange: () => void): UrlMonitor {
     start() {
       lastUrl = location.href;
 
-      // Navigation API (Chromium) — use "navigated" so DOM is already updated.
-      // Throttle to deduplicate rapid triggers from bilibili tracking scripts.
-      (globalThis as any).navigation?.addEventListener(
-        "navigated",
+      // Navigation API (Baseline 2026).
+      // Use "currententrychange" instead of "navigated" so SPA route changes
+      // (e.g. pushState/replaceState) are also detected. Throttled to deduplicate
+      // rapid updates from Bilibili tracking scripts.
+      navigation.addEventListener(
+        "currententrychange",
         throttledHandleUrlDetected,
       );
     },

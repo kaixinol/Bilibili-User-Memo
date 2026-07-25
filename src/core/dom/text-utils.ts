@@ -60,7 +60,7 @@ function resolveWatchTextTarget(
   }
 
   // 2) 兜底：遍历 deep 查询结果，找到包含当前元素的容器实例
-  const watchTargets = querySelectorAllDeep(rule.trigger.watch);
+  const watchTargets = querySelectorAllDeep(rule.trigger.watch, document);
   for (const target of watchTargets) {
     const scope = target.shadowRoot || target;
     if (scope.contains(el)) {

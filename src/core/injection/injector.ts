@@ -27,7 +27,6 @@ import {
 import { RemoteChangeBuffer } from "./remote-change-buffer";
 import { RuleScanScheduler } from "./scan-scheduler";
 import { delay, waitUntil } from "@/utils/scheduler";
-import { isNodeInsideScope } from "./watch-runtime";
 import {
   describeElementForDiagnostics,
   getScopeType,
@@ -204,12 +203,7 @@ class PageInjector {
 
     const scanStart = __IS_DEBUG__ ? performance.now() : 0;
     const queryStart = __IS_DEBUG__ ? performance.now() : 0;
-    const elements =
-      scope instanceof ShadowRoot
-        ? querySelectorAllDeep(selector).filter((element) =>
-            isNodeInsideScope(element, scope),
-          )
-        : querySelectorAllDeep(selector, scope);
+    const elements = querySelectorAllDeep(selector, scope);
     const queryMs = __IS_DEBUG__ ? performance.now() - queryStart : 0;
     logRuleScanResult(rule, selector, elements.length);
     if (__IS_DEBUG__) {
@@ -230,18 +224,19 @@ class PageInjector {
 
       // DOM 复用检测：UID 没变则跳过，变了则清旧数据重处理
       const storedUid = el.getAttribute("data-bilimemo-uid");
+      let preResolvedUid: string | null = null;
       if (storedUid) {
-        const currentUid = extractUid(el, { silent: true, allowLocationFallback: false });
-        if (currentUid && storedUid === currentUid) return;
+        preResolvedUid = extractUid(el, { silent: true, allowLocationFallback: false });
+        if (preResolvedUid && storedUid === preResolvedUid) return;
         el.removeAttribute("data-bilimemo-uid");
         el.removeAttribute("data-bilimemo-original");
       }
 
-      void this.applyRuleToElement(el, rule);
+      void this.applyRuleToElement(el, rule, preResolvedUid);
     });
   }
 
-  private async applyRuleToElement(el: HTMLElement, rule: PageRule) {
+  private async applyRuleToElement(el: HTMLElement, rule: PageRule, preResolvedUid?: string | null) {
     const applyStart = __IS_DEBUG__ ? performance.now() : 0;
     const element = __IS_DEBUG__ ? describeElementForDiagnostics(el) : "";
     let uidResolved = false;
@@ -250,7 +245,7 @@ class PageInjector {
     try {
       const originalName =
         rule.originalNameResolver?.(el, rule) || getElementDisplayName(el, rule);
-      const uid = await this.resolveElementUid(el, rule, originalName);
+      const uid = preResolvedUid ?? await this.resolveElementUid(el, rule, originalName);
       uidResolved = Boolean(uid);
       if (!uid) return;
 

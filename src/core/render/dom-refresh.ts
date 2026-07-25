@@ -2,14 +2,6 @@ import { querySelectorAllDeep } from "@/utils/query-dom";
 import type { BiliUser } from "../types";
 import { syncRenderedNodeState } from "./rendered-node";
 
-function escapeAttrValue(value: string): string {
-  if (typeof CSS !== "undefined" && typeof CSS.escape === "function") {
-    return CSS.escape(value);
-  }
-  // Fallback: enough for attribute selector usage in older environments
-  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-}
-
 function refreshTag(
   tag: HTMLElement,
   user: BiliUser | undefined,
@@ -35,9 +27,19 @@ export function refreshRenderedMemoNodes(
         userMap.set(user.id, user);
       }
     });
+
+    const allTags = querySelectorAllDeep(`[data-bilimemo-uid]`, document);
+    const uidTagMap = new Map<string, HTMLElement[]>();
+    allTags.forEach((tag) => {
+      const uid = tag.getAttribute("data-bilimemo-uid");
+      if (uid && targetIdSet.has(uid)) {
+        let arr = uidTagMap.get(uid);
+        if (!arr) { arr = []; uidTagMap.set(uid, arr); }
+        arr.push(tag);
+      }
+    });
     uniqueIds.forEach((uid) => {
-      const selector = `[data-bilimemo-uid="${escapeAttrValue(uid)}"]`;
-      const tags = querySelectorAllDeep(selector);
+      const tags = uidTagMap.get(uid) || [];
       const user = userMap.get(uid);
       tags.forEach((tag) => refreshTag(tag, user, displayMode));
     });
@@ -45,7 +47,7 @@ export function refreshRenderedMemoNodes(
   }
 
   const userMap = new Map(users.map((u) => [u.id, u]));
-  const allTags = querySelectorAllDeep(`[data-bilimemo-uid]`);
+  const allTags = querySelectorAllDeep(`[data-bilimemo-uid]`, document);
   allTags.forEach((tag) => {
     const uid = tag.getAttribute("data-bilimemo-uid");
     if (!uid) return;

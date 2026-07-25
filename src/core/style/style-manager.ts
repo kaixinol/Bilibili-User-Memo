@@ -91,7 +91,7 @@ export function setCustomMemoCss(css: string): {
  * 用于 CSS 更新时即时生效
  */
 function applyCustomMemoStyleToExistingRoots() {
-  const targets = querySelectorAllDeep(MEMO_STYLE_TARGET_SELECTOR);
+  const targets = querySelectorAllDeep(MEMO_STYLE_TARGET_SELECTOR, document);
   if (!targets || targets.length === 0) return;
 
   const roots = new Set<Document | ShadowRoot>();

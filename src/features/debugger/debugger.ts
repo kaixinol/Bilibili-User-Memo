@@ -145,7 +145,7 @@ function getMatchedRuleEntries(): RuleConfigEntry[] {
 function countSelectorMatches(selector: string): { count: number; error?: string } {
   if (!selector) return { count: 0 };
   try {
-    return { count: querySelectorAllDeep(selector).length };
+    return { count: querySelectorAllDeep(selector, document).length };
   } catch {
     return { count: 0, error: "invalid selector" };
   }
@@ -273,7 +273,7 @@ export function initDebugger() {
 
         let elements: Element[];
         try {
-          elements = querySelectorAllDeep(selector);
+          elements = querySelectorAllDeep(selector, document);
         } catch {
           this.selectorError = "Invalid selector";
           logger.warn(`[Debugger] Invalid selector: ${selector}`);

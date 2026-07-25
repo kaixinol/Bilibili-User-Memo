@@ -48,7 +48,7 @@ export function getUserAvatarFromDOM(userID: string): string {
   ];
 
   for (const { selector, attr } of rules) {
-    const el = querySelectorDeep(selector);
+    const el = querySelectorDeep(selector, document);
     logger.debug(`Found avatar for user ${userID} in ${selector}`);
     const val = el?.getAttribute(attr);
     if (val) return val;

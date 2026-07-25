@@ -128,6 +128,7 @@ function diffUsers(previous: BiliUser[], next: BiliUser[]): UserDiffResult {
 
 class UserStore {
   private users: BiliUser[] = [];
+  private userIndex = new Map<string, BiliUser>();
   private _displayMode = DEFAULT_DISPLAY_MODE;
   private listeners = new Set<StoreListener>();
 
@@ -138,6 +139,11 @@ class UserStore {
 
     // 【重要】绝对不要在这里或 main.ts 添加 window.addEventListener('beforeunload', ...)
     // 依赖实时保存 (updateUserMemo) 和 GM_addValueChangeListener 即可。
+  }
+
+  private rebuildIndex() {
+    this.userIndex.clear();
+    this.users.forEach((u) => this.userIndex.set(u.id, u));
   }
 
   /**
@@ -152,6 +158,7 @@ class UserStore {
 
     this.users = nextUsers;
     this._displayMode = nextDisplayMode;
+    this.rebuildIndex();
 
     // 仅在有清理动作时回写，避免无意义写入
     if (Array.isArray(rawUsers) && this.users.length !== rawUsers.length) {
@@ -198,6 +205,7 @@ class UserStore {
       if (!diff.hasContentChanges && !diff.orderOnly) return;
 
       this.users = nextUsers;
+      this.rebuildIndex();
       if (diff.orderOnly) {
         this.emitUsers("remote");
         return;
@@ -241,7 +249,7 @@ class UserStore {
    * 获取用户记录；不存在时返回临时对象（不入库）
    */
   public ensureUser(uid: string, originalName: string): BiliUser {
-    const existing = this.users.find((u) => u.id === uid);
+    const existing = this.userIndex.get(uid);
     if (existing) {
       return existing;
     }
@@ -267,7 +275,7 @@ class UserStore {
    * 获取备注名；找不到或备注为空时返回 null
    */
   public getUserMemo(uid: string): string | null {
-    const user = this.users.find((u) => u.id === uid);
+    const user = this.userIndex.get(uid);
     if (!user) return null;
     const memo = String(user.memo ?? "").trim();
     return memo === "" ? null : memo;
@@ -345,7 +353,9 @@ class UserStore {
   }
 
   private findUserIndex(uid: string): number {
-    return this.users.findIndex((u) => u.id === uid);
+    const user = this.userIndex.get(uid);
+    if (!user) return -1;
+    return this.users.indexOf(user);
   }
 
   private resolveNextMemo(existing: BiliUser | null, updates: UserUpdates): string {
@@ -517,6 +527,7 @@ class UserStore {
     rescanMatchByName = reason === "import",
   ) {
     saveUsersToStorage(this.users);
+    this.rebuildIndex();
     this.emitUsers(reason, changedIds, rescanMatchByName);
   }
 

@@ -5,19 +5,21 @@ import {
 import { getCaller } from "./caller";
 import { recordQueryDiagnostic } from "./perf-diagnostics";
 
-export function querySelectorDeep(selector: string): HTMLElement | null {
-  if (!__IS_DEBUG__) return rawQuerySelectorDeep(selector);
+export function querySelectorDeep(selector: string, root: Document | HTMLElement | ShadowRoot): HTMLElement | null {
+  const rawRoot = root as Document | HTMLElement;
+  if (!__IS_DEBUG__) return rawQuerySelectorDeep(selector, rawRoot);
 
   const startedAt = performance.now();
   const caller = getCaller();
   try {
-    const element = rawQuerySelectorDeep(selector);
+    const element = rawQuerySelectorDeep(selector, rawRoot);
     recordQueryIfUseful({
       kind: "one",
       selector,
       caller,
       matchCount: element ? 1 : 0,
       durationMs: performance.now() - startedAt,
+      scopeType: describeRoot(root),
     });
     return element;
   } catch (error) {
@@ -27,6 +29,7 @@ export function querySelectorDeep(selector: string): HTMLElement | null {
       caller,
       matchCount: 0,
       durationMs: performance.now() - startedAt,
+      scopeType: describeRoot(root),
       error: error instanceof Error ? error.message : String(error),
     });
     throw error;
@@ -35,15 +38,15 @@ export function querySelectorDeep(selector: string): HTMLElement | null {
 
 export function querySelectorAllDeep(
   selector: string,
-  root?: Document | Element | ShadowRoot,
+  root: Document | HTMLElement | ShadowRoot,
 ): HTMLElement[] {
-  const typedRoot = root as Document | HTMLElement | undefined;
-  if (!__IS_DEBUG__) return rawQuerySelectorAllDeep(selector, typedRoot);
+  const rawRoot = root as Document | HTMLElement;
+  if (!__IS_DEBUG__) return rawQuerySelectorAllDeep(selector, rawRoot);
 
   const startedAt = performance.now();
   const caller = getCaller();
   try {
-    const elements = rawQuerySelectorAllDeep(selector, typedRoot);
+    const elements = rawQuerySelectorAllDeep(selector, rawRoot);
     recordQueryIfUseful({
       kind: "all",
       selector,

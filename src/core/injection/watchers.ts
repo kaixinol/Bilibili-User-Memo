@@ -160,7 +160,17 @@ export class DynamicRuleWatcher {
     }
   }
 
+  private allObserversStillConnected(): boolean {
+    if (this.instanceObservers.size === 0) return false;
+    for (const [node] of this.instanceObservers) {
+      if (!node.isConnected) return false;
+    }
+    return true;
+  }
+
   private scanAndAttachNewTargets() {
+    if (this.allObserversStillConnected()) return;
+
     const targets = getWatchTargets(this.rule.trigger.watch);
     if (targets.length === 0) return;
 

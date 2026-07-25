@@ -32,11 +32,11 @@ export function isNodeInsideScope(node: Node, scope: ScanScope): boolean {
 }
 
 export function getWatchTarget(selector: string): HTMLElement | null {
-  return querySelectorDeep(selector);
+  return querySelectorDeep(selector, document);
 }
 
 export function getWatchTargets(selector: string): HTMLElement[] {
-  return querySelectorAllDeep(selector);
+  return querySelectorAllDeep(selector, document);
 }
 
 export function shouldHandleDiscoveryMutations(mutations: MutationRecord[]): {

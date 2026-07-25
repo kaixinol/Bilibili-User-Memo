@@ -19,10 +19,13 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - `src/core/rules/rules.ts` — All page rules as `RawConfig[]` (urlPattern + rule)
 - `src/core/injection/` — Rule runtime, scan scheduler, MutationObserver watchers
 - `src/core/render/renderer.ts` — `renderMinimal` (class injection) vs `renderEditable` (wrapper span)
+- `src/core/render/rendered-node.ts` — `syncRenderedNodeState` for memoDetail title sync
 - `src/core/store/store.ts` — `UserStore` singleton with listener pattern, GM_addValueChangeListener for cross-tab sync
 - `src/core/style/style-manager.ts` — Constructable Stylesheets API for Shadow DOM style injection
 - `src/features/panel/` — Alpine.js panel UI (box.html, panel.html, panel-core.ts, panel-settings.ts, item-components.ts)
+- `src/features/panel/user-list-types.ts` — `UserListStore` TypeScript interface
 - `src/features/panel/perceptual-hash.ts` — bmvbhash for fake noface avatar detection (hardcoded reference hash, reads from DOM img)
+- `src/utils/gm-storage.ts` — GM_getValue/GM_setValue wrappers, panel settings persistence
 
 ## Conventions
 - `verbatimModuleSyntax: true` → always `import type { X }` for type-only imports
@@ -51,3 +54,4 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - Bilibili CDN supports CORS (`access-control-allow-origin: *`) → can read pixel data from cross-origin `<img>` with `crossorigin="anonymous"`
 - `a.bili-memo-tag` may render as `<a>` in mention scenarios → CSS must handle both
 - Panel toggle button cursor: base is `context-menu` with `.is-windows-chrome` override to `cursor: help`
+- memoDetail title sync: `syncRenderedNodeState` appends `详细备注：` to element title, uses `\n` separator for existing titles

@@ -11,9 +11,15 @@
   <summary>兼容性说明</summary>
 
    - 不兼容的脚本：*一切*同时修改了备注的脚本
-   - 兼容的脚本：[Bilibili 账号已注销修正](https://greasyfork.org/zh-CN/scripts/528706-bilibili-%E8%B4%A6%E5%8F%B7%E5%B7%B2%E6%B3%A8%E9%94%80%E4%BF%AE%E6%AD%A3)
-     - 兼容方式：让 **Bilibili 账号已注销修正** 比此脚本先运行即可。
-     - 具体设置：`油猴菜单栏` -> `Edit` -> `Settings` -> `General` -> `Position`，设置为1
+   - 兼容的脚本：
+     - [Bilibili 账号已注销修正](https://greasyfork.org/zh-CN/scripts/528706-bilibili-%E8%B4%A6%E5%8F%B7%E5%B7%B2%E6%B3%A8%E9%94%80%E4%BF%AE%E6%AD%A3)
+      兼容方式：让 **Bilibili 账号已注销修正** 比此脚本先运行即可。
+      具体设置：`油猴菜单栏` -> `Edit` -> `Settings` -> `General` -> `Position`，设置为1
+   - 会尽量兼容的脚本：
+      - [the1812/Bilibili-Evolved](https://github.com/the1812/Bilibili-Evolved) 的全部功能
+        注意：`网址参数清理（urlParamsClean）`组件可能会导致本脚本重复扫描导致性能降低。
+      - [SukkaW/Make-Bilibili-Great-Than-Ever-Before](https://github.com/SukkaW/Make-Bilibili-Great-Than-Ever-Before) 的全部功能
+        同上，`清理 URL 中的无用参数`组件可能会导致本脚本重复扫描导致性能降低。
 </details>
 
 ## 暴露的API
@@ -34,7 +40,9 @@ const getBiliMemoAPI = (() => {
     const api = await getBiliMemoAPI();
     if (api) {
         console.log("成功拿到了 API！");
-        console.log("UID 123 的备注:", api.getUserMemo("123"));
+        const user = api.getUserMemo("123");
+        console.log("UID 123 的备注:", user?.memo);
+        console.log("UID 123 的详细备注:", user?.memoDetail);
     }
 })();
 ```
@@ -61,6 +69,7 @@ const getBiliMemoAPI = (() => {
 - 非默认头像用户可中键点击头像，手动填写头像 URL（可选同时关闭静默更新头像功能）。
 - BilibiliID：点击可复制，复制后短暂显示“已复制”。
 - 备注：点击进入编辑，`Enter` 或失焦自动保存；`Shift + Enter` 可强制将当前昵称保存为备注。
+- 详细备注（memoDetail）：中键点击页面中已渲染的备注标签可打开详细备注对话框，用于填写长文本备注。详细备注会同步显示在页面标题和元素 title 属性中。
 - 删除：右上角垃圾桶图标删除单个用户。
 - 注意：将备注清空会直接删除该用户记录（不会再弹确认）。
 
@@ -100,9 +109,15 @@ const getBiliMemoAPI = (() => {
 
 **静默更新头像**
 
-- 油猴菜单可开启/关闭”静默更新头像”功能（默认关闭）。
+- 油猴菜单可开启/关闭"静默更新头像"功能（默认关闭）。
 - 开启后，访问用户空间页时会自动将该用户的最新头像同步到备注列表。
 - 中键修改非默认头像时，可选择同时关闭此功能以保护手动设置的头像。
+
+**默认预注入全部卡片**
+
+- 油猴菜单可开启/关闭"默认预注入全部卡片"功能（默认开启）。
+- 开启后，页面加载时会预先注入所有用户卡片的备注。
+- 关闭后，未打开面板前将延后加载列表，减少初始页面负担。
 
 **主题与样式**
 

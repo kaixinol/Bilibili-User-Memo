@@ -101,12 +101,13 @@ src/
 │       ├── panel-components.ts  # 组件注册入口
 │       ├── panel-core.ts        # 共享 helpers + shell/toggle/actions
 │       ├── panel-settings.ts    # 设置组件
-│       ├── item-components.ts   # 用户卡片、UID、头像、备注编辑器
+│       ├── item-components.ts   # 用户卡片、UID、头像、备注编辑器、详细备注对话框
 │       ├── perceptual-hash.ts   # 感知哈希检测假 noface 头像
+│       ├── user-list-types.ts   # UserListStore TypeScript 接口
 │       ├── box.html / panel.html # Alpine 模板
 │       └── ...
 ├── styles/            # CSS 样式文件
-├── utils/             # 工具函数（缓存、日志、调度器、中文搜索等）
+├── utils/             # 工具函数（缓存、日志、调度器、中文搜索、GM 存储等）
 └── main.ts            # 入口：Alpine 初始化、GM 菜单命令、生命周期
 ```
 

@@ -6,13 +6,13 @@ const MAX_QUERY_EVENTS = 240;
 const QUERY_RETENTION_MS = 30_000;
 const LONG_TASK_CORRELATION_PADDING_MS = 100;
 
-export const PERF_DIAGNOSTIC_THRESHOLDS = {
+const PERF_DIAGNOSTIC_THRESHOLDS = {
   slowRuleScanMs: 16,
   slowRuleApplyMs: 8,
   slowFlowMs: 50,
 } as const;
 
-export interface RuleScanDiagnostic {
+interface RuleScanDiagnostic {
   id: number;
   time: number;
   ruleName: string;
@@ -25,7 +25,7 @@ export interface RuleScanDiagnostic {
   slow: boolean;
 }
 
-export interface RuleApplyDiagnostic {
+interface RuleApplyDiagnostic {
   id: number;
   time: number;
   ruleName: string;

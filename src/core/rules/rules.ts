@@ -159,7 +159,7 @@ const rawConfig: RawConfig[] = [
                     | HTMLElement
                     | null;
                 return (
-                    sessionName?.dataset.biliOriginal?.trim() ||
+                    sessionName?.dataset.bilimemoOriginal?.trim() ||
                     sessionName?.textContent?.trim() ||
                     null
                 );

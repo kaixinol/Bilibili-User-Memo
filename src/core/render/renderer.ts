@@ -95,8 +95,8 @@ function renderEditable(
     wrapper.addEventListener("click", (e) => {
       e.stopPropagation();
       e.preventDefault();
-      const uid = wrapper?.dataset.biliUid;
-      const originalName = wrapper?.dataset.biliOriginal || meta.originalName;
+      const uid = wrapper?.dataset.bilimemoUid;
+      const originalName = wrapper?.dataset.bilimemoOriginal || meta.originalName;
       if (!uid) return;
 
       // 每次点击都从 store 取最新用户，避免闭包捕获旧对象导致编辑值回退

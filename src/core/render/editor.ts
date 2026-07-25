@@ -13,7 +13,7 @@ export function enterEditMode(targetElement: HTMLElement, user: BiliUser) {
   if (!user || targetElement.querySelector("input.bili-memo-input")) return;
 
   const originalName =
-    targetElement.dataset.biliOriginal || targetElement.textContent || "";
+    targetElement.dataset.bilimemoOriginal || targetElement.textContent || "";
   const currentMemo = user.memo || originalName;
 
   // 1. 创建 UI

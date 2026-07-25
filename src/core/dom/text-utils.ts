@@ -8,7 +8,7 @@ import { querySelectorAllDeep } from "@/utils/query-dom";
 
 function readPreferredText(node: HTMLElement | null): string | null {
   if (!node) return null;
-  const original = node.dataset.biliOriginal?.trim();
+  const original = node.dataset.bilimemoOriginal?.trim();
   if (original) return original;
   const text = node.textContent?.trim();
   return text || null;

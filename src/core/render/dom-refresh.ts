@@ -15,7 +15,7 @@ function refreshTag(
   user: BiliUser | undefined,
   displayMode: number,
 ) {
-  const originalName = tag.getAttribute("data-bili-original") || "";
+  const originalName = tag.getAttribute("data-bilimemo-original") || "";
   syncRenderedNodeState(tag, user, originalName, displayMode, {
     isEditableWrapper: tag.classList.contains("editable-textarea"),
   });
@@ -36,7 +36,7 @@ export function refreshRenderedMemoNodes(
       }
     });
     uniqueIds.forEach((uid) => {
-      const selector = `[data-bili-uid="${escapeAttrValue(uid)}"]`;
+      const selector = `[data-bilimemo-uid="${escapeAttrValue(uid)}"]`;
       const tags = querySelectorAllDeep(selector);
       const user = userMap.get(uid);
       tags.forEach((tag) => refreshTag(tag, user, displayMode));
@@ -45,9 +45,9 @@ export function refreshRenderedMemoNodes(
   }
 
   const userMap = new Map(users.map((u) => [u.id, u]));
-  const allTags = querySelectorAllDeep(`[data-bili-uid]`);
+  const allTags = querySelectorAllDeep(`[data-bilimemo-uid]`);
   allTags.forEach((tag) => {
-    const uid = tag.getAttribute("data-bili-uid");
+    const uid = tag.getAttribute("data-bilimemo-uid");
     if (!uid) return;
     refreshTag(tag, userMap.get(uid), displayMode);
   });

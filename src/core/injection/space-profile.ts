@@ -33,7 +33,7 @@ async function syncSpaceProfileNickname() {
     SPACE_PROFILE_NICKNAME_SELECTOR,
   ) as HTMLElement | null;
   const nickname =
-    nicknameEl?.dataset.biliOriginal?.trim() ||
+    nicknameEl?.dataset.bilimemoOriginal?.trim() ||
     nicknameEl?.textContent?.trim() ||
     "";
   if (!nickname || uid !== getUidFromUrl()) return;

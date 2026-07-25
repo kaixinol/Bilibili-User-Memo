@@ -27,10 +27,10 @@ export function syncRenderedNodeState(
 }
 
 export function syncElementMeta(el: HTMLElement, meta: ElementMeta) {
-  if (el.dataset.biliUid !== meta.uid) {
-    el.dataset.biliUid = meta.uid;
+  if (el.dataset.bilimemoUid !== meta.uid) {
+    el.dataset.bilimemoUid = meta.uid;
   }
-  if (el.dataset.biliOriginal !== meta.originalName) {
-    el.dataset.biliOriginal = meta.originalName;
+  if (el.dataset.bilimemoOriginal !== meta.originalName) {
+    el.dataset.bilimemoOriginal = meta.originalName;
   }
 }

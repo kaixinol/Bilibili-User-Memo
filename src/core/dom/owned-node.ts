@@ -1,4 +1,4 @@
-const BILI_MEMO_OWNED_ATTR = "data-bili-memo-owned";
+const BILI_MEMO_OWNED_ATTR = "data-bilimemo-owned";
 const BILI_MEMO_OWNED_SELECTOR = `[${BILI_MEMO_OWNED_ATTR}]`;
 
 function isOwnedElement(element: Element | null): boolean {

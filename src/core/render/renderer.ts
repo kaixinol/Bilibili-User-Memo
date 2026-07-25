@@ -69,11 +69,6 @@ function renderMinimal(
   ensureStylesForElement(element);
   syncRenderedNodeState(element, user, meta.originalName, displayMode);
   syncElementMeta(element, meta);
-  if (user.memoDetail && !element.title?.includes("详细备注：")) {
-    element.title = element.title
-      ? `${element.title}\n---------\n详细备注：${user.memoDetail}`
-      : `详细备注：${user.memoDetail}`;
-  }
 
   if (user.memo && !middleClickBound.has(element)) {
     middleClickBound.add(element);
@@ -129,17 +124,12 @@ function renderEditable(
     const originalHref = (el as HTMLAnchorElement).href;
     if (originalHref?.includes("/list/")) {
       wrapper.title = el.title ? `${el.title}\n发现注销用户！右键可跳转`: "发现注销用户！右键可跳转";
-      if (user.memoDetail && !wrapper.title?.includes("详细备注：")) {
-        wrapper.title += `\n---------\n详细备注：${user.memoDetail}`;
-      }
       wrapper.style.cursor = "pointer";
       wrapper.addEventListener("contextmenu", (e) => {
         e.preventDefault();
         e.stopPropagation();
         window.open(originalHref, "_blank");
       });
-    } else if (user.memoDetail && !wrapper.title?.includes("详细备注：")) {
-      wrapper.title = `详细备注：${user.memoDetail}`;
     }
 
     wrapper.addEventListener("mousedown", (e: MouseEvent) => {

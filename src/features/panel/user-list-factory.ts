@@ -7,16 +7,10 @@ import {
   readImportUsersFromDialog,
 } from "./user-list-io";
 import { getSearchForms, matchesChineseSearch } from "@/utils/chinese-search";
-import { getGmValue, setGmValue } from "@/utils/gm-storage";
+import { getGmValue, setGmValue, getPanelPreloadAllCards, setPanelPreloadAllCards, getSilentAvatarUpdate, setSilentAvatarUpdate } from "@/utils/gm-storage";
 import { afterFramesAndIdle, delay } from "@/utils/scheduler";
 import { showAlert } from "./dialogs";
-import type { UserListStore } from "./user-list-store";
-import {
-  getPanelPreloadAllCards,
-  setPanelPreloadAllCards,
-  getSilentAvatarUpdate,
-  setSilentAvatarUpdate,
-} from "./user-list-store";
+import type { UserListStore } from "./user-list-types";
 
 export interface InternalUserListStore extends UserListStore {
   _usersMap: Map<string, BiliUser>;

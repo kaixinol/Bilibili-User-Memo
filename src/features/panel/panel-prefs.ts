@@ -1,5 +1,5 @@
 import Alpine from "alpinejs";
-import type { UserListStore } from "./user-list-store";
+import type { UserListStore } from "./user-list-types";
 import { createPrefixedGmStorage, getGmValue } from "@/utils/gm-storage";
 import { promptText, showAlert } from "./dialogs";
 import {

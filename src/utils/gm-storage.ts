@@ -31,3 +31,22 @@ export function createPrefixedGmStorage(
     },
   };
 }
+
+const PRELOAD_ALL_CARDS_KEY = "panelPreloadAllCards";
+const SILENT_AVATAR_UPDATE_KEY = "panelSilentAvatarUpdate";
+
+export function getPanelPreloadAllCards(): boolean {
+  return getGmValue<boolean>(PRELOAD_ALL_CARDS_KEY, true);
+}
+
+export function setPanelPreloadAllCards(value: boolean) {
+  setGmValue(PRELOAD_ALL_CARDS_KEY, value);
+}
+
+export function getSilentAvatarUpdate(): boolean {
+  return getGmValue<boolean>(SILENT_AVATAR_UPDATE_KEY, false);
+}
+
+export function setSilentAvatarUpdate(value: boolean) {
+  setGmValue(SILENT_AVATAR_UPDATE_KEY, value);
+}

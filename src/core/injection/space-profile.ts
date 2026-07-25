@@ -1,7 +1,7 @@
 import { SPACE_UID_REGEX } from "../dom/uid-extractor";
 import { isNoFaceAvatar, parseSrcsetUrl } from "../dom/avatar-utils";
 import { userStore } from "../store/store";
-import { getSilentAvatarUpdate } from "@/features/panel/user-list-store";
+import { getSilentAvatarUpdate } from "@/utils/gm-storage";
 import { waitUntil } from "@/utils/scheduler";
 
 const SPACE_PROFILE_NICKNAME_SELECTOR = ".upinfo-detail div.nickname";

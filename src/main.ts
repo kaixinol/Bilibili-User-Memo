@@ -6,11 +6,9 @@ import { unsafeWindow, GM_registerMenuCommand } from "$";
 import {
   getPanelPreloadAllCards,
   setPanelPreloadAllCards,
-} from "@/features/panel/user-list-store";
-import {
   getSilentAvatarUpdate,
   setSilentAvatarUpdate,
-} from "@/features/panel/user-list-store";
+} from "@/utils/gm-storage";
 import {
   disablePageScope,
   enablePageScope,

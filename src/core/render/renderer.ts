@@ -9,9 +9,20 @@ import { logger } from "@/utils/logger";
 import { syncElementMeta, syncRenderedNodeState } from "./rendered-node";
 import { markOwnedElement } from "../dom/owned-node";
 import { fontSizeCache } from "@/utils/cache";
+import Alpine from "alpinejs";
 
 // 使用 WeakMap 建立 "B站原元素" -> "我们注入的元素" 的映射
 const wrapperCache = new WeakMap<HTMLElement, HTMLElement>();
+
+const middleClickBound = new WeakSet<HTMLElement>();
+
+function openMemoDetailDialog(uid: string) {
+  try {
+    (Alpine.store("memoDetailDialog") as { open?: (uid: string) => void })?.open?.(uid);
+  } catch {
+    logger.debug("[renderer] 无法打开详细备注对话框");
+  }
+}
 
 let showOriginalInDebug = false;
 const trackedOriginalElements = new Set<HTMLElement>();
@@ -62,6 +73,17 @@ function renderMinimal(
     element.title = element.title
       ? `${element.title}\n---------\n详细备注：${user.memoDetail}`
       : `详细备注：${user.memoDetail}`;
+  }
+
+  if (user.memo && !middleClickBound.has(element)) {
+    middleClickBound.add(element);
+    element.addEventListener("mousedown", (e: MouseEvent) => {
+      if (e.button !== 1) return;
+      const uid = (e.currentTarget as HTMLElement)?.dataset.bilimemoUid;
+      if (!uid) return;
+      e.preventDefault();
+      openMemoDetailDialog(uid);
+    });
   }
 
   return true;
@@ -119,6 +141,16 @@ function renderEditable(
     } else if (user.memoDetail && !wrapper.title?.includes("详细备注：")) {
       wrapper.title = `详细备注：${user.memoDetail}`;
     }
+
+    wrapper.addEventListener("mousedown", (e: MouseEvent) => {
+      if (e.button !== 1) return;
+      const uid = wrapper?.dataset.bilimemoUid;
+      if (!uid) return;
+      const currentUser = userStore.ensureUser(uid, "");
+      if (!currentUser?.memo) return;
+      e.preventDefault();
+      openMemoDetailDialog(uid);
+    });
 
     // 插入 DOM（非调试模式隐藏原元素）
     if (!__IS_DEBUG__ || !showOriginalInDebug)

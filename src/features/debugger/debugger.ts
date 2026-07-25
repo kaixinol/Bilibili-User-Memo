@@ -25,6 +25,7 @@ import {
   type QueryDiagnostic,
   type RulePerfSummary,
 } from "@/utils/perf-diagnostics";
+import { persistWithGmStorage } from "@/utils/gm-storage";
 
 const HIGHLIGHT_CLASS = "debugger-highlight-active";
 
@@ -99,6 +100,7 @@ interface MonkeyApp {
   displayLongTaskEvents: LongTaskDiagnostic[];
   scanTimer: number | null;
   showOriginalName: boolean;
+  autoOpenPanel: boolean;
   init(): void;
   refreshRuleList(): void;
   scan(): void;
@@ -113,6 +115,7 @@ interface MonkeyApp {
   startPerformanceMonitor(): void;
   toggleExpand(id: number): void;
   toggleShowOriginalName(event: Event): void;
+  toggleAutoOpenPanel(event: Event): void;
   injectModeLabel(mode: InjectionMode): string;
   styleScopeLabel(scope: StyleScope): string;
   formatMs(value: number): string;
@@ -180,6 +183,7 @@ export function initDebugger() {
       relatedLongTaskCount: 0,
       scanTimer: null,
       showOriginalName: false,
+      autoOpenPanel: persistWithGmStorage("debug.autoOpenPanel", false),
       perf: {
         fps: 0,
         longTasks: 0,
@@ -463,6 +467,11 @@ export function initDebugger() {
         const checked = (event.target as HTMLInputElement).checked;
         this.showOriginalName = checked;
         setShowOriginalInDebug(checked);
+      },
+
+      toggleAutoOpenPanel(event) {
+        const checked = (event.target as HTMLInputElement).checked;
+        this.autoOpenPanel = checked;
       },
 
       injectModeLabel(mode) {

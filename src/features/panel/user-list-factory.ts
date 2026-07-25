@@ -7,7 +7,7 @@ import {
   readImportUsersFromDialog,
 } from "./user-list-io";
 import { getSearchForms, matchesChineseSearch } from "@/utils/chinese-search";
-import { getGmValue, setGmValue, getPanelPreloadAllCards, setPanelPreloadAllCards, getSilentAvatarUpdate, setSilentAvatarUpdate } from "@/utils/gm-storage";
+import { persistWithGmStorage } from "@/utils/gm-storage";
 import { afterFramesAndIdle, delay } from "@/utils/scheduler";
 import { showAlert } from "./dialogs";
 import type { UserListStore } from "./user-list-types";
@@ -17,16 +17,6 @@ export interface InternalUserListStore extends UserListStore {
   _usersList: BiliUser[];
   syncUsersSnapshot(users: readonly BiliUser[]): void;
   resetUsersSnapshot(): void;
-}
-
-const FUZZY_SEARCH_KEY = "panelFuzzySearch";
-
-function getPanelFuzzySearch(): boolean {
-  return getGmValue<boolean>(FUZZY_SEARCH_KEY, false);
-}
-
-function setPanelFuzzySearch(value: boolean) {
-  setGmValue(FUZZY_SEARCH_KEY, value);
 }
 
 function syncUsersSnapshot(store: InternalUserListStore, users: readonly BiliUser[]) {
@@ -67,11 +57,11 @@ async function waitForUsersSnapshotIdle() {
 }
 
 export function createUserListStore(): InternalUserListStore {
-  const preloadAllCards = getPanelPreloadAllCards();
+  const preloadAllCards = persistWithGmStorage("panelPreloadAllCards", true);
   const shouldPreloadImmediately = __IS_DEBUG__ || preloadAllCards;
 
   return {
-    isOpen: __IS_DEBUG__ ? true : false,
+    isOpen: persistWithGmStorage("debug.autoOpenPanel", __IS_DEBUG__),
     _usersMap: Alpine.reactive(new Map<string, BiliUser>()),
     _usersList: Alpine.reactive([] as BiliUser[]),
 
@@ -91,9 +81,9 @@ export function createUserListStore(): InternalUserListStore {
     removeUser(userId: string) {
       userStore.removeUser(userId);
     },
-    isDark: getGmValue<boolean>("isDark", false),
-    fuzzySearchEnabled: getPanelFuzzySearch(),
-    silentAvatarUpdate: getSilentAvatarUpdate(),
+    isDark: persistWithGmStorage<boolean>("isDark", false),
+    fuzzySearchEnabled: persistWithGmStorage("panelFuzzySearch", false),
+    silentAvatarUpdate: persistWithGmStorage("panelSilentAvatarUpdate", false),
     preloadAllCards,
     isUsersLoading: false,
     hasLoadedUsers: shouldPreloadImmediately,
@@ -176,13 +166,11 @@ export function createUserListStore(): InternalUserListStore {
       const shouldEnable = Boolean(next);
       if (shouldEnable === this.fuzzySearchEnabled) return;
       this.fuzzySearchEnabled = shouldEnable;
-      setPanelFuzzySearch(shouldEnable);
     },
     setSilentAvatarUpdate(next: boolean) {
       const shouldEnable = Boolean(next);
       if (shouldEnable === this.silentAvatarUpdate) return;
       this.silentAvatarUpdate = shouldEnable;
-      setSilentAvatarUpdate(shouldEnable);
     },
 
     setOpen(next: boolean) {
@@ -196,7 +184,6 @@ export function createUserListStore(): InternalUserListStore {
     setPreloadAllCards(next: boolean) {
       const shouldPreload = Boolean(next);
       this.preloadAllCards = shouldPreload;
-      setPanelPreloadAllCards(shouldPreload);
 
       if (shouldPreload) {
         if (this.hasLoadedUsers) return;

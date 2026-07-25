@@ -1,6 +1,5 @@
-import Alpine from "alpinejs";
 import type { UserListStore } from "./user-list-types";
-import { createPrefixedGmStorage, getGmValue } from "@/utils/gm-storage";
+import { persistWithGmStorage } from "@/utils/gm-storage";
 import { promptText, showAlert } from "./dialogs";
 import {
   applyCustomFontColor,
@@ -9,30 +8,6 @@ import {
   resolveCustomCssStatus,
 } from "./custom-css";
 import { setCustomMemoCss } from "@/core/injection/injector";
-
-const CUSTOM_FONT_COLOR_KEY = "customFontColor";
-const CUSTOM_MEMO_CSS_KEY = "customMemoCss";
-const THEME_KEY = "isDark";
-const TOGGLE_OPEN_TEXT_KEY = "btn_open_text";
-const TOGGLE_CLOSE_TEXT_KEY = "btn_close_text";
-const PERSIST_KEY_PREFIX = "panelPrefs:";
-
-interface PersistInterceptor<T> {
-  as(key: string): PersistInterceptor<T>;
-  using(storage: ReturnType<typeof createPrefixedGmStorage>): T;
-}
-
-const gmPersistStorage = createPrefixedGmStorage(PERSIST_KEY_PREFIX);
-
-function persistWithGmStorage<T>(key: string, initialValue: T): T {
-  const persistFactory = (Alpine as unknown as {
-    $persist?: (value: T) => PersistInterceptor<T>;
-  }).$persist;
-
-  if (!persistFactory) return initialValue;
-
-  return persistFactory(initialValue).as(key).using(gmPersistStorage);
-}
 
 export interface PanelPrefsStore {
   initialized: boolean;
@@ -59,19 +34,13 @@ interface PanelPrefsDeps {
 export function createPanelPrefsStore({
   getUserListStore,
 }: PanelPrefsDeps): PanelPrefsStore {
-  const initialOpenText = getGmValue<string>(TOGGLE_OPEN_TEXT_KEY, "UvU");
-  const initialCloseText = getGmValue<string>(TOGGLE_CLOSE_TEXT_KEY, "UwU");
-  const initialDarkTheme = getGmValue<boolean>(THEME_KEY, false);
-  const initialFontColor = getGmValue<string>(CUSTOM_FONT_COLOR_KEY, "").trim();
-  const initialMemoCss = getGmValue<string>(CUSTOM_MEMO_CSS_KEY, "");
-
   return {
     initialized: false,
-    openText: persistWithGmStorage("toggle.openText", initialOpenText),
-    closeText: persistWithGmStorage("toggle.closeText", initialCloseText),
-    isDark: persistWithGmStorage("theme.isDark", initialDarkTheme),
-    customFontColor: persistWithGmStorage("style.customFontColor", initialFontColor),
-    customMemoCss: persistWithGmStorage("style.customMemoCss", initialMemoCss),
+    openText: persistWithGmStorage("panelPrefs:toggle.openText", "UvU"),
+    closeText: persistWithGmStorage("panelPrefs:toggle.closeText", "UwU"),
+    isDark: persistWithGmStorage("panelPrefs:theme.isDark", false),
+    customFontColor: persistWithGmStorage("panelPrefs:style.customFontColor", ""),
+    customMemoCss: persistWithGmStorage("panelPrefs:style.customMemoCss", ""),
     cssStatus: "",
     showAdvancedCss: false,
 

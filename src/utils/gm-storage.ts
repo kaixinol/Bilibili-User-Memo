@@ -9,36 +9,27 @@ export function setGmValue<T>(key: string, value: T): void {
   GM_setValue(key, value);
 }
 
-function persistNative<T>(initialValue: T) {
-  let alias: string | undefined;
-
+function persistNative<T>(key: string, initialValue: T) {
   const factory = Alpine.interceptor(
     (initValue, getter, setter) => {
-      const lookup = alias!;
-      const stored = GM_getValue<unknown>(lookup);
+      const stored = GM_getValue<unknown>(key);
       const initial = stored !== undefined ? stored : initValue;
 
       setter(initial);
 
       Alpine.effect(() => {
-        GM_setValue(lookup, getter());
+        GM_setValue(key, getter());
       });
 
       return initial;
     },
-    (obj) => {
-      (obj as unknown as { as(key: string): typeof obj }).as = (key: string) => {
-        alias = key;
-        return obj;
-      };
-    },
   );
 
-  return factory(initialValue) as Alpine.InterceptorObject<T> & { as(key: string): unknown };
+  return factory(initialValue) as Alpine.InterceptorObject<T>;
 }
 
 export function persistWithGmStorage<T>(key: string, initialValue: T): T {
-  return persistNative(initialValue).as(key) as T;
+  return persistNative(key, initialValue) as T;
 }
 
 const PRELOAD_ALL_CARDS_KEY = "panelPreloadAllCards";

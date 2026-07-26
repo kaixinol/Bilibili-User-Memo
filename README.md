@@ -18,8 +18,9 @@
    - 会尽量兼容的脚本：
       - [the1812/Bilibili-Evolved](https://github.com/the1812/Bilibili-Evolved) 的全部功能
         注意：`网址参数清理（urlParamsClean）`组件可能会导致本脚本重复扫描导致性能降低。
-      - [SukkaW/Make-Bilibili-Great-Than-Ever-Before](https://github.com/SukkaW/Make-Bilibili-Great-Than-Ever-Before) 的全部功能
+       - [SukkaW/Make-Bilibili-Great-Than-Ever-Before](https://github.com/SukkaW/Make-Bilibili-Great-Than-Ever-Before) 的全部功能
         同上，`清理 URL 中的无用参数`组件可能会导致本脚本重复扫描导致性能降低。
+- 性能说明：脚本使用脏标记优化动态扫描，仅在必要时重新扫描 DOM，不会因正常页面交互（滚动、展开评论等）产生额外性能开销
 </details>
 
 ## 暴露的API

@@ -46,6 +46,7 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - `StyleScope.Editable` → creates a `<span class="editable-textarea">` wrapper after the original element, hides original
 - `InjectionMode.Static` → scan once when page matches
 - `InjectionMode.Dynamic` → has `trigger.watch` selector + interval, uses MutationObserver
+  - `dynamicWatch: true` → multi-target discovery via `DynamicRuleWatcher`; each watch target gets its own MutationObserver instance
 - `matchByName` → fallback to name-based lookup when UID is unavailable
 - `uidResolver` / `originalNameResolver` → custom extraction for non-standard DOM structures
 
@@ -55,3 +56,4 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - `a.bili-memo-tag` may render as `<a>` in mention scenarios → CSS must handle both
 - Panel toggle button cursor: base is `context-menu` with `.is-windows-chrome` override to `cursor: help`
 - memoDetail title sync: `syncRenderedNodeState` appends `详细备注：` to element title, uses `\n` separator for existing titles
+- Dynamic watcher scan trigger: `DynamicRuleWatcher` uses `targetsDirty`/`hasScannedOnce` flags to avoid unnecessary full-DOM scans; only rescans when existing containers are removed or new Shadow DOM is discovered

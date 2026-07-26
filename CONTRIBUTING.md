@@ -47,7 +47,7 @@ URL 匹配 → 规则系统 → DOM 扫描/注入 → 渲染备注
 | 模式 | 说明 |
 |------|------|
 | **Static** | 页面匹配时扫描一次 |
-| **Dynamic** | 配置 `trigger.watch` 选择器 + 轮询间隔，使用 MutationObserver 监听 |
+| **Dynamic** | 配置 `trigger.watch` 选择器 + 轮询间隔，使用 MutationObserver 监听。设置 `dynamicWatch: true` 启用多目标发现，每个 watch 目标独立监听 |
 
 ### 样式隔离
 
@@ -81,6 +81,7 @@ import { UserType, createUser } from './utils'
 2. **高频事件**：使用 Alpine.js `.debounce` 修饰符，如 `@input.debounce.100ms`
 3. **MutationObserver**：实现防重入锁机制，避免并发调用
 4. **批量操作**：遵循"批量读，批量写"原则，结合 `requestAnimationFrame`
+5. **动态扫描触发**：`DynamicRuleWatcher` 使用脏标记（`targetsDirty`）避免无意义的全树扫描，仅在容器被移除或 Shadow DOM 发现时重新扫描
 
 ## 项目结构
 

@@ -191,7 +191,7 @@ const rawConfig: RawConfig[] = [
         }
     },
     {
-        urlPattern: COMMON_REG,
+        urlPattern: COMMON_REG, // FIXME: 过广
         rule: {
             name: "动态正文-提及",
             styleScope: StyleScope.Minimal,

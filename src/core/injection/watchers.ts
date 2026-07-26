@@ -135,6 +135,8 @@ export class DynamicRuleWatcher {
       scope === document ? "document" : scope,
     );
 
+    const watchSelector = this.rule.trigger.watch;
+
     const observer = new MutationObserver((mutations) => {
       const { hasAddedNodes, hasRemovedNodes } =
         shouldHandleDiscoveryMutations(mutations);
@@ -144,8 +146,18 @@ export class DynamicRuleWatcher {
         this.cleanupDetachedDiscoveryScopes();
       }
 
-      if (hasAddedNodes) {
-        this.targetsDirty = true;
+      if (hasAddedNodes && !this.targetsDirty) {
+        for (const mutation of mutations) {
+          for (const node of mutation.addedNodes) {
+            if (node.nodeType !== Node.ELEMENT_NODE) continue;
+            const el = node as Element;
+            if (el.matches(watchSelector) || el.querySelector(watchSelector)) {
+              this.targetsDirty = true;
+              break;
+            }
+          }
+          if (this.targetsDirty) break;
+        }
       }
 
       if (this.targetsDirty) {

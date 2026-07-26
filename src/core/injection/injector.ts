@@ -224,7 +224,7 @@ class PageInjector {
       if (el.classList.contains("editable-textarea")) return;
 
       // DOM 复用检测：UID 没变则跳过，变了则清旧数据重处理
-      const storedUid = el.getAttribute("data-bilimemo-uid");
+      const storedUid = el.dataset.bilimemoUid;
       let preResolvedUid: string | null = null;
       if (storedUid) {
         preResolvedUid = extractUid(el, { silent: true, allowLocationFallback: false });

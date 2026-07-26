@@ -10,7 +10,7 @@ function refreshTag(
   user: BiliUser | undefined,
   displayMode: number,
 ) {
-  const originalName = tag.getAttribute("data-bilimemo-original") || "";
+  const originalName = tag.dataset.bilimemoOriginal || "";
   syncRenderedNodeState(tag, user, originalName, displayMode, {
     isEditableWrapper: tag.classList.contains("editable-textarea"),
   });

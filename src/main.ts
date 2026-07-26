@@ -102,13 +102,13 @@ import { logger } from "./utils/logger";
   );
 
   if (pageDisabled) {
-    console.info(`[Bilibili-User-Memo] 当前页面已禁用: ${currentScopePattern}`);
+    logger.info(`当前页面已禁用: ${currentScopePattern}`);
     return;
   }
 
   // 👉 先注册 debugger（关键修复点）
   if (__IS_DEBUG__) {
-    console.debug("调试模式已启用");
+    logger.debug("调试模式已启用");
     const mod = await import("@/features/debugger/debugger");
     mod.initDebugger(); // 这里会 Alpine.data("monkeyApp")
   }

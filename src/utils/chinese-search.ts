@@ -1,4 +1,5 @@
 import { Converter as createOpenCCConverter } from "opencc-js";
+import { logger } from "./logger";
 
 export interface SearchForms {
   raw: string;
@@ -23,10 +24,7 @@ function createConverter(
     converterCache.set(cacheKey, converter);
     return converter;
   } catch (error) {
-    console.warn(
-      `[Bilibili-User-Memo] 简繁搜索转换器初始化失败 (${from} -> ${to})`,
-      error,
-    );
+    logger.warn(`简繁搜索转换器初始化失败 (${from} -> ${to})`, error);
     converterCache.set(cacheKey, null);
     return null;
   }

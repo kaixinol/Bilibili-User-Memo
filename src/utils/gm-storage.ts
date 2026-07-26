@@ -13,7 +13,18 @@ function persistNative<T>(key: string, initialValue: T) {
   const factory = Alpine.interceptor(
     (initValue, getter, setter) => {
       const stored = GM_getValue<unknown>(key);
-      const initial = stored !== undefined ? stored : initValue;
+      let initial: T;
+      if (stored !== undefined && typeof stored === "string") {
+        try {
+          const parsed = JSON.parse(stored);
+          initial = parsed as T;
+          GM_setValue(key, initial);
+        } catch {
+          initial = stored as T;
+        }
+      } else {
+        initial = (stored !== undefined ? stored : initValue) as T;
+      }
 
       setter(initial);
 

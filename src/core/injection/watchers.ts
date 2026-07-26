@@ -36,7 +36,10 @@ export class DynamicRuleWatcher {
   private discoveryObservers = new Map<DiscoveryScope, MutationObserver>();
   private instanceObservers = new Map<HTMLElement, InstanceObserverRecord>();
   private readonly instanceIdlePending = new WeakSet<HTMLElement>();
+  private targetsDirty = false;
+  private hasScannedOnce = false;
   private readonly handleShadowAttached = (shadowRoot: ShadowRoot) => {
+    this.targetsDirty = true;
     this.observeDiscoveryScope(shadowRoot);
     this.scanAndAttachNewTargets();
   };
@@ -72,6 +75,8 @@ export class DynamicRuleWatcher {
     this.discoveryObservers.clear();
     this.instanceObservers.forEach(({ observer }) => observer.disconnect());
     this.instanceObservers.clear();
+    this.targetsDirty = false;
+    this.hasScannedOnce = false;
   }
 
   // ==========================================================
@@ -125,19 +130,23 @@ export class DynamicRuleWatcher {
 
   private observeDiscoveryScope(scope: DiscoveryScope) {
     if (this.discoveryObservers.has(scope)) return;
+    logger.debug(
+      `👁️ [${this.rule.name}] 开始观察发现域:`,
+      scope === document ? "document" : scope,
+    );
 
     const observer = new MutationObserver((mutations) => {
-      const { hasAddedNodes, hasRemovedNodes } =
+      const { hasRemovedNodes } =
         shouldHandleDiscoveryMutations(mutations);
-
-      if (hasAddedNodes) {
-        this.scanAndAttachNewTargets();
-        this.bridgeShadowMutationsToWatchScopes(scope);
-      }
 
       if (hasRemovedNodes) {
         this.cleanupDetachedTargets();
         this.cleanupDetachedDiscoveryScopes();
+      }
+
+      if (this.targetsDirty) {
+        this.scanAndAttachNewTargets();
+        this.bridgeShadowMutationsToWatchScopes(scope);
       }
     });
 
@@ -160,18 +169,15 @@ export class DynamicRuleWatcher {
     }
   }
 
-  private allObserversStillConnected(): boolean {
-    if (this.instanceObservers.size === 0) return false;
-    for (const [node] of this.instanceObservers) {
-      if (!node.isConnected) return false;
-    }
-    return true;
-  }
-
   private scanAndAttachNewTargets() {
-    if (this.allObserversStillConnected()) return;
+    if (!this.targetsDirty && this.hasScannedOnce) return;
 
     const targets = getWatchTargets(this.rule.trigger.watch);
+    logger.debug(
+      `🔍 [${this.rule.name}] 扫描目标容器: 找到 ${targets.length} 个, 已监听 ${this.instanceObservers.size} 个`,
+    );
+    this.targetsDirty = false;
+    this.hasScannedOnce = true;
     if (targets.length === 0) return;
 
     targets.forEach((target) => {
@@ -260,6 +266,7 @@ export class DynamicRuleWatcher {
         logger.debug(`🗑️ [${this.rule.name}] 容器已销毁，移除监听器`);
         observer.disconnect();
         this.instanceObservers.delete(node);
+        this.targetsDirty = true;
       }
     }
   }

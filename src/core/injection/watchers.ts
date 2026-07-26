@@ -136,12 +136,16 @@ export class DynamicRuleWatcher {
     );
 
     const observer = new MutationObserver((mutations) => {
-      const { hasRemovedNodes } =
+      const { hasAddedNodes, hasRemovedNodes } =
         shouldHandleDiscoveryMutations(mutations);
 
       if (hasRemovedNodes) {
         this.cleanupDetachedTargets();
         this.cleanupDetachedDiscoveryScopes();
+      }
+
+      if (hasAddedNodes) {
+        this.targetsDirty = true;
       }
 
       if (this.targetsDirty) {

@@ -278,7 +278,7 @@ const rawConfig: RawConfig[] = [
             name: "用户空间动态-转发",
             styleScope: StyleScope.Minimal,
             aSelector: "span.dyn-orig-author__name",
-            trigger: { watch: "bili-dyn-content__orig", interval: 1000 },
+            trigger: { watch: "div.dyn-orig-author", interval: 1000 },
             dynamicWatch: true,
             uidResolver: el => {
                 return (el as any)._profile.uid;

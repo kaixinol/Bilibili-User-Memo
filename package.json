@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "vite --mode debug",
     "build": "vite build --mode production",
-    "lint": "eslint . && stylelint '**/*.css' && tsc",
-    "lint:fix": "eslint . --fix && stylelint '**/*.css' --fix",
+    "lint": "eslint . && stylelint '**/*.css' && tsc && npx knip && npx dpdm --skip-dynamic-imports=tree --warning=false ./src/main.ts",
+    "lint:fix": "eslint . --fix && stylelint '**/*.css' --fix && npx knip --fix",
     "test": "vitest run"
   },
   "keywords": [

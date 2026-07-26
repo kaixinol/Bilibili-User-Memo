@@ -1,12 +1,6 @@
 import Alpine from "alpinejs";
 import { GM_getValue, GM_setValue } from "$";
 
-export interface PersistStorage {
-  getItem(key: string): string | null;
-  setItem(key: string, value: string): void;
-  removeItem?(key: string): void;
-}
-
 export function getGmValue<T>(key: string, fallback: T): T {
   return GM_getValue<T>(key, fallback);
 }
@@ -15,32 +9,36 @@ export function setGmValue<T>(key: string, value: T): void {
   GM_setValue(key, value);
 }
 
-const gmStorage: PersistStorage = {
-  getItem(key) {
-    const value = GM_getValue<string | null>(key, null);
-    return value ?? null;
-  },
-  setItem(key, value) {
-    GM_setValue(key, value);
-  },
-  removeItem(key) {
-    GM_setValue(key, null);
-  },
-};
+function persistNative<T>(initialValue: T) {
+  let alias: string | undefined;
 
-interface PersistInterceptor<T> {
-  as(key: string): PersistInterceptor<T>;
-  using(storage: PersistStorage): T;
+  const factory = Alpine.interceptor(
+    (initValue, getter, setter) => {
+      const lookup = alias!;
+      const stored = GM_getValue<unknown>(lookup);
+      const initial = stored !== undefined ? stored : initValue;
+
+      setter(initial);
+
+      Alpine.effect(() => {
+        GM_setValue(lookup, getter());
+      });
+
+      return initial;
+    },
+    (obj) => {
+      (obj as unknown as { as(key: string): typeof obj }).as = (key: string) => {
+        alias = key;
+        return obj;
+      };
+    },
+  );
+
+  return factory(initialValue) as Alpine.InterceptorObject<T> & { as(key: string): unknown };
 }
 
 export function persistWithGmStorage<T>(key: string, initialValue: T): T {
-  const persistFactory = (Alpine as unknown as {
-    $persist?: (value: T) => PersistInterceptor<T>;
-  }).$persist;
-
-  if (!persistFactory) return initialValue;
-
-  return persistFactory(initialValue).as(key).using(gmStorage);
+  return persistNative(initialValue).as(key) as T;
 }
 
 const PRELOAD_ALL_CARDS_KEY = "panelPreloadAllCards";

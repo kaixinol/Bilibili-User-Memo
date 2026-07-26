@@ -115,7 +115,6 @@ interface MonkeyApp {
   startPerformanceMonitor(): void;
   toggleExpand(id: number): void;
   toggleShowOriginalName(event: Event): void;
-  toggleAutoOpenPanel(event: Event): void;
   injectModeLabel(mode: InjectionMode): string;
   styleScopeLabel(scope: StyleScope): string;
   formatMs(value: number): string;
@@ -467,11 +466,6 @@ export function initDebugger() {
         const checked = (event.target as HTMLInputElement).checked;
         this.showOriginalName = checked;
         setShowOriginalInDebug(checked);
-      },
-
-      toggleAutoOpenPanel(event) {
-        const checked = (event.target as HTMLInputElement).checked;
-        this.autoOpenPanel = checked;
       },
 
       injectModeLabel(mode) {

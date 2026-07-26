@@ -7,7 +7,7 @@ import {
   readImportUsersFromDialog,
 } from "./user-list-io";
 import { getSearchForms, matchesChineseSearch } from "@/utils/chinese-search";
-import { persistWithGmStorage } from "@/utils/gm-storage";
+import { getGmValue, persistWithGmStorage } from "@/utils/gm-storage";
 import { afterFramesAndIdle, delay } from "@/utils/scheduler";
 import { showAlert } from "./dialogs";
 import type { UserListStore } from "./user-list-types";
@@ -60,8 +60,10 @@ export function createUserListStore(): InternalUserListStore {
   const preloadAllCards = persistWithGmStorage("panelPreloadAllCards", true);
   const shouldPreloadImmediately = __IS_DEBUG__ || preloadAllCards;
 
+  const rawAutoOpen = getGmValue<boolean>("debug.autoOpenPanel", false);
+
   return {
-    isOpen: persistWithGmStorage("debug.autoOpenPanel", __IS_DEBUG__),
+    isOpen: rawAutoOpen,
     _usersMap: Alpine.reactive(new Map<string, BiliUser>()),
     _usersList: Alpine.reactive([] as BiliUser[]),
 

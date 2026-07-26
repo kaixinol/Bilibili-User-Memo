@@ -3,7 +3,7 @@ import { type RawConfig, StyleScope } from "./rule-types";
 import { logger } from "@/utils/logger";
 import { waitUntil } from "@/utils/scheduler";
 
-export { StyleScope, InjectionMode } from "./rule-types";
+export { StyleScope,  } from "./rule-types";
 const COMMON_REG = /^https:\/\/[a-z0-9.]+\.bilibili\.com\/.*/;
 const VIDEO_REG = /^https:\/\/www\.bilibili\.com\/(video|list)\/.*/;
 

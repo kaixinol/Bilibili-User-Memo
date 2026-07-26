@@ -56,7 +56,7 @@ export function untrackRenderedElement(el: HTMLElement, uid: string): void {
  * 获取指定 UID 的已连接渲染元素。
  * 自动清理已断开连接的元素。
  */
-export function getTrackedElements(uid: string): HTMLElement[] {
+function getTrackedElements(uid: string): HTMLElement[] {
   const set = uidElementMap.get(uid);
   if (!set) return [];
 

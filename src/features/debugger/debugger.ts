@@ -4,6 +4,7 @@ import { config as defaultRules } from "@/core/rules/rules";
 import {
   InjectionMode,
   StyleScope,
+  DYNAMIC_SCAN_INTERVAL_MS,
   type DynamicTriggerConfig,
   type PageRule,
   type RuleConfigEntry,
@@ -136,7 +137,7 @@ function getRuleSelector(rule: PageRule): string {
 function getRuleTrigger(rule: PageRule): string | undefined {
   if (isStaticMode(rule)) return undefined;
   const trigger = rule.trigger as DynamicTriggerConfig;
-  return `${trigger.watch} / interval ${trigger.interval}ms`;
+  return `${trigger.watch} / interval ${DYNAMIC_SCAN_INTERVAL_MS}ms`;
 }
 
 function getMatchedRuleEntries(): RuleConfigEntry[] {

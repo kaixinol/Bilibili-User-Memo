@@ -48,7 +48,7 @@ export function buildRuleSelector(rule: PageRule): string | null {
 }
 
 function buildMultiTargetSelector(rule: PageRule): string | null {
-  if (!isDynamicMode(rule) || !rule.multiTarget) return null;
+  if (!isDynamicMode(rule) || !rule.trigger.multiTarget) return null;
   const watch = rule.trigger.watch;
   const parts = [rule.aSelector, rule.textSelector]
     .filter((s): s is string => Boolean(s))
@@ -59,7 +59,7 @@ function buildMultiTargetSelector(rule: PageRule): string | null {
 export function buildMergedSelector(rules: PageRule[]): string | null {
   const selectors = rules
     .map((r) =>
-      isDynamicMode(r) && r.multiTarget
+      isDynamicMode(r) && r.trigger.multiTarget
         ? buildMultiTargetSelector(r)
         : buildRuleSelector(r),
     )
@@ -71,7 +71,7 @@ export function buildMergedSelector(rules: PageRule[]): string | null {
 export function getSingleTargetDynamicRules(
   rules: DynamicPageRule[],
 ): DynamicPageRule[] {
-  return rules.filter((r) => !r.multiTarget);
+  return rules.filter((r) => !r.trigger.multiTarget);
 }
 
 export function logRuleScanResult(

@@ -4,14 +4,15 @@ export type InjectionMode = typeof InjectionMode[keyof typeof InjectionMode];
 export const StyleScope = { Minimal: 1, Editable: 2 } as const;
 export type StyleScope = typeof StyleScope[keyof typeof StyleScope];
 
+export const DYNAMIC_SCAN_INTERVAL_MS = 1000;
+
 export interface RawRule {
   name: string;
   styleScope: StyleScope;
   aSelector?: string;
   textSelector?: string;
-  trigger?: { watch: string; interval: number };
+  trigger?: { watch: string; multiTarget?: boolean };
   matchByName?: boolean;
-  multiTarget?: boolean;
   uidResolver?: UidResolverFn;
   originalNameResolver?: OriginalNameResolverFn;
 }

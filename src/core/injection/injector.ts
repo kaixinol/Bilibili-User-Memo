@@ -4,6 +4,7 @@ import {
   type DynamicPageRule,
   getInjectMode,
   StyleScope,
+  DYNAMIC_SCAN_INTERVAL_MS,
 } from "@/core/rules/rule-types";
 import { logger } from "@/utils/logger";
 import { extractUid } from "../dom/uid-extractor";
@@ -153,7 +154,7 @@ class PageInjector {
     }
 
     const singleTarget = getSingleTargetDynamicRules(groups.dynamicRules);
-    const multiTarget = groups.dynamicRules.filter((r) => r.multiTarget);
+    const multiTarget = groups.dynamicRules.filter((r) => r.trigger.multiTarget);
 
     this.reconcileWatchers(singleTarget);
     this.reconcileMultiTargetScan(multiTarget);
@@ -244,7 +245,7 @@ class PageInjector {
 
   private startMultiTargetScan(rules: DynamicPageRule[]) {
     if (rules.length === 0) return;
-    const interval = rules[0].trigger.interval;
+    const interval = DYNAMIC_SCAN_INTERVAL_MS;
     this.multiTargetScanTimer = window.setInterval(() => {
       this.scanAndInjectRulesBatch(this.activeMultiTargetRules, document);
     }, interval);

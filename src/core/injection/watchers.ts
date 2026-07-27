@@ -1,6 +1,7 @@
 import {
   type DynamicPageRule,
   getInjectMode,
+  DYNAMIC_SCAN_INTERVAL_MS,
 } from "@/core/rules/rule-types";
 import { logger } from "@/utils/logger";
 import {
@@ -27,7 +28,7 @@ export class DynamicRuleWatcher {
 
     this.pollTimer = window.setInterval(() => {
       this.poll();
-    }, this.rule.trigger.interval);
+    }, DYNAMIC_SCAN_INTERVAL_MS);
   }
 
   public stop() {

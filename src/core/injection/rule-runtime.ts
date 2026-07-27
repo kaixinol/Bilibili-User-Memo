@@ -47,6 +47,14 @@ export function buildRuleSelector(rule: PageRule): string | null {
   return rule.aSelector || rule.textSelector || null;
 }
 
+export function buildMergedSelector(rules: PageRule[]): string | null {
+  const selectors = rules
+    .map(buildRuleSelector)
+    .filter((s): s is string => s !== null);
+  const unique = [...new Set(selectors)];
+  return unique.length > 0 ? unique.join(", ") : null;
+}
+
 export function logRuleScanResult(
   rule: PageRule,
   selector: string,

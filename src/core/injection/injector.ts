@@ -18,6 +18,7 @@ import { DynamicRuleWatcher } from "./watchers";
 import { unsafeWindow } from "$";
 import type { ScanScope } from "./scan-scope";
 import {
+  buildMergedSelector,
   buildRuleSelector,
   getMatchByNameRules,
   getMatchedRules,
@@ -167,8 +168,60 @@ class PageInjector {
       this.scanScheduler.clearStaticRuleRetries();
       return;
     }
-    this.scanScheduler.scanRules(staticRules, scope, "static initial scan");
+    this.scanAndInjectRulesBatch(staticRules, scope);
     this.scanScheduler.scheduleStaticRuleRetries(staticRules, scope);
+  }
+
+  private async scanAndInjectRulesBatch(
+    rules: PageRule[],
+    scope: ScanScope,
+  ) {
+    const merged = buildMergedSelector(rules);
+    if (!merged) return;
+
+    const scanStart = __IS_DEBUG__ ? performance.now() : 0;
+    const elements = querySelectorAllDeep(merged, scope);
+    if (__IS_DEBUG__) {
+      recordRuleScanDiagnostic({
+        ruleName: rules.map((r) => r.name).join(","),
+        mode: getInjectMode(rules[0]),
+        selector: merged,
+        scopeType: getScopeType(scope),
+        matchCount: elements.length,
+        queryMs: 0,
+        totalMs: performance.now() - scanStart,
+      });
+    }
+    if (elements.length === 0) return;
+
+    const selectorRules = rules
+      .map((r) => ({ selector: buildRuleSelector(r), rule: r }))
+      .filter(
+        (r): r is { selector: string; rule: PageRule } => r.selector !== null,
+      );
+
+    for (const el of elements) {
+      if (el.classList.contains("editable-textarea")) continue;
+
+      for (const { selector, rule } of selectorRules) {
+        if (!el.matches(selector)) continue;
+
+        const storedUid = el.dataset.bilimemoUid;
+        let preResolvedUid: string | null = null;
+        if (storedUid) {
+          preResolvedUid = extractUid(el, {
+            silent: true,
+            allowLocationFallback: false,
+          });
+          if (preResolvedUid && storedUid === preResolvedUid) continue;
+          el.removeAttribute("data-bilimemo-uid");
+          el.removeAttribute("data-bilimemo-original");
+          untrackRenderedElement(el, storedUid);
+        }
+
+        void this.applyRuleToElement(el, rule, preResolvedUid);
+      }
+    }
   }
 
   private reconcileWatchers(nextRules: DynamicPageRule[]) {

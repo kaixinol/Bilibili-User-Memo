@@ -1,4 +1,7 @@
-import { type DynamicPageRule, getInjectMode } from "@/core/rules/rule-types";
+import {
+  type DynamicPageRule,
+  getInjectMode,
+} from "@/core/rules/rule-types";
 import { logger } from "@/utils/logger";
 import {
   getScopeType,
@@ -7,10 +10,8 @@ import {
 import {
   getWatchTarget,
   getWatchTargets,
-  isNodeInsideScope,
   resolveWatchScope,
   shouldHandleDiscoveryMutations,
-  type DiscoveryScope,
 } from "./watch-runtime";
 import type { ScanScope } from "./scan-scope";
 import { requestIdle } from "@/utils/scheduler";
@@ -21,33 +22,19 @@ interface InstanceObserverRecord {
 }
 
 export class DynamicRuleWatcher {
-  private static originalAttachShadow = Element.prototype.attachShadow;
-  private static attachShadowPatched = false;
-  private static attachShadowListeners = new Set<
-    (shadowRoot: ShadowRoot) => void
-  >();
-
   // Legacy Mode (dynamicWatch = false): Single target management
   private legacyObserver: MutationObserver | null = null;
   private legacyPollTimer: number | null = null;
   private legacyIdlePending = false;
 
   // Global Mode (dynamicWatch = true): Multi-target management
-  private discoveryObservers = new Map<DiscoveryScope, MutationObserver>();
   private instanceObservers = new Map<HTMLElement, InstanceObserverRecord>();
-  private readonly instanceIdlePending = new WeakSet<HTMLElement>();
-  private targetsDirty = false;
-  private hasScannedOnce = false;
-  private readonly handleShadowAttached = (shadowRoot: ShadowRoot) => {
-    this.targetsDirty = true;
-    this.observeDiscoveryScope(shadowRoot);
-    this.scanAndAttachNewTargets();
-  };
+  private periodicScanTimer: number | null = null;
 
   constructor(
-    public readonly rule: DynamicPageRule, // 公开 rule 以便 Map 索引比对
+    public readonly rule: DynamicPageRule,
     private onTrigger: (rule: DynamicPageRule, root: ScanScope) => void,
-  ) { }
+  ) {}
 
   public start() {
     if (this.rule.dynamicWatch) {
@@ -70,17 +57,16 @@ export class DynamicRuleWatcher {
     this.legacyIdlePending = false;
 
     // Stop Global
-    this.unregisterAttachShadowListener();
-    this.discoveryObservers.forEach((observer) => observer.disconnect());
-    this.discoveryObservers.clear();
+    if (this.periodicScanTimer) {
+      clearInterval(this.periodicScanTimer);
+      this.periodicScanTimer = null;
+    }
     this.instanceObservers.forEach(({ observer }) => observer.disconnect());
     this.instanceObservers.clear();
-    this.targetsDirty = false;
-    this.hasScannedOnce = false;
   }
 
   // ==========================================================
-  // 模式 A: Dynamic Watch (新模式 - 持续监听 DOM 变化以发现 watch 目标)
+  // 模式 A: Dynamic Watch — 周期性深度扫描 + instance observer
   // ==========================================================
 
   private startGlobalWatch() {
@@ -88,122 +74,21 @@ export class DynamicRuleWatcher {
       `📡 启动动态全域监听: [${this.rule.name}] watch=${this.rule.trigger.watch}`,
     );
 
-    this.registerAttachShadowListener();
-
-    // 1. 监听 document 与所有可达的 open shadowRoot
-    this.observeDiscoveryScope(document);
-
-    // 2. 立即扫描现有的目标
     this.scanAndAttachNewTargets();
-  }
-
-  private static ensureAttachShadowPatched() {
-    if (DynamicRuleWatcher.attachShadowPatched) return;
-
-    const originalAttachShadow = DynamicRuleWatcher.originalAttachShadow;
-    Element.prototype.attachShadow = function (
-      this: Element,
-      init: ShadowRootInit,
-    ): ShadowRoot {
-      const shadowRoot = originalAttachShadow.call(this, init);
-      for (const listener of DynamicRuleWatcher.attachShadowListeners) {
-        try {
-          listener(shadowRoot);
-        } catch (error) {
-          logger.debug("attachShadow listener error", error);
-        }
-      }
-      return shadowRoot;
-    };
-
-    DynamicRuleWatcher.attachShadowPatched = true;
-  }
-
-  private registerAttachShadowListener() {
-    DynamicRuleWatcher.ensureAttachShadowPatched();
-    DynamicRuleWatcher.attachShadowListeners.add(this.handleShadowAttached);
-  }
-
-  private unregisterAttachShadowListener() {
-    DynamicRuleWatcher.attachShadowListeners.delete(this.handleShadowAttached);
-  }
-
-  private observeDiscoveryScope(scope: DiscoveryScope) {
-    if (this.discoveryObservers.has(scope)) return;
-    logger.debug(
-      `👁️ [${this.rule.name}] 开始观察发现域:`,
-      scope === document ? "document" : scope,
-    );
-
-    const watchSelector = this.rule.trigger.watch;
-
-    const observer = new MutationObserver((mutations) => {
-      const { hasAddedNodes, hasRemovedNodes } =
-        shouldHandleDiscoveryMutations(mutations);
-
-      if (hasRemovedNodes) {
-        this.cleanupDetachedTargets();
-        this.cleanupDetachedDiscoveryScopes();
-      }
-
-      if (hasAddedNodes && !this.targetsDirty) {
-        for (const mutation of mutations) {
-          for (const node of mutation.addedNodes) {
-            if (node.nodeType !== Node.ELEMENT_NODE) continue;
-            const el = node as Element;
-            if (el.matches(watchSelector) || el.querySelector(watchSelector)) {
-              this.targetsDirty = true;
-              break;
-            }
-          }
-          if (this.targetsDirty) break;
-        }
-      }
-
-      if (this.targetsDirty) {
-        this.scanAndAttachNewTargets();
-        this.bridgeShadowMutationsToWatchScopes(scope);
-      }
-    });
-
-    observer.observe(scope, { childList: true, subtree: true });
-    this.discoveryObservers.set(scope, observer);
-
-    this.discoverShadowScopes(scope);
-  }
-
-  private discoverShadowScopes(scope: DiscoveryScope) {
-    scope
-      .querySelectorAll("*")
-      .forEach((element) => this.observeHostShadowScope(element));
-  }
-
-  private observeHostShadowScope(element: Element) {
-    const shadowRoot = element.shadowRoot;
-    if (shadowRoot) {
-      this.observeDiscoveryScope(shadowRoot);
-    }
+    this.startPeriodicScan();
   }
 
   private scanAndAttachNewTargets() {
-    if (!this.targetsDirty && this.hasScannedOnce) return;
-
     const targets = getWatchTargets(this.rule.trigger.watch);
-    logger.debug(
-      `🔍 [${this.rule.name}] 扫描目标容器: 找到 ${targets.length} 个, 已监听 ${this.instanceObservers.size} 个`,
-    );
-    this.targetsDirty = false;
-    this.hasScannedOnce = true;
     if (targets.length === 0) return;
 
     targets.forEach((target) => {
       const scope = resolveWatchScope(target);
-      const keyNode = target;
-      const current = this.instanceObservers.get(keyNode);
+      const current = this.instanceObservers.get(target);
 
       if (!current) {
         logger.debug(`🔭 [${this.rule.name}] 捕获新容器实例`, target);
-        this.attachInstanceWatcher(keyNode, scope);
+        this.attachInstanceWatcher(target, scope);
         return;
       }
 
@@ -213,52 +98,24 @@ export class DynamicRuleWatcher {
           target,
         );
         current.observer.disconnect();
-        this.attachInstanceWatcher(keyNode, scope);
+        this.attachInstanceWatcher(target, scope);
       }
     });
   }
 
-  private createScopeObserver(keyNode: HTMLElement, scope: ScanScope): MutationObserver {
+  private createScopeObserver(scope: ScanScope): MutationObserver {
     const observer = new MutationObserver((mutations) => {
       if (!shouldHandleDiscoveryMutations(mutations).hasAddedNodes) return;
-      if (this.instanceIdlePending.has(keyNode)) return;
-      this.instanceIdlePending.add(keyNode);
       this.onTrigger(this.rule, scope);
-      this.instanceIdlePending.delete(keyNode);
     });
     observer.observe(scope, { childList: true, subtree: true });
     return observer;
   }
 
-  /**
-   * ShadowRoot 内部新增节点不会冒泡到其宿主元素的 childList 观察器。
-   * 因此在 discovery 层发现 shadow 变更时，桥接到对应 watch 容器触发扫描。
-   * 仅处理新增节点的场景；去重由 scheduler 的 pendingQueue 保证。
-   */
-  private bridgeShadowMutationsToWatchScopes(scope: DiscoveryScope) {
-    if (!(scope instanceof ShadowRoot)) return;
-    if (this.instanceObservers.size === 0) return;
-
-    for (const { scope: watchScope } of this.instanceObservers.values()) {
-      if (watchScope instanceof ShadowRoot && watchScope === scope) continue;
-      if (!isNodeInsideScope(scope, watchScope)) continue;
-      if (__IS_DEBUG__) {
-        recordFlowDiagnostic({
-          source: "dynamic shadow bridge",
-          ruleName: this.rule.name,
-          mode: getInjectMode(this.rule),
-          scopeType: getScopeType(watchScope),
-        });
-      }
-      this.onTrigger(this.rule, watchScope);
-    }
-  }
-
   private attachInstanceWatcher(keyNode: HTMLElement, scope: ScanScope) {
-    const observer = this.createScopeObserver(keyNode, scope);
+    const observer = this.createScopeObserver(scope);
     this.instanceObservers.set(keyNode, { observer, scope });
 
-    // 首次挂载成功，立即执行一次局部扫描
     if (__IS_DEBUG__) {
       recordFlowDiagnostic({
         source: "dynamic attach",
@@ -271,30 +128,20 @@ export class DynamicRuleWatcher {
   }
 
   /**
-   * 清理已经从 DOM 中移除的元素的监听器
-   * 防止内存泄漏
+   * 周期性深度扫描：每 interval ms 触发已有 instance observer 的深度扫描。
+   * 仅在尚未找到 watch target 时才扫描新 target（避免遍历全页面 shadow DOM）。
+   * querySelectorAllDeep 会穿透 shadow DOM 查找元素，无需手动观察每个 shadow root。
    */
-  private cleanupDetachedTargets() {
-    for (const [node, { observer }] of this.instanceObservers) {
-      // document.contains(node) 对 Shadow DOM 内节点会误判为 false
-      // isConnected 能正确反映"是否仍连接在文档树（含 shadow tree）"
-      if (!node.isConnected) {
-        logger.debug(`🗑️ [${this.rule.name}] 容器已销毁，移除监听器`);
-        observer.disconnect();
-        this.instanceObservers.delete(node);
-        this.targetsDirty = true;
+  private startPeriodicScan() {
+    this.periodicScanTimer = window.setInterval(() => {
+      if (this.instanceObservers.size === 0) {
+        this.scanAndAttachNewTargets();
       }
-    }
-  }
 
-  private cleanupDetachedDiscoveryScopes() {
-    for (const [scope, observer] of this.discoveryObservers) {
-      if (scope === document) continue;
-      if (!scope.isConnected) {
-        observer.disconnect();
-        this.discoveryObservers.delete(scope);
+      for (const { scope } of this.instanceObservers.values()) {
+        this.onTrigger(this.rule, scope);
       }
-    }
+    }, this.rule.trigger.interval);
   }
 
   // ==========================================================
@@ -311,7 +158,7 @@ export class DynamicRuleWatcher {
           this.legacyPollTimer = null;
           logger.debug(`👀 规则 [${this.rule.name}] 监听器挂载成功`);
         }
-      }, this.rule.trigger.interval * 2); // 轮询间隔设为 debounce 的两倍，减少空转
+      }, this.rule.trigger.interval * 2);
     }
   }
 
@@ -334,9 +181,6 @@ export class DynamicRuleWatcher {
     return true;
   }
 
-  /**
-   * Legacy 模式专用 observer：mutation 后空闲时触发，最高 500ms 触发一次
-   */
   private createIdleLegacyObserver(scope: ScanScope): MutationObserver {
     const scheduleTrigger = () => {
       if (this.legacyIdlePending) return;

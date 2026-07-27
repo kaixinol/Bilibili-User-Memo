@@ -24,9 +24,3 @@ export function hasExternalAddedNodes(mutations: MutationRecord[]): boolean {
   });
 }
 
-export function hasExternalRemovedNodes(mutations: MutationRecord[]): boolean {
-  return mutations.some((mutation) => {
-    if (isOwnedNode(mutation.target)) return false;
-    return Array.from(mutation.removedNodes).some((node) => !isOwnedNode(node));
-  });
-}

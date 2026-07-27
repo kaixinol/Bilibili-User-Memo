@@ -104,7 +104,7 @@ export class RuleScanScheduler {
 
     const existingTimer = scopeTimers.get(scope);
     if (existingTimer) {
-      clearTimeout(existingTimer);
+      return;
     }
 
     const timerId = window.setTimeout(() => {
@@ -113,7 +113,7 @@ export class RuleScanScheduler {
       if (activeScopeTimers && activeScopeTimers.size === 0) {
         this.ruleDebounceTimers.delete(rule);
       }
-      this.scanRules([rule], scope, "dynamic debounce");
+      this.scanRules([rule], scope, "dynamic throttle");
     }, delay);
 
     scopeTimers.set(scope, timerId);

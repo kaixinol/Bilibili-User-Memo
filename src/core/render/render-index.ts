@@ -5,7 +5,6 @@
  * 将 O(totalDOM) 全量遍历降为 O(trackedElements) 索引查找。
  *
  * 写入点：syncElementMeta() — 设置 data-bilimemo-uid 时
- * 移除点：scanAndInjectRule() — DOM 复用检测移除 data-bilimemo-uid 时
  */
 
 const uidElementMap = new Map<string, Set<HTMLElement>>();
@@ -36,20 +35,6 @@ export function trackRenderedElement(el: HTMLElement, uid: string): void {
   }
   set.add(el);
   elementUidMap.set(el, uid);
-}
-
-/**
- * 从索引移除元素。在 scanAndInjectRule DOM 复用检测移除 UID 时调用。
- */
-export function untrackRenderedElement(el: HTMLElement, uid: string): void {
-  const set = uidElementMap.get(uid);
-  if (set) {
-    set.delete(el);
-    if (set.size === 0) uidElementMap.delete(uid);
-  }
-  if (elementUidMap.get(el) === uid) {
-    elementUidMap.delete(el);
-  }
 }
 
 /**

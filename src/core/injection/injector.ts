@@ -9,7 +9,7 @@ import { extractUid } from "../dom/uid-extractor";
 import { getElementDisplayName } from "../dom/text-utils";
 import { refreshRenderedMemoNodes } from "../render/dom-refresh";
 import { injectMemoRenderer } from "../render/renderer";
-import { untrackRenderedElement } from "../render/render-index";
+
 import { userStore, type UserStoreChange } from "../store/store";
 import { createUrlMonitor, type UrlMonitor } from "./url-monitor";
 import { syncSpaceProfile } from "./space-profile";
@@ -28,7 +28,7 @@ import {
 } from "./rule-runtime";
 import { RemoteChangeBuffer } from "./remote-change-buffer";
 import { RuleScanScheduler } from "./scan-scheduler";
-import { delay, waitUntil } from "@/utils/scheduler";
+import { waitUntil } from "@/utils/scheduler";
 import {
   describeElementForDiagnostics,
   getScopeType,
@@ -42,9 +42,9 @@ class PageInjector {
   private readonly pendingRemoteChanges = new RemoteChangeBuffer();
   private readonly scanScheduler = new RuleScanScheduler(
     (rule, scope) => this.scanAndInjectRule(rule, scope),
-    () => this.domReady,
   );
 
+  private matchedStaticRules: PageRule[] = [];
   private activeWatchers = new Map<DynamicPageRule, DynamicRuleWatcher>();
 
   constructor() {
@@ -58,7 +58,7 @@ class PageInjector {
     this.urlMonitor.start();
     this.onDomReady(async () => {
       await this.waitForBiliEnvironment();
-      await delay(100);
+      await new Promise((resolve) => requestAnimationFrame(resolve));
       this.domReady = true;
       this.handleUrlChange();
     });
@@ -138,12 +138,6 @@ class PageInjector {
     refreshRenderedMemoNodes(users, displayMode, changedIds);
   }
 
-  private scanActiveRules(scope: ScanScope) {
-    const activeRules = [...this.activeWatchers.keys()];
-    if (activeRules.length === 0) return;
-    this.scanScheduler.scanRules(activeRules, scope, "refresh active rules");
-  }
-
   private handleUrlChange() {
     if (!this.domReady) return;
 
@@ -151,25 +145,18 @@ class PageInjector {
 
     const matchedRules = getMatchedRules();
     const groups = this.groupRulesByMode(matchedRules);
-    this.applyStaticRules(groups.staticRules, document);
+
+    this.matchedStaticRules = groups.staticRules;
+
+    if (groups.staticRules.length > 0) {
+      this.scanAndInjectRulesBatch(groups.staticRules, document);
+    }
+
     this.reconcileWatchers(groups.dynamicRules);
-    this.scanActiveRules(document);
   }
 
   private groupRulesByMode(rules: PageRule[]): RuleGroups {
     return groupRulesByMode(rules);
-  }
-
-  private applyStaticRules(
-    staticRules: ReturnType<typeof groupRulesByMode>["staticRules"],
-    scope: ScanScope,
-  ) {
-    if (staticRules.length === 0) {
-      this.scanScheduler.clearStaticRuleRetries();
-      return;
-    }
-    this.scanAndInjectRulesBatch(staticRules, scope);
-    this.scanScheduler.scheduleStaticRuleRetries(staticRules, scope);
   }
 
   private async scanAndInjectRulesBatch(
@@ -214,9 +201,6 @@ class PageInjector {
             allowLocationFallback: false,
           });
           if (preResolvedUid && storedUid === preResolvedUid) continue;
-          el.removeAttribute("data-bilimemo-uid");
-          el.removeAttribute("data-bilimemo-original");
-          untrackRenderedElement(el, storedUid);
         }
 
         void this.applyRuleToElement(el, rule, preResolvedUid);
@@ -236,6 +220,9 @@ class PageInjector {
       if (this.activeWatchers.has(rule)) return;
       const watcher = new DynamicRuleWatcher(rule, (r, scope) => {
         this.scanScheduler.scheduleDynamicRuleScan(r, r.trigger.interval, scope);
+        if (this.matchedStaticRules.length > 0) {
+          this.scanAndInjectRulesBatch(this.matchedStaticRules, scope);
+        }
       });
       this.activeWatchers.set(rule, watcher);
       watcher.start();
@@ -245,7 +232,7 @@ class PageInjector {
   private scanMatchByNameRules(scope: ScanScope) {
     const rules = getMatchByNameRules(this.activeWatchers.keys());
     if (rules.length === 0) return;
-    this.scanScheduler.scanRules(rules, scope, "matchByName rescan");
+    this.scanScheduler.scanRules(rules, scope);
   }
 
   private async scanAndInjectRule(
@@ -276,15 +263,11 @@ class PageInjector {
     elements.forEach((el) => {
       if (el.classList.contains("editable-textarea")) return;
 
-      // DOM 复用检测：UID 没变则跳过，变了则清旧数据重处理
       const storedUid = el.dataset.bilimemoUid;
       let preResolvedUid: string | null = null;
       if (storedUid) {
         preResolvedUid = extractUid(el, { silent: true, allowLocationFallback: false });
         if (preResolvedUid && storedUid === preResolvedUid) return;
-        el.removeAttribute("data-bilimemo-uid");
-        el.removeAttribute("data-bilimemo-original");
-        untrackRenderedElement(el, storedUid);
       }
 
       void this.applyRuleToElement(el, rule, preResolvedUid);

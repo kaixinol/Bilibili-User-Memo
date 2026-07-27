@@ -121,16 +121,14 @@ function renderEditable(
       enterEditMode(wrapper!, latestUser);
     });
 
-    const originalHref = (el as HTMLAnchorElement).href;
-    if (originalHref?.includes("/list/")) {
-      wrapper.title = el.title ? `${el.title}\n发现注销用户！右键可跳转`: "发现注销用户！右键可跳转";
-      wrapper.style.cursor = "pointer";
-      wrapper.addEventListener("contextmenu", (e) => {
+    wrapper.addEventListener("contextmenu", (e) => {
+      const currentHref = (el as HTMLAnchorElement).href;
+      if (currentHref?.includes("/list/")) {
         e.preventDefault();
         e.stopPropagation();
-        window.open(originalHref, "_blank");
-      });
-    }
+        window.open(currentHref, "_blank");
+      }
+    });
 
     wrapper.addEventListener("mousedown", (e: MouseEvent) => {
       if (e.button !== 1) return;
@@ -150,6 +148,15 @@ function renderEditable(
 
     // 存入缓存
     wrapperCache.set(el, wrapper);
+  }
+
+  const currentHref = (el as HTMLAnchorElement).href;
+  if (currentHref?.includes("/list/")) {
+    wrapper.title = el.title ? `${el.title}\n发现注销用户！右键可跳转` : "发现注销用户！右键可跳转";
+    wrapper.style.cursor = "pointer";
+  } else {
+    wrapper.title = "";
+    wrapper.style.cursor = "";
   }
 
   // 更新数据

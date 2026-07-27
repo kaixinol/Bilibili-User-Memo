@@ -122,7 +122,7 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Editable,
             aSelector: "#user-name a",
             trigger: { watch: "div#contents", interval: 1000 },
-            dynamicWatch: true
+            multiTarget: true
         }
     },
     {
@@ -186,7 +186,7 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Editable,
             textSelector: "span.bili-dyn-title__text",
             trigger: { watch: "div.bili-dyn-item__main", interval: 1000 },
-            dynamicWatch: true,
+            multiTarget: true,
             uidResolver: (el) => {
                 return getUidFromVueInstance(el.parentElement!)
             }
@@ -200,7 +200,7 @@ const rawConfig: RawConfig[] = [
             aSelector:
                 ".opus-paragraph-children p a[href*='space.bilibili.com']",
             trigger: { watch: "div.bili-dyn-item__main", interval: 1000 },
-            dynamicWatch: true,
+            multiTarget: true,
         }
     },
     // 弹出层规则
@@ -281,7 +281,7 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Minimal,
             aSelector: "span.dyn-orig-author__name",
             trigger: { watch: "div.dyn-orig-author", interval: 1000 },
-            dynamicWatch: true,
+            multiTarget: true,
             uidResolver: el => {
                 return (el as any)._profile.uid;
             }
@@ -294,7 +294,7 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Minimal,
             aSelector: 'span[data-module="desc"]',
             trigger: { watch: "div.bili-dyn-interaction__item", interval: 1000 },
-            dynamicWatch: true,
+            multiTarget: true,
         }
     }, {
         urlPattern: /^https:\/\/search\.bilibili\.com\/(all|live|upuser)/,

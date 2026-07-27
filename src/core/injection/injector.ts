@@ -22,12 +22,12 @@ import {
   buildRuleSelector,
   getMatchByNameRules,
   getMatchedRules,
+  getSingleTargetDynamicRules,
   groupRulesByMode,
   logRuleScanResult,
   type RuleGroups,
 } from "./rule-runtime";
 import { RemoteChangeBuffer } from "./remote-change-buffer";
-import { RuleScanScheduler } from "./scan-scheduler";
 import { waitUntil } from "@/utils/scheduler";
 import {
   describeElementForDiagnostics,
@@ -40,12 +40,11 @@ class PageInjector {
   private domReady = false;
   private readonly urlMonitor: UrlMonitor;
   private readonly pendingRemoteChanges = new RemoteChangeBuffer();
-  private readonly scanScheduler = new RuleScanScheduler(
-    (rule, scope) => this.scanAndInjectRule(rule, scope),
-  );
 
   private matchedStaticRules: PageRule[] = [];
   private activeWatchers = new Map<DynamicPageRule, DynamicRuleWatcher>();
+  private multiTargetScanTimer: number | null = null;
+  private activeMultiTargetRules: DynamicPageRule[] = [];
 
   constructor() {
     logger.info("🚀 PageInjector 正在启动...");
@@ -152,7 +151,11 @@ class PageInjector {
       this.scanAndInjectRulesBatch(groups.staticRules, document);
     }
 
-    this.reconcileWatchers(groups.dynamicRules);
+    const singleTarget = getSingleTargetDynamicRules(groups.dynamicRules);
+    const multiTarget = groups.dynamicRules.filter((r) => r.multiTarget);
+
+    this.reconcileWatchers(singleTarget);
+    this.reconcileMultiTargetScan(multiTarget);
   }
 
   private groupRulesByMode(rules: PageRule[]): RuleGroups {
@@ -212,14 +215,13 @@ class PageInjector {
     for (const [rule, watcher] of this.activeWatchers) {
       if (nextRules.includes(rule)) continue;
       watcher.stop();
-      this.scanScheduler.clearRuleDebounceTimers(rule);
       this.activeWatchers.delete(rule);
     }
 
     nextRules.forEach((rule) => {
       if (this.activeWatchers.has(rule)) return;
       const watcher = new DynamicRuleWatcher(rule, (r, scope) => {
-        this.scanScheduler.scheduleDynamicRuleScan(r, r.trigger.interval, scope);
+        this.scanAndInjectRule(r, scope);
         if (this.matchedStaticRules.length > 0) {
           this.scanAndInjectRulesBatch(this.matchedStaticRules, scope);
         }
@@ -229,10 +231,37 @@ class PageInjector {
     });
   }
 
+  private reconcileMultiTargetScan(nextRules: DynamicPageRule[]) {
+    this.activeMultiTargetRules = nextRules;
+    this.stopMultiTargetScan();
+
+    if (nextRules.length > 0) {
+      this.scanAndInjectRulesBatch(nextRules, document);
+      this.startMultiTargetScan(nextRules);
+    }
+  }
+
+  private startMultiTargetScan(rules: DynamicPageRule[]) {
+    if (rules.length === 0) return;
+    const interval = rules[0].trigger.interval;
+    this.multiTargetScanTimer = window.setInterval(() => {
+      this.scanAndInjectRulesBatch(this.activeMultiTargetRules, document);
+    }, interval);
+  }
+
+  private stopMultiTargetScan() {
+    if (this.multiTargetScanTimer) {
+      clearInterval(this.multiTargetScanTimer);
+      this.multiTargetScanTimer = null;
+    }
+  }
+
   private scanMatchByNameRules(scope: ScanScope) {
     const rules = getMatchByNameRules(this.activeWatchers.keys());
     if (rules.length === 0) return;
-    this.scanScheduler.scanRules(rules, scope);
+    for (const rule of rules) {
+      void this.scanAndInjectRule(rule, scope);
+    }
   }
 
   private async scanAndInjectRule(

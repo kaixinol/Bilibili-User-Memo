@@ -11,7 +11,7 @@ export interface RawRule {
   textSelector?: string;
   trigger?: { watch: string; interval: number };
   matchByName?: boolean;
-  dynamicWatch?: boolean;
+  multiTarget?: boolean;
   uidResolver?: UidResolverFn;
   originalNameResolver?: OriginalNameResolverFn;
 }

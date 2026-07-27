@@ -47,12 +47,31 @@ export function buildRuleSelector(rule: PageRule): string | null {
   return rule.aSelector || rule.textSelector || null;
 }
 
+export function buildMultiTargetSelector(rule: PageRule): string | null {
+  if (!isDynamicMode(rule) || !rule.multiTarget) return null;
+  const watch = rule.trigger.watch;
+  const parts = [rule.aSelector, rule.textSelector]
+    .filter((s): s is string => Boolean(s))
+    .map((el) => `${watch} ${el}`);
+  return parts.length > 0 ? parts.join(", ") : null;
+}
+
 export function buildMergedSelector(rules: PageRule[]): string | null {
   const selectors = rules
-    .map(buildRuleSelector)
+    .map((r) =>
+      isDynamicMode(r) && r.multiTarget
+        ? buildMultiTargetSelector(r)
+        : buildRuleSelector(r),
+    )
     .filter((s): s is string => s !== null);
   const unique = [...new Set(selectors)];
   return unique.length > 0 ? unique.join(", ") : null;
+}
+
+export function getSingleTargetDynamicRules(
+  rules: DynamicPageRule[],
+): DynamicPageRule[] {
+  return rules.filter((r) => !r.multiTarget);
 }
 
 export function logRuleScanResult(

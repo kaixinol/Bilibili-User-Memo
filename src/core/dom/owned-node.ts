@@ -17,7 +17,7 @@ export function markOwnedElement<T extends HTMLElement>(element: T): T {
   return isOwnedElement(node.parentElement);
 }
 
-export function hasExternalAddedNodes(mutations: MutationRecord[]): boolean {
+function hasExternalAddedNodes(mutations: MutationRecord[]): boolean {
   return mutations.some((mutation) => {
     if (isOwnedNode(mutation.target)) return false;
     return Array.from(mutation.addedNodes).some((node) => !isOwnedNode(node));

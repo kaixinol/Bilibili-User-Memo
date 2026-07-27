@@ -68,7 +68,7 @@ export async function waitUntil(
   }
 }
 
-export function requestIdle(
+function requestIdle(
   callback: (deadline: IdleDeadline) => void,
   timeout = 1000,
 ) {

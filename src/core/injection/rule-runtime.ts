@@ -47,7 +47,7 @@ export function buildRuleSelector(rule: PageRule): string | null {
   return rule.aSelector || rule.textSelector || null;
 }
 
-export function buildMultiTargetSelector(rule: PageRule): string | null {
+function buildMultiTargetSelector(rule: PageRule): string | null {
   if (!isDynamicMode(rule) || !rule.multiTarget) return null;
   const watch = rule.trigger.watch;
   const parts = [rule.aSelector, rule.textSelector]

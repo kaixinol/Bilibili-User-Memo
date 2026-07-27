@@ -3,6 +3,7 @@ import {
   type PageRule,
   type DynamicPageRule,
   getInjectMode,
+  StyleScope,
 } from "@/core/rules/rule-types";
 import { logger } from "@/utils/logger";
 import { extractUid } from "../dom/uid-extractor";
@@ -315,7 +316,10 @@ class PageInjector {
       const uid = preResolvedUid ?? await this.resolveElementUid(el, rule, originalName);
       uidResolved = Boolean(uid);
       if (!uid) return;
-
+      if (rule.styleScope === StyleScope.Editable) {
+        const sibling = el.nextElementSibling as HTMLElement | null;
+        if (sibling?.classList.contains("editable-textarea") && sibling.dataset.bilimemoUid === uid) return;
+      }
       const user = userStore.ensureUser(uid, originalName);
       applied = await injectMemoRenderer(el, user, rule, { uid, originalName });
     } finally {

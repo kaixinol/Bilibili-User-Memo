@@ -45,5 +45,9 @@ declare global {
   interface HTMLElement {
     __vue__?: VueInstance;
   }
-
+  interface DOMStringMap {
+    bilimemoUid?: string;
+    bilimemoOriginal?: string;
+    bilimemoOwned?: string;
+  }
 }

@@ -1,4 +1,5 @@
 import { logger } from "@/utils/logger";
+import { activityMonitor } from "@/utils/activity-monitor";
 
 export interface UrlMonitor {
   start(): void;
@@ -21,6 +22,7 @@ export function createUrlMonitor(onChange: () => void): UrlMonitor {
     logger.debug(
       `🌏 [${source}] URL 变更检测: ${prevUrl} → ${currentUrl} (${performance.now().toFixed(0)}ms)`,
     );
+    activityMonitor.markActive();
     onChange();
   }
 

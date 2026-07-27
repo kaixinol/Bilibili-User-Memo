@@ -67,26 +67,3 @@ export async function waitUntil(
     await delay(intervalMs);
   }
 }
-
-function requestIdle(
-  callback: (deadline: IdleDeadline) => void,
-  timeout = 1000,
-) {
-  const requestIdleCallback =
-    (window as Window & {
-      requestIdleCallback?: (
-        cb: (deadline: IdleDeadline) => void,
-        options?: { timeout?: number },
-      ) => number;
-    }).requestIdleCallback;
-
-  if (requestIdleCallback) {
-    requestIdleCallback(callback, { timeout });
-    return;
-  }
-
-  window.setTimeout(
-    () => callback({ timeRemaining: () => 16 } as IdleDeadline),
-    16,
-  );
-}

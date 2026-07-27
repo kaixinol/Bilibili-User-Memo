@@ -5,8 +5,10 @@ import {
 import { getCaller } from "./caller";
 import { recordQueryDiagnostic } from "./perf-diagnostics";
 import { logger } from "./logger";
+import { activityMonitor } from "./activity-monitor";
 
 export function querySelectorDeep(selector: string, root: Document | HTMLElement | ShadowRoot): HTMLElement | null {
+  if (activityMonitor.isIdle()) return null;
   const rawRoot = root as Document | HTMLElement;
   if (!__IS_DEBUG__) return rawQuerySelectorDeep(selector, rawRoot);
 
@@ -41,6 +43,7 @@ export function querySelectorAllDeep(
   selector: string,
   root: Document | HTMLElement | ShadowRoot,
 ): HTMLElement[] {
+  if (activityMonitor.isIdle()) return [];
   const rawRoot = root as Document | HTMLElement;
   if (!__IS_DEBUG__) return rawQuerySelectorAllDeep(selector, rawRoot);
 

@@ -128,15 +128,20 @@ export class DynamicRuleWatcher {
   }
 
   /**
-   * 周期性深度扫描：每 interval ms 触发已有 instance observer 的深度扫描。
-   * 仅在尚未找到 watch target 时才扫描新 target（避免遍历全页面 shadow DOM）。
+   * 周期性深度扫描：每 interval ms 清理已销毁容器并扫描新容器。
+   * scanAndAttachNewTargets 内部对已存在的 target 有幂等拦截，开销极低。
    * querySelectorAllDeep 会穿透 shadow DOM 查找元素，无需手动观察每个 shadow root。
    */
   private startPeriodicScan() {
     this.periodicScanTimer = window.setInterval(() => {
-      if (this.instanceObservers.size === 0) {
-        this.scanAndAttachNewTargets();
+      for (const [target, { observer }] of this.instanceObservers.entries()) {
+        if (!target.isConnected) {
+          observer.disconnect();
+          this.instanceObservers.delete(target);
+        }
       }
+
+      this.scanAndAttachNewTargets();
 
       for (const { scope } of this.instanceObservers.values()) {
         this.onTrigger(this.rule, scope);

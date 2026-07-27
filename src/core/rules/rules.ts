@@ -3,13 +3,15 @@ import { type RawConfig, StyleScope } from "./rule-types";
 import { logger } from "@/utils/logger";
 import { waitUntil } from "@/utils/scheduler";
 
-export { StyleScope,  } from "./rule-types";
+export { StyleScope, } from "./rule-types";
 const COMMON_REG = /^https:\/\/[a-z0-9.]+\.bilibili\.com\/.*/;
 const VIDEO_REG = /^https:\/\/www\.bilibili\.com\/(video|list)\/.*/;
 
 const VIDEO_CARD_A_SELECTOR = ".bili-video-card__info--owner:not(:has(.bili-video-card__info--ad)), .bili-video-card__author, a.up-name";
 const VIDEO_CARD_TEXT_SELECTOR = ".bili-video-card__info--author, .bili-video-card__text span[title], .up-name__text";
-
+const NEW_DYNAMIC_OPUS_ONE = /^https:\/\/www\.bilibili\.com\/opus\/\d+/
+const USER_SPACE_DYNAMIC = /^https:\/\/space\.bilibili\.com\/\d+\/dynamic/;
+const DYNAMIC_PAGE = /^https:\/\/t\.bilibili\.com\/(?:\?[^#]*)?$/;
 const rawConfig: RawConfig[] = [
     {
         urlPattern: VIDEO_REG,
@@ -159,7 +161,7 @@ const rawConfig: RawConfig[] = [
         }
     },
     {
-        urlPattern: /^https:\/\/space\.bilibili\.com\/\d+\/dynamic\/*/,
+        urlPattern: USER_SPACE_DYNAMIC,
         rule: {
             name: "个人空间动态",
             styleScope: StyleScope.Minimal,
@@ -178,9 +180,9 @@ const rawConfig: RawConfig[] = [
         }
     },
     {
-        urlPattern: /^https:\/\/t\.bilibili\.com\/.*/,
+        urlPattern: DYNAMIC_PAGE,
         rule: {
-            name: "动态页",
+            name: "动态页（所有动态）",
             styleScope: StyleScope.Editable,
             textSelector: "span.bili-dyn-title__text",
             trigger: { watch: "div.bili-dyn-item__main", interval: 1000 },
@@ -191,7 +193,7 @@ const rawConfig: RawConfig[] = [
         }
     },
     {
-        urlPattern: COMMON_REG, // FIXME: 过广
+        urlPattern: new RegExp(`${USER_SPACE_DYNAMIC.source}|${NEW_DYNAMIC_OPUS_ONE.source}|${DYNAMIC_PAGE.source}`),
         rule: {
             name: "动态正文-提及",
             styleScope: StyleScope.Minimal,
@@ -243,9 +245,9 @@ const rawConfig: RawConfig[] = [
         }
     },
     {
-        urlPattern: /^https:\/\/www\.bilibili\.com\/opus\/\d+/,
+        urlPattern: NEW_DYNAMIC_OPUS_ONE,
         rule: {
-            name: "新版动态",
+            name: "动态（新）",
             styleScope: StyleScope.Editable,
             aSelector: "div.opus-module-author__name",
             uidResolver: async (el) => {
@@ -265,7 +267,7 @@ const rawConfig: RawConfig[] = [
     {
         urlPattern: /^https:\/\/t\.bilibili\.com\/\d+/,
         rule: {
-            name: "动态-转发",
+            name: "动态（旧）-转发",
             styleScope: StyleScope.Minimal,
             aSelector: "span.dyn-orig-author__name",
             uidResolver: el => {
@@ -273,7 +275,7 @@ const rawConfig: RawConfig[] = [
             }
         }
     }, {
-        urlPattern: /^https:\/\/space\.bilibili\.com\/\d+\/dynamic/,
+        urlPattern: USER_SPACE_DYNAMIC,
         rule: {
             name: "用户空间动态-转发",
             styleScope: StyleScope.Minimal,
@@ -286,7 +288,7 @@ const rawConfig: RawConfig[] = [
         }
     },
     {
-        urlPattern: /^https:\/\/space\.bilibili\.com\/\d+\/dynamic/,
+        urlPattern: USER_SPACE_DYNAMIC,
         rule: {
             name: "用户空间动态-点赞",
             styleScope: StyleScope.Minimal,

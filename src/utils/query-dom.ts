@@ -4,6 +4,7 @@ import {
 } from "query-selector-shadow-dom";
 import { getCaller } from "./caller";
 import { recordQueryDiagnostic } from "./perf-diagnostics";
+import { logger } from "./logger";
 
 export function querySelectorDeep(selector: string, root: Document | HTMLElement | ShadowRoot): HTMLElement | null {
   const rawRoot = root as Document | HTMLElement;
@@ -45,6 +46,9 @@ export function querySelectorAllDeep(
 
   const startedAt = performance.now();
   const caller = getCaller();
+  if (root instanceof Document){
+    logger.debug( `🔍 querySelectorAllDeep: selector=${selector}, root=document, caller=${caller}`,)
+  }
   try {
     const elements = rawQuerySelectorAllDeep(selector, rawRoot);
     recordQueryIfUseful({

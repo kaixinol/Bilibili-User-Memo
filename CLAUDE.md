@@ -17,7 +17,8 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 ## Key modules
 - `src/main.ts` — Entry: Alpine init, GM_registerMenuCommand, lifecycle orchestration
 - `src/core/rules/rules.ts` — All page rules as `RawConfig[]` (urlPattern + rule)
-- `src/core/injection/` — Rule runtime, scan scheduler, MutationObserver watchers
+- `src/core/injection/` — Rule runtime, poll-based watchers, selector merging, scan orchestration
+- `src/core/injection/rule-runtime.ts` — Selector building (`buildMergedSelector`), rule grouping, match-by-name filter
 - `src/core/render/renderer.ts` — `renderMinimal` (class injection) vs `renderEditable` (wrapper span)
 - `src/core/render/rendered-node.ts` — `syncRenderedNodeState` for memoDetail title sync
 - `src/core/store/store.ts` — `UserStore` singleton with listener pattern, GM_addValueChangeListener for cross-tab sync
@@ -26,6 +27,7 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - `src/features/panel/user-list-types.ts` — `UserListStore` TypeScript interface
 - `src/features/panel/perceptual-hash.ts` — bmvbhash for fake noface avatar detection (hardcoded reference hash, reads from DOM img)
 - `src/utils/gm-storage.ts` — GM_getValue/GM_setValue wrappers, panel settings persistence
+- `src/utils/activity-monitor.ts` — Idle detection (10s inactivity → pauses querySelectorDeep scans)
 
 ## Conventions
 - `verbatimModuleSyntax: true` → always `import type { X }` for type-only imports
@@ -45,8 +47,8 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - `StyleScope.Minimal` → adds CSS classes to the original DOM element (no wrapper)
 - `StyleScope.Editable` → creates a `<span class="editable-textarea">` wrapper after the original element, hides original
 - `InjectionMode.Static` → scan once when page matches
-- `InjectionMode.Dynamic` → has `trigger.watch` selector + interval, uses MutationObserver
-  - `dynamicWatch: true` → multi-target discovery via `DynamicRuleWatcher`; each watch target gets its own MutationObserver instance
+- `InjectionMode.Dynamic` → has `trigger.watch` selector + interval, uses poll-only `setInterval` (1000ms)
+  - `trigger.multiTarget: true` → generates combined `watch > element` selectors for single `querySelectorAllDeep` call
 - `matchByName` → fallback to name-based lookup when UID is unavailable
 - `uidResolver` / `originalNameResolver` → custom extraction for non-standard DOM structures
 
@@ -56,4 +58,4 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - `a.bili-memo-tag` may render as `<a>` in mention scenarios → CSS must handle both
 - Panel toggle button cursor: base is `context-menu` with `.is-windows-chrome` override to `cursor: help`
 - memoDetail title sync: `syncRenderedNodeState` appends `详细备注：` to element title, uses `\n` separator for existing titles
-- Dynamic watcher scan trigger: `DynamicRuleWatcher` uses `targetsDirty`/`hasScannedOnce` flags to avoid unnecessary full-DOM scans; only rescans when existing containers are removed or new Shadow DOM is discovered
+- Dynamic watcher scan trigger: `DynamicRuleWatcher` uses poll-only `setInterval` (no MutationObserver); `multiTarget` rules generate `watch > element` selectors for combined `querySelectorAllDeep` calls

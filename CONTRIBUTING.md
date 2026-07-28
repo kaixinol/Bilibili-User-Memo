@@ -47,7 +47,7 @@ URL 匹配 → 规则系统 → DOM 扫描/注入 → 渲染备注
 | 模式 | 说明 |
 |------|------|
 | **Static** | 页面匹配时扫描一次 |
-| **Dynamic** | 配置 `trigger.watch` 选择器 + 轮询间隔，使用 MutationObserver 监听。设置 `dynamicWatch: true` 启用多目标发现，每个 watch 目标独立监听 |
+| **Dynamic** | 配置 `trigger.watch` 选择器 + 轮询间隔，使用 poll-only `setInterval`（1000ms）。`trigger.multiTarget: true` 时生成组合选择器，单次 `querySelectorAllDeep` 扫描所有 watch 下的目标 |
 
 ### 样式隔离
 
@@ -79,9 +79,9 @@ import { UserType, createUser } from './utils'
 
 1. **避免布局抖动**：优先使用原生 CSS 属性（如 `outline`），避免创建大量覆盖层 DIV
 2. **高频事件**：使用 Alpine.js `.debounce` 修饰符，如 `@input.debounce.100ms`
-3. **MutationObserver**：实现防重入锁机制，避免并发调用
-4. **批量操作**：遵循"批量读，批量写"原则，结合 `requestAnimationFrame`
-5. **动态扫描触发**：`DynamicRuleWatcher` 使用脏标记（`targetsDirty`）避免无意义的全树扫描，仅在容器被移除或 Shadow DOM 发现时重新扫描
+3. **批量操作**：遵循"批量读，批量写"原则，结合 `requestAnimationFrame`
+4. **空闲规避**：`querySelectorAllDeep` 通过 `activityMonitor.isIdle()` 在用户闲置 10s 后跳过扫描，避免后台标签页的性能浪费
+5. **动态扫描**：使用 `setInterval` 轮询（1000ms），`multiTarget` 规则生成 `watch > element` 组合选择器以减少 `querySelectorAllDeep` 调用次数
 
 ## 项目结构
 
@@ -90,7 +90,7 @@ src/
 ├── core/              # 核心业务逻辑
 │   ├── api/           # Bilibili API 接口与请求限流
 │   ├── dom/           # DOM 操作工具（节点所有权、文本处理、UID 提取、头像提取）
-│   ├── injection/     # 注入引擎（规则运行时、扫描调度、MutationObserver 监听）
+│   ├── injection/     # 注入引擎（规则运行时、扫描调度、轮询监听）
 │   ├── render/        # 渲染引擎（Minimal/Editable 两种模式）
 │   ├── rules/         # 规则系统（URL 匹配 + 样式作用域 + UID 解析）
 │   ├── store/         # 数据存储（UserStore 单例、昵称匹配、持久化）
@@ -124,7 +124,7 @@ src/
         styleScope: StyleScope.Minimal,  // 或 Editable
         aSelector: ".target-element",     // 目标元素选择器
         textSelector: "span.name",        // 可选：文本内容选择器
-        trigger: { watch: "#app", interval: 1000 },  // 可选：动态触发
+        trigger: { watch: "#app", multiTarget: true },  // 可选：动态触发
         uidResolver: (el) => ...,         // 可选：自定义 UID 提取
         matchByName: false,               // 可选：按名称匹配（无 UID 时回退）
     })

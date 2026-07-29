@@ -10,13 +10,8 @@ import {
 import { buildRuleSelector } from "@/core/injection/rule-runtime";
 import {
   getLatestScan,
-  getPerfDiagnosticsSnapshot,
   recordLongTaskDiagnostic,
   setScanUpdateListener,
-  type FlowDiagnostic,
-  type LongTaskDiagnostic,
-  type QueryDiagnostic,
-  type RulePerfSummary,
 } from "@/utils/perf-diagnostics";
 import "@/styles/global.css";
 import "@/styles/debugger.css";
@@ -37,13 +32,7 @@ const adoptedShadowRoots = new WeakSet<ShadowRoot>();
 
 interface PerfStats {
   fps: number;
-  longTasks: number;
   memory: string;
-  slowRules: RulePerfSummary[];
-  longTaskEvents: LongTaskDiagnostic[];
-  recentFlows: FlowDiagnostic[];
-  slowQueries: QueryDiagnostic[];
-  recentQueries: QueryDiagnostic[];
 }
 
 interface DebugRuleView {
@@ -88,12 +77,7 @@ interface MonkeyApp {
   color: string;
   rules: DebugRuleView[];
   expandedRuleId: number | null;
-  selectorError: string;
-  selectorMatchCount: number;
-  showUnrelatedTasks: boolean;
-  relatedLongTaskCount: number;
   perf: PerfStats;
-  displayLongTaskEvents: LongTaskDiagnostic[];
   batchQueryMs: number;
   scanTimer: number | null;
   showOriginalName: boolean;
@@ -104,18 +88,14 @@ interface MonkeyApp {
   _runScan(): void;
   clearHighlights(): void;
   applyHighlightColor(color: string): void;
-  updateDiagnostics(): void;
   startPerformanceMonitor(): void;
   onPointerDown(event: PointerEvent): void;
   onPointerMove(event: PointerEvent): void;
   onPointerUp(event: PointerEvent): void;
   toggleExpand(id: number): void;
   toggleShowOriginalName(event: Event): void;
-  injectModeLabel(mode: number): string;
   styleScopeLabel(scope: StyleScope): string;
   formatMs(value: number): string;
-  formatTime(value: number): string;
-  totalRuleMs(rule: RulePerfSummary): string;
 }
 
 function renderDebuggerUI(appName: string) {
@@ -158,33 +138,14 @@ export function initDebugger() {
       color: "#1976d2",
       rules: [],
       expandedRuleId: null,
-      selectorError: "",
-      selectorMatchCount: 0,
-      showUnrelatedTasks: false,
-      relatedLongTaskCount: 0,
       perf: {
         fps: 0,
-        longTasks: 0,
         memory: "n/a",
-        slowRules: [],
-        longTaskEvents: [],
-        recentFlows: [],
-        slowQueries: [],
-        recentQueries: [],
       },
       batchQueryMs: 0,
       scanTimer: null,
       showOriginalName: false,
       autoOpenPanel: persistWithGmStorage("debug.autoOpenPanel", false),
-
-      get displayLongTaskEvents() {
-        if (this.showUnrelatedTasks) {
-          return this.perf.longTaskEvents;
-        }
-        return this.perf.longTaskEvents.filter(
-          (task) => task.relatedKind !== "unrelated",
-        );
-      },
 
       init() {
         window.addEventListener("pointerup", (event) => {
@@ -195,7 +156,6 @@ export function initDebugger() {
         });
 
         this.refreshRuleList();
-        this.updateDiagnostics();
         this.scan();
         this.startPerformanceMonitor();
         setScanUpdateListener(() => this.refreshRuleList());
@@ -246,9 +206,6 @@ export function initDebugger() {
       },
 
       _runScan() {
-        this.selectorError = "";
-        this.selectorMatchCount = 0;
-
         const selector = this.selector.trim();
         if (!selector) {
           if (_highlightedElements.size > 0) {
@@ -261,18 +218,13 @@ export function initDebugger() {
         try {
           elements = querySelectorAllDeep(selector, document);
         } catch {
-          this.selectorError = "Invalid selector";
           logger.warn(`[Debugger] Invalid selector: ${selector}`);
           return;
         }
 
         const newSet = new Set<HTMLElement>();
-        let visibleCount = 0;
         elements.forEach((element) => {
           if (!(element instanceof HTMLElement)) return;
-          const rect = element.getBoundingClientRect();
-          if (rect.width <= 0 || rect.height <= 0) return;
-          visibleCount += 1;
           adoptHighlightToRoot(element);
           newSet.add(element);
         });
@@ -290,7 +242,6 @@ export function initDebugger() {
         });
 
         _highlightedElements = newSet;
-        this.selectorMatchCount = visibleCount;
         this.applyHighlightColor(this.color);
       },
 
@@ -300,8 +251,6 @@ export function initDebugger() {
           this.scanTimer = null;
         }
         this.selector = "";
-        this.selectorError = "";
-        this.selectorMatchCount = 0;
         clearAllHighlights();
       },
 
@@ -310,18 +259,6 @@ export function initDebugger() {
           "--debugger-highlight-color",
           color,
         );
-      },
-
-      updateDiagnostics() {
-        const snapshot = getPerfDiagnosticsSnapshot();
-        this.perf.slowRules = snapshot.slowRules;
-        this.perf.longTaskEvents = snapshot.longTasks.slice(0, 10);
-        this.relatedLongTaskCount = snapshot.longTasks.filter(
-          (task) => task.relatedKind !== "unrelated",
-        ).length;
-        this.perf.recentFlows = snapshot.recentFlows.slice(0, 10);
-        this.perf.slowQueries = snapshot.slowQueries.slice(0, 10);
-        this.perf.recentQueries = snapshot.recentQueries.slice(0, 40);
       },
 
       onPointerDown(event: PointerEvent) {
@@ -398,12 +335,10 @@ export function initDebugger() {
         };
         state.perfRafId = window.requestAnimationFrame(tick);
 
-        let longTasks = 0;
         if ("PerformanceObserver" in window) {
           try {
             state.perfObserver = new PerformanceObserver((list) => {
               const entries = list.getEntries();
-              longTasks += entries.length;
               if (__IS_DEBUG__) {
                 entries.forEach((entry) =>
                   recordLongTaskDiagnostic(entry.duration, entry.startTime),
@@ -415,8 +350,6 @@ export function initDebugger() {
         }
 
         state.perfTimer = window.setInterval(() => {
-          this.perf.longTasks = longTasks;
-          longTasks = 0;
           const memory = (
             performance as Performance & {
               memory?: { usedJSHeapSize: number; jsHeapSizeLimit: number };
@@ -429,7 +362,6 @@ export function initDebugger() {
           } else {
             this.perf.memory = "n/a";
           }
-          this.updateDiagnostics();
         }, 1000);
       },
 
@@ -443,10 +375,6 @@ export function initDebugger() {
         setShowOriginalInDebug(checked);
       },
 
-      injectModeLabel(mode) {
-        return mode === 2 ? "Dynamic" : "Static";
-      },
-
       styleScopeLabel(scope) {
         switch (scope) {
           case StyleScope.Minimal:
@@ -458,14 +386,6 @@ export function initDebugger() {
 
       formatMs(value) {
         return `${value.toFixed(1)}ms`;
-      },
-
-      formatTime(value) {
-        return new Date(value).toLocaleTimeString();
-      },
-
-      totalRuleMs(rule) {
-        return `${(rule.scanMs + rule.applyMs).toFixed(1)}ms`;
       },
     }),
   );

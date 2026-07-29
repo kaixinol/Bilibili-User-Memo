@@ -2,14 +2,10 @@ import Alpine from "alpinejs";
 import { querySelectorAllDeep } from "@/utils/query-dom";
 import { config as defaultRules } from "@/core/rules/rules";
 import {
-  InjectionMode,
   StyleScope,
   DYNAMIC_SCAN_INTERVAL_MS,
-  type DynamicTriggerConfig,
   type PageRule,
   type RuleConfigEntry,
-  getInjectMode,
-  isStaticMode,
 } from "@/core/rules/rule-types";
 import { buildRuleSelector } from "@/core/injection/rule-runtime";
 import {
@@ -53,7 +49,6 @@ interface PerfStats {
 interface DebugRuleView {
   id: number;
   name: string;
-  mode: InjectionMode;
   styleScope: StyleScope;
   selector: string;
   trigger?: string;
@@ -116,7 +111,7 @@ interface MonkeyApp {
   onPointerUp(event: PointerEvent): void;
   toggleExpand(id: number): void;
   toggleShowOriginalName(event: Event): void;
-  injectModeLabel(mode: InjectionMode): string;
+  injectModeLabel(mode: number): string;
   styleScopeLabel(scope: StyleScope): string;
   formatMs(value: number): string;
   formatTime(value: number): string;
@@ -131,9 +126,8 @@ function renderDebuggerUI(appName: string) {
 }
 
 function getRuleTrigger(rule: PageRule): string | undefined {
-  if (isStaticMode(rule)) return undefined;
-  const trigger = rule.trigger as DynamicTriggerConfig;
-  return `${trigger.watch} / interval ${DYNAMIC_SCAN_INTERVAL_MS}ms`;
+  if (!rule.container) return undefined;
+  return `${rule.container} / interval ${DYNAMIC_SCAN_INTERVAL_MS}ms`;
 }
 
 function getMatchedRuleEntries(): RuleConfigEntry[] {
@@ -230,7 +224,6 @@ export function initDebugger() {
           return {
             id: index + 1,
             name: rule.name,
-            mode: getInjectMode(rule),
             styleScope: rule.styleScope,
             selector,
             trigger: getRuleTrigger(rule),
@@ -451,12 +444,7 @@ export function initDebugger() {
       },
 
       injectModeLabel(mode) {
-        switch (mode) {
-          case InjectionMode.Static:
-            return "Static";
-          case InjectionMode.Dynamic:
-            return "Dynamic";
-        }
+        return mode === 2 ? "Dynamic" : "Static";
       },
 
       styleScopeLabel(scope) {

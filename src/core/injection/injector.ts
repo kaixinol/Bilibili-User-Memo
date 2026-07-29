@@ -1,8 +1,6 @@
 import { querySelectorAllDeep } from "@/utils/query-dom";
 import {
   type PageRule,
-  type DynamicPageRule,
-  getInjectMode,
   StyleScope,
   DYNAMIC_SCAN_INTERVAL_MS,
 } from "@/core/rules/rule-types";
@@ -16,18 +14,12 @@ import { userStore, type UserStoreChange } from "../store/store";
 import { createUrlMonitor, type UrlMonitor } from "./url-monitor";
 import { syncSpaceProfile } from "./space-profile";
 import type { BiliUser } from "../types";
-import { DynamicRuleWatcher } from "./watchers";
 import { unsafeWindow } from "$";
 import type { ScanScope } from "./scan-scope";
 import {
   buildMergedSelector,
   buildRuleSelector,
-  getMatchByNameRules,
   getMatchedRules,
-  getSingleTargetDynamicRules,
-  groupRulesByMode,
-  logRuleScanResult,
-  type RuleGroups,
 } from "./rule-runtime";
 import { RemoteChangeBuffer } from "./remote-change-buffer";
 import { waitUntil } from "@/utils/scheduler";
@@ -44,11 +36,8 @@ class PageInjector {
   private domReady = false;
   private readonly urlMonitor: UrlMonitor;
   private readonly pendingRemoteChanges = new RemoteChangeBuffer();
-
-  private matchedStaticRules: PageRule[] = [];
-  private activeWatchers = new Map<DynamicPageRule, DynamicRuleWatcher>();
-  private multiTargetScanTimer: number | null = null;
-  private activeMultiTargetRules: DynamicPageRule[] = [];
+  private matchedRules: PageRule[] = [];
+  private scanTimer: number | null = null;
 
   constructor() {
     logger.info("🚀 PageInjector 正在启动...");
@@ -86,7 +75,7 @@ class PageInjector {
         change.changedIds,
       );
       if (change.rescanMatchByName) {
-        this.scanMatchByNameRules(document);
+        this.scanAndInjectRulesBatch(this.matchedRules, document);
       }
       return;
     }
@@ -129,7 +118,7 @@ class PageInjector {
     }
 
     if (pendingState.rescanMatchByName) {
-      this.scanMatchByNameRules(document);
+      this.scanAndInjectRulesBatch(this.matchedRules, document);
     }
   }
 
@@ -146,24 +135,24 @@ class PageInjector {
 
     void syncSpaceProfile();
 
-    const matchedRules = getMatchedRules();
-    const groups = this.groupRulesByMode(matchedRules);
+    this.matchedRules = getMatchedRules();
 
-    this.matchedStaticRules = groups.staticRules;
-
-    if (groups.staticRules.length > 0) {
-      this.scanAndInjectRulesBatch(groups.staticRules, document);
+    if (this.matchedRules.length > 0) {
+      this.scanAndInjectRulesBatch(this.matchedRules, document);
     }
 
-    const singleTarget = getSingleTargetDynamicRules(groups.dynamicRules);
-    const multiTarget = groups.dynamicRules.filter((r) => r.trigger.multiTarget);
-
-    this.reconcileWatchers(singleTarget);
-    this.reconcileMultiTargetScan(multiTarget);
+    this.startScanTimer();
   }
 
-  private groupRulesByMode(rules: PageRule[]): RuleGroups {
-    return groupRulesByMode(rules);
+  private startScanTimer() {
+    if (this.scanTimer !== null) {
+      clearInterval(this.scanTimer);
+    }
+    this.scanTimer = window.setInterval(() => {
+      if (this.matchedRules.length > 0) {
+        this.scanAndInjectRulesBatch(this.matchedRules, document);
+      }
+    }, DYNAMIC_SCAN_INTERVAL_MS);
   }
 
   private async scanAndInjectRulesBatch(
@@ -180,7 +169,7 @@ class PageInjector {
       queryMs = performance.now() - scanStart;
       recordRuleScanDiagnostic({
         ruleName: rules.map((r) => r.name).join(","),
-        mode: getInjectMode(rules[0]),
+        mode: rules[0].container ? 2 : 1,
         selector: merged,
         scopeType: getScopeType(scope),
         matchCount: elements.length,
@@ -245,107 +234,6 @@ class PageInjector {
     }
   }
 
-  private reconcileWatchers(nextRules: DynamicPageRule[]) {
-    for (const [rule, watcher] of this.activeWatchers) {
-      if (nextRules.includes(rule)) continue;
-      watcher.stop();
-      this.activeWatchers.delete(rule);
-    }
-
-    nextRules.forEach((rule) => {
-      if (this.activeWatchers.has(rule)) return;
-      const watcher = new DynamicRuleWatcher(rule, (r, scope) => {
-        this.scanAndInjectRule(r, scope);
-        if (this.matchedStaticRules.length > 0) {
-          this.scanAndInjectRulesBatch(this.matchedStaticRules, scope);
-        }
-      });
-      this.activeWatchers.set(rule, watcher);
-      watcher.start();
-    });
-  }
-
-  private reconcileMultiTargetScan(nextRules: DynamicPageRule[]) {
-    this.activeMultiTargetRules = nextRules;
-    this.stopMultiTargetScan();
-
-    if (nextRules.length > 0) {
-      this.scanAndInjectRulesBatch(nextRules, document);
-      this.startMultiTargetScan(nextRules);
-    }
-  }
-
-  private startMultiTargetScan(rules: DynamicPageRule[]) {
-    if (rules.length === 0) return;
-    const interval = DYNAMIC_SCAN_INTERVAL_MS;
-    this.multiTargetScanTimer = window.setInterval(() => {
-      this.scanAndInjectRulesBatch(this.activeMultiTargetRules, document);
-    }, interval);
-  }
-
-  private stopMultiTargetScan() {
-    if (this.multiTargetScanTimer) {
-      clearInterval(this.multiTargetScanTimer);
-      this.multiTargetScanTimer = null;
-    }
-  }
-
-  private scanMatchByNameRules(scope: ScanScope) {
-    const rules = getMatchByNameRules(this.activeWatchers.keys());
-    if (rules.length === 0) return;
-    for (const rule of rules) {
-      void this.scanAndInjectRule(rule, scope);
-    }
-  }
-
-  private async scanAndInjectRule(
-    rule: PageRule,
-    scope: ScanScope,
-  ) {
-    const selector = buildRuleSelector(rule);
-    if (!selector) return;
-
-    const scanStart = __IS_DEBUG__ ? performance.now() : 0;
-    const queryStart = __IS_DEBUG__ ? performance.now() : 0;
-    const elements = querySelectorAllDeep(selector, scope);
-    const queryMs = __IS_DEBUG__ ? performance.now() - queryStart : 0;
-    logRuleScanResult(rule, selector, elements.length);
-    if (__IS_DEBUG__) {
-      recordRuleScanDiagnostic({
-        ruleName: rule.name,
-        mode: getInjectMode(rule),
-        selector,
-        scopeType: getScopeType(scope),
-        matchCount: elements.length,
-        queryMs,
-        totalMs: performance.now() - scanStart,
-      });
-      const existingScan = getLatestScan();
-      const mergedCounts = existingScan
-        ? { ...existingScan.perRuleCounts, [rule.name]: elements.length }
-        : { [rule.name]: elements.length };
-      recordLatestScan({
-        queryMs,
-        totalMs: performance.now() - scanStart,
-        perRuleCounts: mergedCounts,
-      });
-    }
-    if (elements.length === 0) return;
-
-    elements.forEach((el) => {
-      if (el.classList.contains("editable-textarea")) return;
-
-      const storedUid = el.dataset.bilimemoUid;
-      let preResolvedUid: string | null = null;
-      if (storedUid) {
-        preResolvedUid = extractUid(el, { silent: true, allowLocationFallback: false });
-        if (preResolvedUid && storedUid === preResolvedUid) return;
-      }
-
-      void this.applyRuleToElement(el, rule, preResolvedUid);
-    });
-  }
-
   private async applyRuleToElement(el: HTMLElement, rule: PageRule, preResolvedUid?: string | null) {
     const applyStart = __IS_DEBUG__ ? performance.now() : 0;
     const element = __IS_DEBUG__ ? describeElementForDiagnostics(el) : "";
@@ -368,7 +256,7 @@ class PageInjector {
       if (__IS_DEBUG__) {
         recordRuleApplyDiagnostic({
           ruleName: rule.name,
-          mode: getInjectMode(rule),
+          mode: rule.container ? 2 : 1,
           element,
           uidResolved,
           applied,
@@ -378,14 +266,6 @@ class PageInjector {
     }
   }
 
-  /**
-   * 解析元素对应的 UID。
-   *
-   * 优先级固定为：
-   *   1. rule.uidResolver
-   *   2. extractUid
-   *   3. matchByName（仅显式开启时作为最后兜底）
-   */
   private async resolveElementUid(
     el: HTMLElement,
     rule: PageRule,

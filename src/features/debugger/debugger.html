@@ -70,20 +70,11 @@
                 :class="{ 'rule-expanded-btn': expandedRuleId === r.id }"
                 @click="toggleExpand(r.id)"
               >▼</button>
-              <span
-                class="rule-mode-badge"
-                :title="injectModeLabel(r.mode)"
-                x-text="injectModeLabel(r.mode).charAt(0)"
-              ></span>
               <span class="rule-name" x-text="r.name"></span>
               <span class="rule-count" x-text="r.matchCount"></span>
             </div>
             <template x-if="expandedRuleId === r.id">
               <div class="rule-details">
-                <div class="rule-detail-row">
-                  <label>Mode</label>
-                  <span class="rule-mode-label" x-text="injectModeLabel(r.mode)"></span>
-                </div>
                 <div class="rule-detail-row">
                   <label>Scope</label>
                   <span class="rule-mode-label" x-text="styleScopeLabel(r.styleScope)"></span>

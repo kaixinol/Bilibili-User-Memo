@@ -1,8 +1,6 @@
 import type { BiliUser } from "../types";
-import {
-  isDynamicMode,
-  type DynamicPageRule,
-  type PageRule,
+import type {
+  PageRule,
 } from "@/core/rules/rule-types";
 import { querySelectorAllDeep } from "@/utils/query-dom";
 
@@ -12,12 +10,6 @@ function readPreferredText(node: HTMLElement | null): string | null {
   if (original) return original;
   const text = node.textContent?.trim();
   return text || null;
-}
-
-function hasWatchTrigger(
-  rule: PageRule,
-): rule is DynamicPageRule {
-  return "trigger" in rule;
 }
 
 function resolveSelfTextTarget(
@@ -31,7 +23,7 @@ function resolveSelfTextTarget(
 }
 
 /**
- * 在有 watch 容器的规则中，找到 "当前元素对应的昵称 span"。
+ * 在有 container 的规则中，找到 "当前元素对应的昵称 span"。
  *
  * el 是选择器匹配到的元素：
  *   - 有 aSelector 时，el 是链接元素（如 <a class="up-item">）
@@ -39,28 +31,22 @@ function resolveSelfTextTarget(
  *   - 没有 aSelector 只有 textSelector 时，el 就是昵称 span 本身
  *     此时 .matches(textSelector) 成立，直接返回 el
  */
-function resolveWatchTextTarget(
+function resolveContainerTextTarget(
   el: HTMLElement,
-  rule: DynamicPageRule,
+  container: string,
   textSelector: string,
 ): HTMLElement | null {
-  // 元素自身就是文本节点（无 aSelector 的 matchByName 规则），直接返回。
-  // 不跳过这一步会导致后续 .querySelector(textSelector) 在 watch 容器内
-  // 永远返回第一个 span 的文本，造成昵称串数据。
   if (el.matches(textSelector)) return el;
 
-  // 0) 优先从当前元素的后代中查找（适用于 aSelector 指向容器元素，textSelector 指向其内部子元素的情况）
   const childTextEl = el.querySelector(textSelector) as HTMLElement | null;
   if (childTextEl) return childTextEl;
 
-  // 1) 优先命中"当前元素所属"的 watch 容器，避免多容器串数据
-  const directContainer = el.closest(rule.trigger.watch);
+  const directContainer = el.closest(container);
   if (directContainer) {
     return directContainer.querySelector(textSelector) as HTMLElement | null;
   }
 
-  // 2) 兜底：遍历 deep 查询结果，找到包含当前元素的容器实例
-  const watchTargets = querySelectorAllDeep(rule.trigger.watch, document);
+  const watchTargets = querySelectorAllDeep(container, document);
   for (const target of watchTargets) {
     const scope = target.shadowRoot || target;
     if (scope.contains(el)) {
@@ -68,7 +54,6 @@ function resolveWatchTextTarget(
     }
   }
 
-  // 3) 最后兜底：保持原有行为（取第一个）
   const first = watchTargets[0];
   if (!first) return null;
   const fallbackScope = first.shadowRoot || first;
@@ -84,9 +69,8 @@ export function resolveRuleTextTarget(
 ): HTMLElement | null {
   if (!rule.textSelector) return el;
 
-  if (isDynamicMode(rule)) {
-    if (!hasWatchTrigger(rule)) return null;
-    return resolveWatchTextTarget(el, rule, rule.textSelector);
+  if (rule.container) {
+    return resolveContainerTextTarget(el, rule.container, rule.textSelector);
   }
 
   return resolveSelfTextTarget(el, rule.textSelector);

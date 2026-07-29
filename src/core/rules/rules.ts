@@ -28,7 +28,7 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Minimal,
             aSelector: ".upname a",
             textSelector: "span.name",
-            trigger: { watch: ".rcmd-tab" }
+            container: ".rcmd-tab"
         }
     },
     {
@@ -41,7 +41,7 @@ const rawConfig: RawConfig[] = [
             name: "空间关注/粉丝",
             styleScope: StyleScope.Editable,
             aSelector: "a.relation-card-info__uname",
-            trigger: { watch: "main.space-main"},
+            container: "main.space-main",
         }
     },
     {
@@ -52,7 +52,7 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Minimal,
             aSelector: ".bili-video-card__author",
             textSelector: ".bili-video-card__text span[title]",
-            trigger: { watch: ".favlist-main"},
+            container: ".favlist-main",
         }
     },
     {
@@ -63,7 +63,7 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Minimal,
             aSelector: ".bili-video-card__author",
             textSelector: ".bili-video-card__text span[title]",
-            trigger: { watch: "body"},
+            container: "body",
         }
     },
     {
@@ -73,7 +73,7 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Minimal,
             aSelector: VIDEO_CARD_A_SELECTOR,
             textSelector: VIDEO_CARD_TEXT_SELECTOR,
-            trigger: { watch: "#app"},
+            container: "#app",
         }
     },
     {
@@ -92,7 +92,7 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Minimal,
             aSelector: VIDEO_CARD_A_SELECTOR,
             textSelector: VIDEO_CARD_TEXT_SELECTOR,
-            trigger: { watch: "#app"},
+            container: "#app",
         }
     },
     {
@@ -102,7 +102,7 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Minimal,
             aSelector: VIDEO_CARD_A_SELECTOR,
             textSelector: VIDEO_CARD_TEXT_SELECTOR,
-            trigger: { watch: "#app"},
+            container: "#app",
         }
     },
     {
@@ -112,7 +112,7 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Minimal,
             aSelector: VIDEO_CARD_A_SELECTOR,
             textSelector: VIDEO_CARD_TEXT_SELECTOR,
-            trigger: { watch: "#app"},
+            container: "#app",
         }
     },
     {
@@ -121,7 +121,7 @@ const rawConfig: RawConfig[] = [
             name: "评论区",
             styleScope: StyleScope.Editable,
             aSelector: "#user-name a",
-            trigger: { watch: "div#contents", multiTarget: true },
+            container: "div#contents",
         }
     },
     {
@@ -131,7 +131,7 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Minimal,
             aSelector: 'div[data-id^="contact"]',
             textSelector: 'div[class*="_SessionItem__Name"]',
-            trigger: { watch: 'div[class^="_Sidebar_"]'},
+            container: 'div[class^="_Sidebar_"]',
             uidResolver: (el) =>
                 el.closest('[data-id^="contact_"]')?.getAttribute("data-id")?.split("_")?.[1] || null,
         }
@@ -142,7 +142,7 @@ const rawConfig: RawConfig[] = [
             name: "私信-当前",
             styleScope: StyleScope.Minimal,
             textSelector: 'div[class^="_ContactName_"]',
-            trigger: { watch: 'div[class^="_ChatHeader_"]'},
+            container: 'div[class^="_ChatHeader_"]',
             uidResolver: () => location.href.match(/#\/whisper\/mid(\d+)/)?.[1] || null,
             originalNameResolver: () => {
                 const uid = location.href.match(/#\/whisper\/mid(\d+)/)?.[1];
@@ -165,7 +165,7 @@ const rawConfig: RawConfig[] = [
             name: "个人空间动态",
             styleScope: StyleScope.Minimal,
             aSelector: "div.bili-dyn-title span.bili-dyn-title__text",
-            trigger: { watch: ".bili-dyn-list"},
+            container: ".bili-dyn-list",
         }
     },
     {
@@ -175,7 +175,7 @@ const rawConfig: RawConfig[] = [
             name: "回复/赞/AT",
             styleScope: StyleScope.Minimal,
             aSelector: "a.interaction-item__uname",
-            trigger: { watch: "div.message-content"},
+            container: "div.message-content",
         }
     },
     {
@@ -184,7 +184,7 @@ const rawConfig: RawConfig[] = [
             name: "动态页（所有动态）",
             styleScope: StyleScope.Editable,
             textSelector: "span.bili-dyn-title__text",
-            trigger: { watch: "div.bili-dyn-item__main", multiTarget: true },
+            container: "div.bili-dyn-item__main",
             uidResolver: (el) => {
                 return getUidFromVueInstance(el.parentElement!)
             }
@@ -197,7 +197,7 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Minimal,
             aSelector:
                 ".opus-paragraph-children p a[href*='space.bilibili.com']",
-            trigger: { watch: "div.bili-dyn-item__main", multiTarget: true },
+            container: "div.bili-dyn-item__main",
         }
     },
     // 弹出层规则
@@ -207,7 +207,7 @@ const rawConfig: RawConfig[] = [
             name: "最近-UP动态",
             styleScope: StyleScope.Editable,
             aSelector: "div.user-name a",
-            trigger: { watch: "div.header-content-panel"},
+            container: "div.header-content-panel",
         }
     },
     {
@@ -217,7 +217,7 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Minimal,
             aSelector: "span.header-fav-card__info--name",
             textSelector: "span.header-fav-card__info--name span",
-            trigger: { watch: "div.favorite-panel-popover"},
+            container: "div.favorite-panel-popover",
         }
     },
     {
@@ -226,7 +226,7 @@ const rawConfig: RawConfig[] = [
             name: "最近-历史",
             styleScope: StyleScope.Editable,
             textSelector: "div.header-history-card__info--name span",
-            trigger: { watch: "div.history-panel-popover"},
+            container: "div.history-panel-popover",
             matchByName: true,
         }
     },
@@ -237,7 +237,7 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Minimal,
             aSelector: "a.up-item",
             textSelector: "div.up-name",
-            trigger: { watch: "div.living-up-list"},
+            container: "div.living-up-list",
             matchByName: true, // 因为直播间ID不是UID
         }
     },
@@ -277,7 +277,7 @@ const rawConfig: RawConfig[] = [
             name: "用户空间动态-转发",
             styleScope: StyleScope.Minimal,
             aSelector: "span.dyn-orig-author__name",
-            trigger: { watch: "div.dyn-orig-author", multiTarget: true },
+            container: "div.dyn-orig-author",
             uidResolver: el => {
                 return (el as any)._profile.uid;
             }
@@ -289,7 +289,7 @@ const rawConfig: RawConfig[] = [
             name: "用户空间动态-点赞",
             styleScope: StyleScope.Minimal,
             aSelector: 'span[data-module="desc"]',
-            trigger: { watch: "div.bili-dyn-interaction__item", multiTarget: true },
+            container: "div.bili-dyn-interaction__item",
         }
     }, {
         urlPattern: /^https:\/\/search\.bilibili\.com\/(all|live|upuser)/,

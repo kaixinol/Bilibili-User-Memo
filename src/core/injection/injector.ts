@@ -202,8 +202,17 @@ class PageInjector {
     for (const el of elements) {
       if (el.classList.contains("editable-textarea")) continue;
 
+      let firstMatchedRule: string | null = null;
+
       for (const { matchSelector, rule } of selectorRules) {
         if (!el.matches(matchSelector)) continue;
+        if (rule.container && !el.closest(rule.container)) continue;
+
+        if (firstMatchedRule) {
+          logger.warn(`[injector] Element matched by multiple rules: "${firstMatchedRule}" and "${rule.name}"`, el);
+        } else {
+          firstMatchedRule = rule.name;
+        }
 
         if (__IS_DEBUG__) perRuleCounts[rule.name]++;
 

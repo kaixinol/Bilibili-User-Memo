@@ -47,7 +47,7 @@ URL 匹配 → 规则系统 → DOM 扫描/注入 → 渲染备注
 | 模式 | 说明 |
 |------|------|
 | **Static** | 页面匹配时扫描一次 |
-| **Dynamic** | 配置 `trigger.watch` 选择器 + 轮询间隔，使用 poll-only `setInterval`（1000ms）。`trigger.multiTarget: true` 时生成组合选择器，单次 `querySelectorAllDeep` 扫描所有 watch 下的目标 |
+| **Dynamic** | 配置 `trigger.watch` 选择器 + 轮询间隔，使用 poll-only `setInterval`（750ms）。`trigger.multiTarget: true` 时生成组合选择器，单次 `querySelectorAllDeep` 扫描所有 watch 下的目标 |
 
 ### 样式隔离
 
@@ -80,8 +80,8 @@ import { UserType, createUser } from './utils'
 1. **避免布局抖动**：优先使用原生 CSS 属性（如 `outline`），避免创建大量覆盖层 DIV
 2. **高频事件**：使用 Alpine.js `.debounce` 修饰符，如 `@input.debounce.100ms`
 3. **批量操作**：遵循"批量读，批量写"原则，结合 `requestAnimationFrame`
-4. **空闲规避**：`querySelectorAllDeep` 通过 `activityMonitor.isIdle()` 在用户闲置 10s 后跳过扫描，避免后台标签页的性能浪费
-5. **动态扫描**：使用 `setInterval` 轮询（1000ms），`multiTarget` 规则生成 `watch > element` 组合选择器以减少 `querySelectorAllDeep` 调用次数
+4. **空闲规避**：`querySelectorAllDeep` 通过 `activityMonitor.isIdle()` 在用户闲置 3s 后跳过扫描，避免后台标签页的性能浪费
+5. **动态扫描**：使用 `setInterval` 轮询（750ms），`multiTarget` 规则生成 `watch > element` 组合选择器以减少 `querySelectorAllDeep` 调用次数
 
 ## 项目结构
 
@@ -170,6 +170,7 @@ src/
 - 右键点击面板开关按钮可打开调试窗口
 - 使用 `logger.debug()` 输出调试日志
 - 调试版暴露 `window.__biliMemoTest` API，可用于非 DOM 相关的自动化测试（查询用户、搜索过滤、多选、导出、刷新等），避免直接操作 DOM
+- 调试器命中数从批量扫描快照（`getLatestScan()`）读取，不再对每规则单独调用 `querySelectorAllDeep`
 
 ### 为什么我的规则没有生效？
 

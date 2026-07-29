@@ -27,7 +27,7 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - `src/features/panel/user-list-types.ts` — `UserListStore` TypeScript interface
 - `src/features/panel/perceptual-hash.ts` — bmvbhash for fake noface avatar detection (hardcoded reference hash, reads from DOM img)
 - `src/utils/gm-storage.ts` — GM_getValue/GM_setValue wrappers, panel settings persistence
-- `src/utils/activity-monitor.ts` — Idle detection (10s inactivity → pauses querySelectorDeep scans)
+- `src/utils/activity-monitor.ts` — Idle detection (3s inactivity → pauses querySelectorDeep scans)
 
 ## Conventions
 - `verbatimModuleSyntax: true` → always `import type { X }` for type-only imports
@@ -47,7 +47,7 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - `StyleScope.Minimal` → adds CSS classes to the original DOM element (no wrapper)
 - `StyleScope.Editable` → creates a `<span class="editable-textarea">` wrapper after the original element, hides original
 - `InjectionMode.Static` → scan once when page matches
-- `InjectionMode.Dynamic` → has `trigger.watch` selector + interval, uses poll-only `setInterval` (1000ms)
+- `InjectionMode.Dynamic` → has `trigger.watch` selector + interval, uses poll-only `setInterval` (750ms)
   - `trigger.multiTarget: true` → generates combined `watch > element` selectors for single `querySelectorAllDeep` call
 - `matchByName` → fallback to name-based lookup when UID is unavailable
 - `uidResolver` / `originalNameResolver` → custom extraction for non-standard DOM structures

@@ -3,16 +3,17 @@ export type StyleScope = typeof StyleScope[keyof typeof StyleScope];
 
 export const DYNAMIC_SCAN_INTERVAL_MS = 750;
 
-export interface RawRule {
+export type RawRule = {
   name: string;
   styleScope: StyleScope;
-  aSelector?: string;
-  textSelector?: string;
   container?: string;
-  matchByName?: boolean;
   uidResolver?: UidResolverFn;
   originalNameResolver?: OriginalNameResolverFn;
-}
+} & (
+  | { aSelector: string; textSelector?: string; matchByName?: false }
+  | { textSelector: string; aSelector?: string; matchByName?: false }
+  | { textSelector: string; aSelector?: string; matchByName: true }
+);
 
 export interface RawConfig {
   urlPattern: RegExp;

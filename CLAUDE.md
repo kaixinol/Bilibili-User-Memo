@@ -21,8 +21,8 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 
 - `src/main.ts` — Entry: Alpine init, GM_registerMenuCommand, lifecycle orchestration
 - `src/core/rules/rules.ts` — All page rules as `RawConfig[]` (urlPattern + rule)
-- `src/core/injection/` — Rule runtime, poll-based watchers, selector merging, scan orchestration
-- `src/core/injection/rule-runtime.ts` — Selector building (`buildMergedSelector`), rule grouping, match-by-name filter
+- `src/core/injection/` — Rule runtime, single-timer scan, selector merging
+- `src/core/injection/rule-runtime.ts` — Selector building (`buildMergedSelector`)
 - `src/core/render/renderer.ts` — `renderMinimal` (class injection) vs `renderEditable` (wrapper span)
 - `src/core/render/rendered-node.ts` — `syncRenderedNodeState` for memoDetail title sync
 - `src/core/store/store.ts` — `UserStore` singleton with listener pattern, GM_addValueChangeListener for cross-tab sync
@@ -52,10 +52,8 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 
 - `StyleScope.Minimal` → adds CSS classes to the original DOM element (no wrapper)
 - `StyleScope.Editable` → creates a `<span class="editable-textarea">` wrapper after the original element, hides original
-- `InjectionMode.Static` → scan once when page matches
-- `InjectionMode.Dynamic` → has `trigger.watch` selector + interval, uses poll-only `setInterval` (750ms)
-  - `trigger.multiTarget: true` → generates combined `watch > element` selectors for single `querySelectorAllDeep` call
-- `matchByName` → fallback to name-based lookup when UID is unavailable
+- `container` → optional scope selector; rules with `container` verify `el.closest(container)` before processing, rules without it scan globally. All rules share one `setInterval` (750ms) scanning via `buildMergedSelector`
+- `matchByName` → fallback to name-based lookup when UID is unavailable; requires `textSelector`
 - `uidResolver` / `originalNameResolver` → custom extraction for non-standard DOM structures
 
 ## Gotchas
@@ -65,4 +63,4 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - `a.bili-memo-tag` may render as `<a>` in mention scenarios → CSS must handle both
 - Panel toggle button cursor: base is `context-menu` with `.is-windows-chrome` override to `cursor: help`
 - memoDetail title sync: `syncRenderedNodeState` appends `详细备注：` to element title, uses `\n` separator for existing titles
-- Dynamic watcher scan trigger: `DynamicRuleWatcher` uses poll-only `setInterval` (no MutationObserver); `multiTarget` rules generate `watch > element` selectors for combined `querySelectorAllDeep` calls
+

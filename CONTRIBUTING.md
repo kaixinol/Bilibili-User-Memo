@@ -42,12 +42,11 @@ URL 匹配 → 规则系统 → DOM 扫描/注入 → 渲染备注
 | **Minimal** | 在原 DOM 元素上添加 CSS 类，不创建包裹元素 | 视频卡片作者、搜索列表等 |
 | **Editable** | 创建 `<span class="editable-textarea">` 包裹元素，隐藏原始元素 | 视频页 UP 主、评论区、空间昵称等 |
 
-### 注入模式
+### 扫描方式
 
-| 模式 | 说明 |
-|------|------|
-| **Static** | 页面匹配时扫描一次 |
-| **Dynamic** | 配置 `trigger.watch` 选择器 + 轮询间隔，使用 poll-only `setInterval`（750ms）。`trigger.multiTarget: true` 时生成组合选择器，单次 `querySelectorAllDeep` 扫描所有 watch 下的目标 |
+所有规则共享一个 `setInterval`（750ms），通过 `buildMergedSelector` 生成合并选择器，单次 `querySelectorAllDeep` 扫描。
+- 有 `container` 的规则：扫描到元素后额外校验 `el.closest(container)`，通过后才处理
+- 无 `container` 的规则：全局扫描，所有匹配元素均处理
 
 ### 样式隔离
 
@@ -81,7 +80,7 @@ import { UserType, createUser } from './utils'
 2. **高频事件**：使用 Alpine.js `.debounce` 修饰符，如 `@input.debounce.100ms`
 3. **批量操作**：遵循"批量读，批量写"原则，结合 `requestAnimationFrame`
 4. **空闲规避**：`querySelectorAllDeep` 通过 `activityMonitor.isIdle()` 在用户闲置 3s 后跳过扫描，避免后台标签页的性能浪费
-5. **动态扫描**：使用 `setInterval` 轮询（750ms），`multiTarget` 规则生成 `watch > element` 组合选择器以减少 `querySelectorAllDeep` 调用次数
+5. **动态扫描**：使用 `setInterval` 轮询（750ms），`container` 字段自动拼接到选择器前（`${container} ${selector}`），所有规则统一生成合并选择器
 
 ## 项目结构
 
@@ -90,7 +89,7 @@ src/
 ├── core/              # 核心业务逻辑
 │   ├── api/           # Bilibili API 接口与请求限流
 │   ├── dom/           # DOM 操作工具（节点所有权、文本处理、UID 提取、头像提取）
-│   ├── injection/     # 注入引擎（规则运行时、扫描调度、轮询监听）
+│   ├── injection/     # 注入引擎（规则运行时、扫描调度）
 │   ├── render/        # 渲染引擎（Minimal/Editable 两种模式）
 │   ├── rules/         # 规则系统（URL 匹配 + 样式作用域 + UID 解析）
 │   ├── store/         # 数据存储（UserStore 单例、昵称匹配、持久化）
@@ -119,15 +118,15 @@ src/
 ```typescript
 {
     urlPattern: /^https:\/\/www\.bilibili\.com\/xxx/,  // URL 正则
-    rule: r({
+    rule: {
         name: "规则名称",
         styleScope: StyleScope.Minimal,  // 或 Editable
         aSelector: ".target-element",     // 目标元素选择器
         textSelector: "span.name",        // 可选：文本内容选择器
-        trigger: { watch: "#app", multiTarget: true },  // 可选：动态触发
+        container: "#app",                // 可选：限定扫描容器，有 container 的规则会在匹配时校验 el.closest(container)
         uidResolver: (el) => ...,         // 可选：自定义 UID 提取
-        matchByName: false,               // 可选：按名称匹配（无 UID 时回退）
-    })
+        matchByName: true,                // 可选：按名称匹配（无 UID 时回退，需同时设置 textSelector）
+    }
 }
 ```
 
@@ -176,7 +175,7 @@ src/
 
 1. 检查 `urlPattern` 是否正确匹配目标页面
 2. 检查 `aSelector` 是否能选中目标元素
-3. 如果是动态加载的内容，需要配置 `trigger`
+3. 如果是动态加载的内容，建议配置 `container`
 4. 打开调试器查看规则运行时日志
 
 ### 如何添加新的外部依赖？

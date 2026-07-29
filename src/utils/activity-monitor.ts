@@ -1,4 +1,4 @@
-const IDLE_TIMEOUT_MS = 10_000;
+const IDLE_TIMEOUT_MS = 3_000;
 
 let idle = false;
 let idleTimer: number | null = null;

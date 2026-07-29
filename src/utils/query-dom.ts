@@ -16,7 +16,7 @@ export function querySelectorDeep(selector: string, root: Document | HTMLElement
   const caller = getCaller();
   try {
     const element = rawQuerySelectorDeep(selector, rawRoot);
-    recordQueryIfUseful({
+    recordQueryDiagnostic({
       kind: "one",
       selector,
       caller,
@@ -26,7 +26,7 @@ export function querySelectorDeep(selector: string, root: Document | HTMLElement
     });
     return element;
   } catch (error) {
-    recordQueryIfUseful({
+    recordQueryDiagnostic({
       kind: "one",
       selector,
       caller,
@@ -54,7 +54,7 @@ export function querySelectorAllDeep(
   }
   try {
     const elements = rawQuerySelectorAllDeep(selector, rawRoot);
-    recordQueryIfUseful({
+    recordQueryDiagnostic({
       kind: "all",
       selector,
       caller,
@@ -64,7 +64,7 @@ export function querySelectorAllDeep(
     });
     return elements;
   } catch (error) {
-    recordQueryIfUseful({
+    recordQueryDiagnostic({
       kind: "all",
       selector,
       caller,
@@ -84,7 +84,4 @@ function describeRoot(root: Document | Element | ShadowRoot | undefined) {
   return root.tagName.toLowerCase();
 }
 
-function recordQueryIfUseful(input: Parameters<typeof recordQueryDiagnostic>[0]) {
-  if (input.caller?.startsWith("features.debugger.")) return;
-  recordQueryDiagnostic(input);
-}
+

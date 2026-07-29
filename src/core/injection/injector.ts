@@ -33,7 +33,9 @@ import { RemoteChangeBuffer } from "./remote-change-buffer";
 import { waitUntil } from "@/utils/scheduler";
 import {
   describeElementForDiagnostics,
+  getLatestScan,
   getScopeType,
+  recordLatestScan,
   recordRuleApplyDiagnostic,
   recordRuleScanDiagnostic,
 } from "@/utils/perf-diagnostics";
@@ -173,30 +175,48 @@ class PageInjector {
 
     const scanStart = __IS_DEBUG__ ? performance.now() : 0;
     const elements = querySelectorAllDeep(merged, scope);
+    let queryMs = 0;
     if (__IS_DEBUG__) {
+      queryMs = performance.now() - scanStart;
       recordRuleScanDiagnostic({
         ruleName: rules.map((r) => r.name).join(","),
         mode: getInjectMode(rules[0]),
         selector: merged,
         scopeType: getScopeType(scope),
         matchCount: elements.length,
-        queryMs: 0,
-        totalMs: performance.now() - scanStart,
+        queryMs,
+        totalMs: queryMs,
       });
     }
     if (elements.length === 0) return;
 
     const selectorRules = rules
-      .map((r) => ({ selector: buildRuleSelector(r), rule: r }))
+      .map((r) => {
+        const sel = buildRuleSelector(r);
+        return {
+          selector: sel,
+          matchSelector: sel
+            ? r.textSelector || sel.split(/[\s>+~]+/).pop()!
+            : null,
+          rule: r,
+        };
+      })
       .filter(
-        (r): r is { selector: string; rule: PageRule } => r.selector !== null,
+        (r): r is { selector: string; matchSelector: string; rule: PageRule } =>
+          r.selector !== null,
       );
 
+    const perRuleCounts: Record<string, number> = {};
+    for (const { rule } of selectorRules) {
+      perRuleCounts[rule.name] = 0;
+    }
     for (const el of elements) {
       if (el.classList.contains("editable-textarea")) continue;
 
-      for (const { selector, rule } of selectorRules) {
-        if (!el.matches(selector)) continue;
+      for (const { matchSelector, rule } of selectorRules) {
+        if (!el.matches(matchSelector)) continue;
+
+        if (__IS_DEBUG__) perRuleCounts[rule.name]++;
 
         const storedUid = el.dataset.bilimemoUid;
         let preResolvedUid: string | null = null;
@@ -210,6 +230,18 @@ class PageInjector {
 
         void this.applyRuleToElement(el, rule, preResolvedUid);
       }
+    }
+
+    if (__IS_DEBUG__) {
+      const existing = getLatestScan();
+      const mergedPerRuleCounts = existing
+        ? { ...existing.perRuleCounts, ...perRuleCounts }
+        : perRuleCounts;
+      recordLatestScan({
+        queryMs,
+        totalMs: performance.now() - scanStart,
+        perRuleCounts: mergedPerRuleCounts,
+      });
     }
   }
 
@@ -287,6 +319,15 @@ class PageInjector {
         matchCount: elements.length,
         queryMs,
         totalMs: performance.now() - scanStart,
+      });
+      const existingScan = getLatestScan();
+      const mergedCounts = existingScan
+        ? { ...existingScan.perRuleCounts, [rule.name]: elements.length }
+        : { [rule.name]: elements.length };
+      recordLatestScan({
+        queryMs,
+        totalMs: performance.now() - scanStart,
+        perRuleCounts: mergedCounts,
       });
     }
     if (elements.length === 0) return;

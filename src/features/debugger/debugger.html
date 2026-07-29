@@ -17,10 +17,6 @@
         <span class="perf-label">FPS</span>
         <span class="perf-value" x-text="perf.fps"></span>
       </div>
-      <div class="perf-item">
-        <span class="perf-label">Long/s</span>
-        <span class="perf-value" x-text="perf.longTasks"></span>
-      </div>
       <div class="perf-item perf-item-wide">
         <span class="perf-label">Heap</span>
         <span class="perf-value" x-text="perf.memory"></span>
@@ -60,126 +56,8 @@
     <div class="debugger-scroll">
       <section class="debugger-section">
         <div class="debugger-section-title">
-          <span>Selector</span>
-          <span
-            class="debugger-section-meta"
-            x-text="selectorError || `${selectorMatchCount} visible`"
-          ></span>
-        </div>
-      </section>
-
-      <section class="debugger-section">
-        <div class="debugger-section-title">
-          <span>慢规则</span>
-          <span class="debugger-section-meta" x-text="`${perf.slowRules.length} items`"></span>
-        </div>
-        <template x-if="perf.slowRules.length === 0">
-          <div class="debugger-empty">暂无慢规则</div>
-        </template>
-        <template x-for="rule in perf.slowRules" :key="rule.id">
-          <div class="perf-row" :class="{ 'perf-row-slow': rule.slow }">
-            <div class="perf-row-main">
-              <span class="perf-row-title" x-text="rule.ruleName"></span>
-              <span class="perf-row-badge" x-text="rule.mode"></span>
-              <span class="perf-row-total" x-text="totalRuleMs(rule)"></span>
-            </div>
-            <div class="perf-row-sub">
-              <span x-text="`scan ${formatMs(rule.scanMs)}`"></span>
-              <span x-text="`query ${formatMs(rule.queryMs)}`"></span>
-              <span x-text="`apply ${rule.applyCount}/${formatMs(rule.applyMs)}`"></span>
-              <span x-text="`${rule.matchCount} hits`"></span>
-            </div>
-            <div class="perf-row-selector" x-text="rule.selector"></div>
-          </div>
-        </template>
-      </section>
-
-      <section class="debugger-section">
-        <div class="debugger-section-title">
-          <span>卡顿事件</span>
-          <span class="debugger-section-meta" x-text="`${relatedLongTaskCount} related`"></span>
-        </div>
-        <div class="debugger-filter-control">
-          <label class="debugger-checkbox-label">
-            <input type="checkbox" x-model="showUnrelatedTasks" />
-            <span>显示无关事件 (unrelated)</span>
-          </label>
-        </div>
-        <template x-if="displayLongTaskEvents.length === 0">
-          <div class="debugger-empty">暂无卡顿事件</div>
-        </template>
-        <template x-for="task in displayLongTaskEvents" :key="task.id">
-          <div
-            class="perf-row"
-            :class="{ 'perf-row-slow': task.relatedKind !== 'unrelated' }"
-          >
-            <div class="perf-row-main">
-              <span class="perf-row-title" x-text="formatTime(task.time)"></span>
-              <span class="perf-row-badge" x-text="task.relatedKind"></span>
-              <span class="perf-row-total" x-text="formatMs(task.durationMs)"></span>
-            </div>
-            <div
-              class="perf-row-sub"
-              x-text="`${task.relatedFlow}${task.relatedDeltaMs !== undefined ? ` / ${task.relatedDeltaMs}ms from long task` : ''}`"
-            ></div>
-          </div>
-        </template>
-      </section>
-
-      <section class="debugger-section">
-        <div class="debugger-section-title">
-          <span>最近流程</span>
-          <span class="debugger-section-meta" x-text="`${perf.recentFlows.length} recent`"></span>
-        </div>
-        <template x-if="perf.recentFlows.length === 0">
-          <div class="debugger-empty">暂无流程数据</div>
-        </template>
-        <template x-for="flow in perf.recentFlows" :key="flow.id">
-          <div class="perf-row" :class="{ 'perf-row-slow': flow.slow }">
-            <div class="perf-row-main">
-              <span class="perf-row-title" x-text="flow.source"></span>
-              <span class="perf-row-badge" x-text="flow.mode || flow.scopeType || '-'"></span>
-              <span class="perf-row-total" x-text="formatMs(flow.durationMs)"></span>
-            </div>
-            <div
-              class="perf-row-sub"
-              x-text="[flow.ruleName, flow.scopeType, flow.ruleCount ? `${flow.ruleCount} rules` : '', flow.chunked ? 'chunked' : ''].filter(Boolean).join(' / ')"
-            ></div>
-          </div>
-        </template>
-      </section>
-
-      <section class="debugger-section">
-        <div class="debugger-section-title">
-          <span>QueryDOM</span>
-          <span class="debugger-section-meta" x-text="`${perf.recentQueries.length} kept`"></span>
-        </div>
-        <template x-if="perf.recentQueries.length === 0">
-          <div class="debugger-empty">暂无 deep query 数据</div>
-        </template>
-        <div class="debugger-query-list" x-show="perf.recentQueries.length > 0">
-          <template x-for="query in perf.recentQueries" :key="query.id">
-            <div class="perf-row" :class="{ 'perf-row-slow': query.slow }">
-              <div class="perf-row-main">
-                <span class="perf-row-title" x-text="query.caller"></span>
-                <span class="perf-row-badge" x-text="query.kind"></span>
-                <span class="perf-row-total" x-text="formatMs(query.durationMs)"></span>
-              </div>
-              <div class="perf-row-sub">
-                <span x-text="query.scopeType"></span>
-                <span x-text="`${query.matchCount} hits`"></span>
-                <span x-text="query.error || ''"></span>
-              </div>
-              <div class="perf-row-selector" x-text="query.selector"></div>
-            </div>
-          </template>
-        </div>
-      </section>
-
-      <section class="debugger-section">
-        <div class="debugger-section-title">
           <span>当前规则</span>
-          <span class="debugger-section-meta" x-text="`${rules.length} matched`"></span>
+          <span class="debugger-section-meta" x-text="`${rules.length} matched (batch: ${formatMs(batchQueryMs)})`"></span>
         </div>
         <template x-if="rules.length === 0">
           <div class="debugger-empty">当前 URL 没有匹配规则</div>
@@ -198,7 +76,7 @@
                 x-text="injectModeLabel(r.mode).charAt(0)"
               ></span>
               <span class="rule-name" x-text="r.name"></span>
-              <span class="rule-count" :class="{ 'rule-count-error': r.error }" x-text="r.error || `${r.matchCount}`"></span>
+              <span class="rule-count" x-text="r.matchCount"></span>
             </div>
             <template x-if="expandedRuleId === r.id">
               <div class="rule-details">

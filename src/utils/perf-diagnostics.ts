@@ -50,15 +50,27 @@ export interface FlowDiagnostic {
   slow: boolean;
 }
 
-export interface LongTaskDiagnostic {
-  id: number;
-  time: number;
-  startTime: number;
-  endTime: number;
-  durationMs: number;
-  relatedFlow: string;
-  relatedKind: "flow" | "query" | "scan" | "apply" | "unrelated";
-  relatedDeltaMs?: number;
+export interface LatestScanSnapshot {
+  queryMs: number;
+  totalMs: number;
+  perRuleCounts: Record<string, number>;
+}
+
+let latestScan: LatestScanSnapshot | null = null;
+let scanUpdateListener: (() => void) | null = null;
+
+export function setScanUpdateListener(cb: (() => void) | null) {
+  scanUpdateListener = cb;
+}
+
+export function recordLatestScan(snapshot: LatestScanSnapshot) {
+  if (!__IS_DEBUG__) return;
+  latestScan = snapshot;
+  scanUpdateListener?.();
+}
+
+export function getLatestScan(): LatestScanSnapshot | null {
+  return latestScan;
 }
 
 export interface QueryDiagnostic {
@@ -74,30 +86,31 @@ export interface QueryDiagnostic {
   error?: string;
 }
 
+export interface LongTaskDiagnostic {
+  id: number;
+  time: number;
+  startTime: number;
+  endTime: number;
+  durationMs: number;
+  relatedFlow: string;
+  relatedKind: "flow" | "query" | "scan" | "apply" | "unrelated";
+  relatedDeltaMs?: number;
+}
+
 export interface RulePerfSummary {
   id: string;
   ruleName: string;
   mode: string;
+  scopeType: string;
   selector: string;
-  matchCount: number;
   scanMs: number;
   queryMs: number;
-  applyCount: number;
   applyMs: number;
+  matchCount: number;
+  scanCount: number;
+  applyCount: number;
   lastSeen: number;
   slow: boolean;
-}
-
-export interface PerfDiagnosticsSnapshot {
-  thresholds: typeof PERF_DIAGNOSTIC_THRESHOLDS;
-  queryRetentionMs: number;
-  slowRules: RulePerfSummary[];
-  recentScans: RuleScanDiagnostic[];
-  recentApplications: RuleApplyDiagnostic[];
-  recentFlows: FlowDiagnostic[];
-  longTasks: LongTaskDiagnostic[];
-  recentQueries: QueryDiagnostic[];
-  slowQueries: QueryDiagnostic[];
 }
 
 let nextId = 1;
@@ -187,10 +200,12 @@ export function recordRuleScanDiagnostic(input: {
     id: key,
     ruleName: input.ruleName,
     mode,
+    scopeType: input.scopeType,
     selector: input.selector,
     matchCount: input.matchCount,
     scanMs,
     queryMs,
+    scanCount: 1,
     applyCount: 0,
     applyMs: 0,
     lastSeen: event.time,
@@ -266,27 +281,6 @@ export function recordFlowDiagnostic(input: {
   pushBounded(recentFlows, event);
 }
 
-export function recordLongTaskDiagnostic(durationMs: number, startTime?: number) {
-  if (!__IS_DEBUG__) return;
-
-  const startWallTime =
-    startTime === undefined
-      ? Date.now() - durationMs
-      : Math.round(performance.timeOrigin + startTime);
-  const endWallTime = Math.round(startWallTime + durationMs);
-  const related = findLongTaskRelation(startWallTime, endWallTime);
-  pushBounded(longTasks, {
-    id: nextId++,
-    time: endWallTime,
-    startTime: startWallTime,
-    endTime: endWallTime,
-    durationMs: roundMs(durationMs),
-    relatedFlow: related.label,
-    relatedKind: related.kind,
-    relatedDeltaMs: related.deltaMs,
-  });
-}
-
 export function recordQueryDiagnostic(input: {
   kind: "one" | "all";
   selector: string;
@@ -315,42 +309,25 @@ export function recordQueryDiagnostic(input: {
   });
 }
 
-export function getPerfDiagnosticsSnapshot(): PerfDiagnosticsSnapshot {
-  pruneQueryEvents();
-  const slowRules = Array.from(ruleSummaries.values())
-    .filter((summary) => summary.slow)
-    .sort((a, b) => {
-      const aTotal = a.scanMs + a.applyMs;
-      const bTotal = b.scanMs + b.applyMs;
-      return bTotal - aTotal;
-    })
-    .slice(0, 20);
+export function recordLongTaskDiagnostic(durationMs: number, startTime?: number) {
+  if (!__IS_DEBUG__) return;
 
-  return {
-    thresholds: PERF_DIAGNOSTIC_THRESHOLDS,
-    queryRetentionMs: QUERY_RETENTION_MS,
-    slowRules,
-    recentScans: [...recentScans],
-    recentApplications: [...recentApplications],
-    recentFlows: [...recentFlows],
-    longTasks: [...longTasks],
-    recentQueries: [...recentQueries],
-    slowQueries: [...recentQueries]
-      .sort((a, b) => b.durationMs - a.durationMs)
-      .slice(0, 20),
-  };
-}
-
-function pruneQueryEvents() {
-  const cutoff = Date.now() - QUERY_RETENTION_MS;
-  let nextLength = recentQueries.length;
-  while (
-    nextLength > 0 &&
-    (nextLength > MAX_QUERY_EVENTS || recentQueries[nextLength - 1].time < cutoff)
-  ) {
-    nextLength -= 1;
-  }
-  recentQueries.length = nextLength;
+  const startWallTime =
+    startTime === undefined
+      ? Date.now() - durationMs
+      : Math.round(performance.timeOrigin + startTime);
+  const endWallTime = Math.round(startWallTime + durationMs);
+  const related = findLongTaskRelation(startWallTime, endWallTime);
+  pushBounded(longTasks, {
+    id: nextId++,
+    time: endWallTime,
+    startTime: startWallTime,
+    endTime: endWallTime,
+    durationMs: roundMs(durationMs),
+    relatedFlow: related.label,
+    relatedKind: related.kind,
+    relatedDeltaMs: related.deltaMs,
+  });
 }
 
 function formatFlowLabel(flow: FlowDiagnostic) {
@@ -358,6 +335,21 @@ function formatFlowLabel(flow: FlowDiagnostic) {
   if (flow.ruleName) parts.push(flow.ruleName);
   if (flow.durationMs > 0) parts.push(`${flow.durationMs}ms`);
   return parts.join(" -> ");
+}
+
+function formatQueryLabel(query: QueryDiagnostic) {
+  const suffix = query.error ? ` / ${query.error}` : "";
+  return `query ${query.kind} -> ${query.durationMs}ms / ${query.matchCount} hits / ${query.caller}${suffix}`;
+}
+
+function getDistanceToLongTask(
+  eventTime: number,
+  startTime: number,
+  endTime: number,
+) {
+  if (eventTime >= startTime && eventTime <= endTime) return 0;
+  if (eventTime < startTime) return startTime - eventTime;
+  return eventTime - endTime;
 }
 
 function findLongTaskRelation(startTime: number, endTime: number): {
@@ -437,19 +429,32 @@ function findLongTaskRelation(startTime: number, endTime: number): {
   };
 }
 
-function getDistanceToLongTask(
-  eventTime: number,
-  startTime: number,
-  endTime: number,
-) {
-  if (eventTime >= startTime && eventTime <= endTime) return 0;
-  if (eventTime < startTime) return startTime - eventTime;
-  return eventTime - endTime;
+export function getPerfDiagnosticsSnapshot() {
+  return {
+    slowRules: Array.from(ruleSummaries.values()).filter((r) => r.slow),
+    longTasks: longTasks.slice(0, 20),
+    recentFlows: recentFlows.slice(0, 20),
+    recentQueries: recentQueries.slice(0, 60),
+    slowQueries: recentQueries
+      .filter(
+        (q) =>
+          q.durationMs >= PERF_DIAGNOSTIC_THRESHOLDS.slowRuleScanMs ||
+          Boolean(q.error),
+      )
+      .slice(0, 20),
+  };
 }
 
-function formatQueryLabel(query: QueryDiagnostic) {
-  const suffix = query.error ? ` / ${query.error}` : "";
-  return `query ${query.kind} -> ${query.durationMs}ms / ${query.matchCount} hits / ${query.caller}${suffix}`;
+function pruneQueryEvents() {
+  const cutoff = Date.now() - QUERY_RETENTION_MS;
+  let nextLength = recentQueries.length;
+  while (
+    nextLength > 0 &&
+    (nextLength > MAX_QUERY_EVENTS || recentQueries[nextLength - 1].time < cutoff)
+  ) {
+    nextLength -= 1;
+  }
+  recentQueries.length = nextLength;
 }
 
 function trimSummaries() {

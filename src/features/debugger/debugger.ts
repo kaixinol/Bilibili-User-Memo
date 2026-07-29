@@ -11,6 +11,17 @@ import {
   getInjectMode,
   isStaticMode,
 } from "@/core/rules/rule-types";
+import { buildRuleSelector } from "@/core/injection/rule-runtime";
+import {
+  getLatestScan,
+  getPerfDiagnosticsSnapshot,
+  recordLongTaskDiagnostic,
+  setScanUpdateListener,
+  type FlowDiagnostic,
+  type LongTaskDiagnostic,
+  type QueryDiagnostic,
+  type RulePerfSummary,
+} from "@/utils/perf-diagnostics";
 import "@/styles/global.css";
 import "@/styles/debugger.css";
 import debuggerHtml from "./debugger.html?raw";
@@ -18,14 +29,6 @@ import highlightCss from "@/styles/debugger-highlight.css?raw";
 import { logger } from "@/utils/logger";
 import { setShowOriginalInDebug } from "@/core/render/renderer";
 import { initTestApi } from "./test-api";
-import {
-  getPerfDiagnosticsSnapshot,
-  recordLongTaskDiagnostic,
-  type FlowDiagnostic,
-  type LongTaskDiagnostic,
-  type QueryDiagnostic,
-  type RulePerfSummary,
-} from "@/utils/perf-diagnostics";
 import { persistWithGmStorage } from "@/utils/gm-storage";
 
 const HIGHLIGHT_CLASS = "debugger-highlight-active";
@@ -36,17 +39,6 @@ document.adoptedStyleSheets = [...document.adoptedStyleSheets, highlightStyleShe
 
 const adoptedShadowRoots = new WeakSet<ShadowRoot>();
 
-interface DebugRuleView {
-  id: number;
-  name: string;
-  mode: InjectionMode;
-  styleScope: StyleScope;
-  selector: string;
-  trigger?: string;
-  matchCount: number;
-  error?: string;
-}
-
 interface PerfStats {
   fps: number;
   longTasks: number;
@@ -56,6 +48,16 @@ interface PerfStats {
   recentFlows: FlowDiagnostic[];
   slowQueries: QueryDiagnostic[];
   recentQueries: QueryDiagnostic[];
+}
+
+interface DebugRuleView {
+  id: number;
+  name: string;
+  mode: InjectionMode;
+  styleScope: StyleScope;
+  selector: string;
+  trigger?: string;
+  matchCount: number;
 }
 
 interface DebuggerState {
@@ -70,7 +72,6 @@ interface DebuggerState {
   currentTranslateY: number;
   rafId: number | null;
   containerWidth: number;
-  ruleCountTimer: number | null;
 }
 
 const state: DebuggerState = {
@@ -85,7 +86,6 @@ const state: DebuggerState = {
   currentTranslateY: 0,
   rafId: null,
   containerWidth: 360,
-  ruleCountTimer: null,
 };
 
 interface MonkeyApp {
@@ -99,6 +99,7 @@ interface MonkeyApp {
   relatedLongTaskCount: number;
   perf: PerfStats;
   displayLongTaskEvents: LongTaskDiagnostic[];
+  batchQueryMs: number;
   scanTimer: number | null;
   showOriginalName: boolean;
   autoOpenPanel: boolean;
@@ -109,11 +110,10 @@ interface MonkeyApp {
   clearHighlights(): void;
   applyHighlightColor(color: string): void;
   updateDiagnostics(): void;
-  startRuleCountRefresh(): void;
+  startPerformanceMonitor(): void;
   onPointerDown(event: PointerEvent): void;
   onPointerMove(event: PointerEvent): void;
   onPointerUp(event: PointerEvent): void;
-  startPerformanceMonitor(): void;
   toggleExpand(id: number): void;
   toggleShowOriginalName(event: Event): void;
   injectModeLabel(mode: InjectionMode): string;
@@ -130,10 +130,6 @@ function renderDebuggerUI(appName: string) {
   document.body.appendChild(div);
 }
 
-function getRuleSelector(rule: PageRule): string {
-  return rule.aSelector || rule.textSelector || "";
-}
-
 function getRuleTrigger(rule: PageRule): string | undefined {
   if (isStaticMode(rule)) return undefined;
   const trigger = rule.trigger as DynamicTriggerConfig;
@@ -143,15 +139,6 @@ function getRuleTrigger(rule: PageRule): string | undefined {
 function getMatchedRuleEntries(): RuleConfigEntry[] {
   const currentUrl = location.href;
   return defaultRules.filter((entry) => entry.urlPattern.test(currentUrl));
-}
-
-function countSelectorMatches(selector: string): { count: number; error?: string } {
-  if (!selector) return { count: 0 };
-  try {
-    return { count: querySelectorAllDeep(selector, document).length };
-  } catch {
-    return { count: 0, error: "invalid selector" };
-  }
 }
 
 function adoptHighlightToRoot(element: HTMLElement) {
@@ -181,9 +168,6 @@ export function initDebugger() {
       selectorMatchCount: 0,
       showUnrelatedTasks: false,
       relatedLongTaskCount: 0,
-      scanTimer: null,
-      showOriginalName: false,
-      autoOpenPanel: persistWithGmStorage("debug.autoOpenPanel", false),
       perf: {
         fps: 0,
         longTasks: 0,
@@ -194,6 +178,10 @@ export function initDebugger() {
         slowQueries: [],
         recentQueries: [],
       },
+      batchQueryMs: 0,
+      scanTimer: null,
+      showOriginalName: false,
+      autoOpenPanel: persistWithGmStorage("debug.autoOpenPanel", false),
 
       get displayLongTaskEvents() {
         if (this.showUnrelatedTasks) {
@@ -215,8 +203,8 @@ export function initDebugger() {
         this.refreshRuleList();
         this.updateDiagnostics();
         this.scan();
-        this.startRuleCountRefresh();
         this.startPerformanceMonitor();
+        setScanUpdateListener(() => this.refreshRuleList());
 
         requestAnimationFrame(() => {
           state.containerElement = document.querySelector(
@@ -233,10 +221,12 @@ export function initDebugger() {
       },
 
       refreshRuleList() {
+        const snapshot = getLatestScan();
+        this.batchQueryMs = snapshot?.queryMs ?? 0;
+
         this.rules = getMatchedRuleEntries().map((entry, index) => {
           const rule = entry.rule;
-          const selector = getRuleSelector(rule);
-          const result = countSelectorMatches(selector);
+          const selector = buildRuleSelector(rule) || "";
           return {
             id: index + 1,
             name: rule.name,
@@ -244,8 +234,7 @@ export function initDebugger() {
             styleScope: rule.styleScope,
             selector,
             trigger: getRuleTrigger(rule),
-            matchCount: result.count,
-            error: result.error,
+            matchCount: snapshot?.perRuleCounts[rule.name] ?? 0,
           };
         });
       },
@@ -295,14 +284,12 @@ export function initDebugger() {
           newSet.add(element);
         });
 
-        // Remove highlights from elements no longer matched
         _highlightedElements.forEach((el) => {
           if (!newSet.has(el)) {
             el.classList.remove(HIGHLIGHT_CLASS);
           }
         });
 
-        // Add highlights to newly matched elements
         newSet.forEach((el) => {
           if (!_highlightedElements.has(el)) {
             el.classList.add(HIGHLIGHT_CLASS);
@@ -401,12 +388,6 @@ export function initDebugger() {
         } catch { }
 
         state.isDragging = false;
-      },
-
-      startRuleCountRefresh() {
-        state.ruleCountTimer = window.setInterval(() => {
-          this.refreshRuleList();
-        }, 4000);
       },
 
       startPerformanceMonitor() {

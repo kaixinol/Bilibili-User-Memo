@@ -1,9 +1,11 @@
 # CLAUDE.md
 
 ## Project
+
 Bilibili-User-Memo — Tampermonkey userscript that adds per-user memo overlays to bilibili.com. Built with Vite + vite-plugin-monkey, Alpine.js 3 (reactive panel UI), TypeScript strict mode.
 
 ## Commands
+
 ```bash
 pnpm dev          # vite --mode debug (unminified, debug builds)
 pnpm build        # vite build --mode production (terser + lightningcss)
@@ -12,9 +14,11 @@ pnpm test         # vitest run
 ```
 
 ## Architecture (one-liner)
+
 URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS class on original element) or Editable (wrapper `<span>` inserted after original element).
 
 ## Key modules
+
 - `src/main.ts` — Entry: Alpine init, GM_registerMenuCommand, lifecycle orchestration
 - `src/core/rules/rules.ts` — All page rules as `RawConfig[]` (urlPattern + rule)
 - `src/core/injection/` — Rule runtime, poll-based watchers, selector merging, scan orchestration
@@ -30,6 +34,7 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - `src/utils/activity-monitor.ts` — Idle detection (3s inactivity → pauses querySelectorDeep scans)
 
 ## Conventions
+
 - `verbatimModuleSyntax: true` → always `import type { X }` for type-only imports
 - `@/*` path alias → `./src/*`
 - `$` import → Tampermonkey GM API (from vite-plugin-monkey)
@@ -44,6 +49,7 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - Debug builds expose `window.__biliMemoTest` for MCP/automated testing — use this API for non-DOM tests (store queries, search, selection, export, refresh) instead of manipulating DOM directly
 
 ## Rule system
+
 - `StyleScope.Minimal` → adds CSS classes to the original DOM element (no wrapper)
 - `StyleScope.Editable` → creates a `<span class="editable-textarea">` wrapper after the original element, hides original
 - `InjectionMode.Static` → scan once when page matches
@@ -53,6 +59,7 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - `uidResolver` / `originalNameResolver` → custom extraction for non-standard DOM structures
 
 ## Gotchas
+
 - Windows Chrome: `@supports (cursor: context-menu)` returns true but renderer can't draw it → use JS UA detection for fallback
 - Bilibili CDN supports CORS (`access-control-allow-origin: *`) → can read pixel data from cross-origin `<img>` with `crossorigin="anonymous"`
 - `a.bili-memo-tag` may render as `<a>` in mention scenarios → CSS must handle both

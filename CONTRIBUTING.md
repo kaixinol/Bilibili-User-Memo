@@ -85,7 +85,7 @@ import { UserType, createUser } from './utils'
 
 ## 项目结构
 
-```
+```text
 src/
 ├── core/              # 核心业务逻辑
 │   ├── api/           # Bilibili API 接口与请求限流
@@ -135,7 +135,7 @@ src/
 
 项目采用 [gitmoji](https://gitmoji.dev/) 规范：
 
-```
+```text
 <emoji> <描述>
 
 示例：

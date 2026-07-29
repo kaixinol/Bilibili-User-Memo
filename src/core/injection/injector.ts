@@ -185,7 +185,7 @@ class PageInjector {
         return {
           selector: sel,
           matchSelector: sel
-            ? r.textSelector || sel.split(/[\s>+~]+/).pop()!
+            ? sel.split(/[\s>+~]+/).pop()!
             : null,
           rule: r,
         };

@@ -254,33 +254,6 @@ export function recordRuleApplyDiagnostic(input: {
   }
 }
 
-export function recordFlowDiagnostic(input: {
-  source: string;
-  ruleName?: string;
-  mode?: number | string;
-  scopeType?: string;
-  ruleCount?: number;
-  durationMs?: number;
-  chunked?: boolean;
-}) {
-  if (!__IS_DEBUG__) return;
-
-  const durationMs = roundMs(input.durationMs ?? 0);
-  const event: FlowDiagnostic = {
-    id: nextId++,
-    time: Date.now(),
-    source: input.source,
-    ruleName: input.ruleName,
-    mode: input.mode === undefined ? undefined : modeLabel(input.mode),
-    scopeType: input.scopeType,
-    ruleCount: input.ruleCount,
-    durationMs,
-    chunked: Boolean(input.chunked),
-    slow: durationMs >= PERF_DIAGNOSTIC_THRESHOLDS.slowFlowMs,
-  };
-  pushBounded(recentFlows, event);
-}
-
 export function recordQueryDiagnostic(input: {
   kind: "one" | "all";
   selector: string;

@@ -28,7 +28,7 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Minimal,
             aSelector: ".upname a",
             textSelector: "span.name",
-            container: ".rcmd-tab"
+            container: "div.rec-list"
         }
     },
     {
@@ -121,7 +121,7 @@ const rawConfig: RawConfig[] = [
             name: "评论区",
             styleScope: StyleScope.Editable,
             aSelector: "#user-name a",
-            container: "div#contents",
+            container: "div#info",
         }
     },
     {

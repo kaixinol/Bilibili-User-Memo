@@ -3,6 +3,7 @@ import type { BiliUser } from "../types";
 import { userStore } from "../store/store";
 import { syncRenderedNodeState } from "./rendered-node";
 import { markOwnedElement } from "../dom/owned-node";
+import { validateInputLength } from "../dom/text-utils";
 
 /**
  * 进入行内编辑模式
@@ -86,12 +87,7 @@ export function enterEditMode(targetElement: HTMLElement, user: BiliUser) {
   }
 
   input.addEventListener("input", () => {
-    if (input.value.length >= input.maxLength) {
-      input.setCustomValidity("已达到最大长度：24 字符");
-      input.reportValidity();
-    } else {
-      input.setCustomValidity("");
-    } autoResize(input);
+    validateInputLength(input); autoResize(input);
   });
   autoResize(input);
 }

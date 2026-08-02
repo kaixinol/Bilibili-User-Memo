@@ -119,3 +119,32 @@ export function formatDisplayName(
       return withMentionPrefix(nickname);
   }
 }
+
+type InputElement = HTMLInputElement | HTMLTextAreaElement;
+
+export function validateInputLength(input: InputElement): boolean {
+  const { tooShort, tooLong } = input.validity;
+  const { minLength, maxLength, value } = input;
+
+  let errorMessage = "";
+
+  // 原生 tooLong/tooShort 仅在用户编辑后置位，且 maxlength 会封顶用户输入，
+  // 打字时值不会 > maxLength，tooLong 几乎无法触发；
+  // 因此用 >= 让“恰好打满上限”时也给出提示（该值本身仍是合法输入）。
+  if (tooLong || (maxLength > -1 && value.length >= maxLength)) {
+    errorMessage = `已达到最大长度：${maxLength} 字符`;
+  } else if (tooShort || (minLength > -1 && value.length < minLength)) {
+    errorMessage = `至少需要 ${minLength} 个字符`;
+  }
+
+  input.setCustomValidity(errorMessage);
+
+  if (errorMessage) {
+    // 持续提示：保持 invalid 让原生气泡稳定显示；
+    // 配合表单的 novalidate，提交不受原生校验拦截，由调用方 guard 裁决
+    input.reportValidity();
+    return false;
+  }
+
+  return true;
+}

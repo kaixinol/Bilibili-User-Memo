@@ -379,7 +379,7 @@
           ×
         </button>
       </div>
-      <form @submit.prevent="$store.memoDetailDialog.submit()">
+      <form novalidate @submit.prevent="$store.memoDetailDialog.submit($refs.memoDetailInput)">
         <div class="add-user-dialog-body">
           <div class="add-user-field">
             <textarea
@@ -387,6 +387,8 @@
               x-model="$store.memoDetailDialog.detail"
               placeholder="输入详细备注..."
               rows="4"
+              maxlength="240"
+              @input="$store.memoDetailDialog.handleInput($el)"
               style="width: 100%; resize: vertical;"
             ></textarea>
           </div>

@@ -13,6 +13,7 @@ import {
   getRef,
   getCurrentElement,
 } from "./panel-core";
+import { validateInputLength } from "@/core/dom/text-utils";
 
 const processedUID = new WeakSet<Element>();
 
@@ -22,7 +23,8 @@ type MemoDetailDialogStore = {
   detail: string;
   open(uid: string): void;
   close(): void;
-  submit(): void;
+  handleInput(input: HTMLTextAreaElement): void;
+  submit(input?: HTMLTextAreaElement | null): void;
 };
 
 export function registerMemoDetailDialog() {
@@ -44,12 +46,16 @@ export function registerMemoDetailDialog() {
       this.isOpen = false;
     },
 
-    submit(this: MemoDetailDialogStore) {
+    submit(this: MemoDetailDialogStore, input?: HTMLTextAreaElement | null) {
       const uid = this.uid;
       if (!uid) return;
+      if (input && (input.validity.tooShort || input.validity.tooLong)) return;
       const detail = this.detail.trim();
       getUserListStore().updateUser(uid, { memoDetail: detail || undefined });
       this.close();
+    },
+    handleInput(this: MemoDetailDialogStore, input: HTMLTextAreaElement) {
+      validateInputLength(input);
     },
   });
 }
@@ -256,12 +262,7 @@ export function registerMemoEditor() {
       getRef<HTMLInputElement>(this, "memoInput")?.blur();
     },
     handleInput(input: HTMLInputElement) {
-      if (input.value.length >= input.maxLength) {
-        input.setCustomValidity("已达到最大长度：24 字符");
-        input.reportValidity();
-      } else {
-        input.setCustomValidity("");
-      }
+      validateInputLength(input);
     },
   }));
 }

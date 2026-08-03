@@ -2,7 +2,7 @@ import { logger } from "@/utils/logger";
 
 const HASH_SIZE = 16;
 const DISTANCE_THRESHOLD = 20;
-const IMAGE_SCALE = 64;
+const IMAGE_SCALE = 32;
 
 const NOFACE_HASH = "fffffffffffffddff81fe007eff7edb7e997ee77eff7e007fc3ff81ff81ff80f";
 
@@ -48,22 +48,43 @@ function bmvbhash(
 }
 
 function hammingDistance(h1: string, h2: string): number {
-  return h1.length !== h2.length
-    ? 999
-    : [...h1].reduce((dist, char, i) => dist + (char !== h2[i] ? 1 : 0), 0);
-}
+  if (h1.length !== h2.length) return 999;
 
+  let distance = 0;
+
+  for (let i = 0; i < h1.length; i++) {
+    const xor =
+      parseInt(h1[i], 16) ^
+      parseInt(h2[i], 16);
+
+    // 统计 xor 中有多少个 bit 为 1
+    distance += xor.toString(2).replaceAll("0", "").length;
+  }
+
+  return distance;
+}
 function hashFromImage(img: HTMLImageElement): string | null {
   try {
-    const canvas = document.createElement("canvas");
-    canvas.width = IMAGE_SCALE;
-    canvas.height = IMAGE_SCALE;
+    const canvas = new OffscreenCanvas(
+      IMAGE_SCALE,
+      IMAGE_SCALE
+    );
+
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
+
     ctx.drawImage(img, 0, 0, IMAGE_SCALE, IMAGE_SCALE);
-    return bmvbhash(ctx.getImageData(0, 0, IMAGE_SCALE, IMAGE_SCALE));
+
+    const imageData = ctx.getImageData(
+      0,
+      0,
+      IMAGE_SCALE,
+      IMAGE_SCALE
+    );
+
+    return bmvbhash(imageData);
   } catch (error) {
-    logger.debug("[perceptual-hash] DOM图片读取失败(可能canvas被污染)", error);
+    logger.debug("[perceptual-hash] 图片读取失败", error);
     return null;
   }
 }

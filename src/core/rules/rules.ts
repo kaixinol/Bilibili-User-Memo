@@ -190,13 +190,12 @@ const rawConfig: RawConfig[] = [
         }
     },
     {
-        urlPattern: new RegExp(`${USER_SPACE_DYNAMIC.source}|${NEW_DYNAMIC_OPUS_ONE.source}|${DYNAMIC_PAGE.source}`),
+        urlPattern: new RegExp(`${USER_SPACE_DYNAMIC.source}|${NEW_DYNAMIC_OPUS_ONE.source}|${DYNAMIC_PAGE.source}|${OLD_DYNAMIC_PAGE.source}`),
         rule: {
             name: "动态正文-提及",
             styleScope: StyleScope.Minimal,
             aSelector:
                 ".opus-paragraph-children p a[href*='space.bilibili.com']",
-            container: "div.bili-dyn-item__main",
         }
     },
     // 弹出层规则
@@ -266,7 +265,7 @@ const rawConfig: RawConfig[] = [
         rule: {
             name: "用户空间动态-转发",
             styleScope: StyleScope.Minimal,
-            aSelector: "span.dyn-orig-author__name",
+            textSelector: "span.dyn-orig-author__name",
             container: "div.dyn-orig-author",
             uidResolver: el => {
                 return getOpusAuthorUid(el);

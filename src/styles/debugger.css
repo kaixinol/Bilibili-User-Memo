@@ -402,20 +402,6 @@ input {
   transform: rotate(90deg);
 }
 
-.rule-mode-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  border-radius: 3px;
-  font-size: 10px;
-  font-weight: 700;
-  background: var(--border-main);
-  color: var(--text-sub);
-  flex-shrink: 0;
-}
-
 .rule-name {
   flex: 1;
   font-weight: 500;
@@ -432,11 +418,6 @@ input {
   text-align: right;
   color: var(--text-sub);
   font-variant-numeric: tabular-nums;
-}
-
-.rule-count-error {
-  color: var(--danger-color);
-  min-width: 0;
 }
 
 .rule-details {

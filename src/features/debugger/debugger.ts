@@ -3,8 +3,6 @@ import { querySelectorAllDeep } from "@/utils/query-dom";
 import { config as defaultRules } from "@/core/rules/rules";
 import {
   StyleScope,
-  DYNAMIC_SCAN_INTERVAL_MS,
-  type PageRule,
   type RuleConfigEntry,
 } from "@/core/rules/rule-types";
 import { buildRuleSelector } from "@/core/injection/rule-runtime";
@@ -40,7 +38,7 @@ interface DebugRuleView {
   name: string;
   styleScope: StyleScope;
   selector: string;
-  trigger?: string;
+  container?: string;
   matchCount: number;
 }
 
@@ -103,11 +101,6 @@ function renderDebuggerUI(appName: string) {
   div.id = "monkey-debugger-root";
   div.innerHTML = debuggerHtml.replace("${appName}", appName);
   document.body.appendChild(div);
-}
-
-function getRuleTrigger(rule: PageRule): string | undefined {
-  if (!rule.container) return undefined;
-  return `${rule.container} / interval ${DYNAMIC_SCAN_INTERVAL_MS}ms`;
 }
 
 function getMatchedRuleEntries(): RuleConfigEntry[] {
@@ -186,7 +179,7 @@ export function initDebugger() {
             name: rule.name,
             styleScope: rule.styleScope,
             selector,
-            trigger: getRuleTrigger(rule),
+            container: rule.container,
             matchCount: snapshot?.perRuleCounts[rule.name] ?? 0,
           };
         });

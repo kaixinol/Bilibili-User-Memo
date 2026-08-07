@@ -12,14 +12,14 @@
 
 - 不兼容的脚本：*一切*同时修改了备注的脚本
 - 兼容的脚本：
-    - [Bilibili 账号已注销修正](https://greasyfork.org/zh-CN/scripts/528706-bilibili-%E8%B4%A6%E5%8F%B7%E5%B7%B2%E6%B3%A8%E9%94%80%E4%BF%AE%E6%AD%A3)
+  - [Bilibili 账号已注销修正](https://greasyfork.org/zh-CN/scripts/528706-bilibili-%E8%B4%A6%E5%8F%B7%E5%B7%B2%E6%B3%A8%E9%94%80%E4%BF%AE%E6%AD%A3)
 
       兼容方式：让 **Bilibili 账号已注销修正** 比此脚本先运行即可。
 
       具体设置：`油猴菜单栏` -> `Edit` -> `Settings` -> `General` -> `Position`，设置为1
 - 会尽量兼容的脚本：
-    - [the1812/Bilibili-Evolved](https://github.com/the1812/Bilibili-Evolved) 的全部功能
-    - [SukkaW/Make-Bilibili-Great-Than-Ever-Before](https://github.com/SukkaW/Make-Bilibili-Great-Than-Ever-Before) 的全部功能
+  - [the1812/Bilibili-Evolved](https://github.com/the1812/Bilibili-Evolved) 的全部功能
+  - [SukkaW/Make-Bilibili-Great-Than-Ever-Before](https://github.com/SukkaW/Make-Bilibili-Great-Than-Ever-Before) 的全部功能
 
 </details>
 

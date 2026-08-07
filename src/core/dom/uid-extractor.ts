@@ -25,7 +25,9 @@ export function getOpusAuthorUid(el: Element | null | undefined): string | null 
       window.__INITIAL_STATE__?.detail?.modules?.find((module) => module.module_author)
         ?.module_author?.mid,
     ) ||
-    normalizeUid((el as any)?.$log?.click?.value?.mid)
+    normalizeUid((el as any)?.$log?.click?.value?.author_mid)
+    ||
+    normalizeUid((el as any)?._profile.uid)
   );
 }
 

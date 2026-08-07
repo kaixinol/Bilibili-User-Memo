@@ -1,7 +1,5 @@
 import { getOpusAuthorUid, getUidFromVueInstance } from "@/core/dom/uid-extractor";
 import { type RawConfig, StyleScope } from "./rule-types";
-import { logger } from "@/utils/logger";
-import { waitUntil } from "@/utils/scheduler";
 
 export { StyleScope, } from "./rule-types";
 const COMMON_REG = /^https:\/\/[a-z0-9.]+\.bilibili\.com\/.*/;
@@ -12,6 +10,7 @@ const VIDEO_CARD_TEXT_SELECTOR = ".bili-video-card__info--author, .bili-video-ca
 const NEW_DYNAMIC_OPUS_ONE = /^https:\/\/www\.bilibili\.com\/opus\/\d+/
 const USER_SPACE_DYNAMIC = /^https:\/\/space\.bilibili\.com\/\d+\/dynamic/;
 const DYNAMIC_PAGE = /^https:\/\/t\.bilibili\.com\/(?:\?[^#]*)?$/;
+const OLD_DYNAMIC_PAGE = /^https:\/\/t\.bilibili\.com\/\d+(?:\?[^#]*)?(?:#.*)?$/;
 const rawConfig: RawConfig[] = [
     {
         urlPattern: VIDEO_REG,
@@ -247,28 +246,19 @@ const rawConfig: RawConfig[] = [
             name: "动态（新）",
             styleScope: StyleScope.Editable,
             aSelector: "div.opus-module-author__name",
-            uidResolver: async (el) => {
-                let rawUid = getOpusAuthorUid(el);
-                if (!rawUid) {
-                    await waitUntil(() => Boolean(getOpusAuthorUid(el)), {
-                        intervalMs: 200,
-                        timeoutMs: 10000,
-                    });
-                    rawUid = getOpusAuthorUid(el);
-                }
-                logger.debug("rawUid", rawUid);
-                return rawUid;
+            uidResolver: el => {
+                return getOpusAuthorUid(el);
             }
         }
     },
     {
-        urlPattern: /^https:\/\/t\.bilibili\.com\/\d+/,
+        urlPattern: OLD_DYNAMIC_PAGE,
         rule: {
-            name: "动态（旧）-转发",
+            name: "动态（旧）",
             styleScope: StyleScope.Minimal,
-            aSelector: "span.dyn-orig-author__name",
+            textSelector: "span.bili-dyn-title__text",
             uidResolver: el => {
-                return (el as any)._profile.uid;
+                return getUidFromVueInstance((el as HTMLSpanElement).parentElement);
             }
         }
     }, {
@@ -279,7 +269,7 @@ const rawConfig: RawConfig[] = [
             aSelector: "span.dyn-orig-author__name",
             container: "div.dyn-orig-author",
             uidResolver: el => {
-                return (el as any)._profile.uid;
+                return getOpusAuthorUid(el);
             }
         }
     },
@@ -303,8 +293,8 @@ const rawConfig: RawConfig[] = [
         rule: { name: "视频简介-提及", styleScope: StyleScope.Minimal, aSelector: '.basic-desc-info a.mention-user' }
     },
     {
-        urlPattern: COMMON_REG,
-        rule: { name: "全站-提及", styleScope: StyleScope.Minimal, aSelector: 'a[data-type="mention"]' }
+        urlPattern: VIDEO_REG,
+        rule: { name: "视频-提及", styleScope: StyleScope.Minimal, aSelector: 'a[data-type="mention"]' }
     }, {
         urlPattern: /https:\/\/www\.bilibili\.com\/history/,
         rule: {

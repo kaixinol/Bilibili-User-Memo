@@ -219,10 +219,9 @@ class PageInjector {
         const storedUid = el.dataset.bilimemoUid;
         let preResolvedUid: string | null = null;
         if (storedUid) {
-          preResolvedUid = extractUid(el, {
-            silent: true,
-            allowLocationFallback: false,
-          });
+          const originalName =
+            rule.originalNameResolver?.(el, rule) || getElementDisplayName(el, rule);
+          preResolvedUid = await this.resolveElementUid(el, rule, originalName);
           if (preResolvedUid && storedUid === preResolvedUid) continue;
         }
 

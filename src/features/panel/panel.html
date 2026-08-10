@@ -245,7 +245,7 @@
     class="panel-custom-css-input"
     x-model="customMemoCss"
     @input.debounce.700ms="applyMemoCss()"
-    @blur="applyMemoCss()"
+    @blur="saveMemoCss()"
     placeholder="示例：&#10;.bili-memo-tag {&#10;&#32;&#32;font-style: italic;&#10;&#32;&#32;letter-spacing: 0.5px;&#10;}&#10;.editable-textarea {&#10;&#32;&#32;background: rgba(0,0,0,0.08);&#10;&#32;&#32;border-bottom: 2px solid currentColor;&#10;}"
   ></textarea>
   <div

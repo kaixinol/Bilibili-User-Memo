@@ -82,5 +82,8 @@ export function registerPanelSettings() {
     applyMemoCss() {
       this.prefs.applyMemoCss();
     },
+    saveMemoCss() {
+      this.prefs.saveMemoCss();
+    },
   }));
 }

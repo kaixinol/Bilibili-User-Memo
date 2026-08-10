@@ -1,4 +1,9 @@
-import { setCustomMemoCss } from "@/core/injection/injector";
+const MEMO_CSS_PROBE_SENTINEL = "#__biliMemoCssProbeSentinel__";
+
+export interface MemoCssProbe {
+  replaceSync(css: string): void;
+  cssRules: ArrayLike<{ cssText?: string }>;
+}
 
 export function applyCustomFontColor(color: string) {
   if (!color) {
@@ -19,30 +24,26 @@ export function getResolvedCustomFontColor(): string {
     .trim();
 }
 
-function lintCss(css: string): string | null {
-  const trimmedCss = css.trim();
-  if (!trimmedCss) return null;
-
-  let quote: "'" | '"' | null = null;
+export function countTopLevelRuleStarts(css: string): number {
+  let count = 0;
+  let depth = 0;
+  let inComment = false;
+  let inString: "'" | '"' | null = null;
   let escaped = false;
-  let commentDepth = 0;
-  let braces = 0;
-  let parentheses = 0;
-  let brackets = 0;
 
-  for (let index = 0; index < trimmedCss.length; index += 1) {
-    const current = trimmedCss[index];
-    const next = trimmedCss[index + 1];
+  for (let index = 0; index < css.length; index += 1) {
+    const current = css[index];
+    const next = css[index + 1];
 
-    if (commentDepth > 0) {
+    if (inComment) {
       if (current === "*" && next === "/") {
-        commentDepth -= 1;
+        inComment = false;
         index += 1;
       }
       continue;
     }
 
-    if (quote) {
+    if (inString) {
       if (escaped) {
         escaped = false;
         continue;
@@ -51,69 +52,62 @@ function lintCss(css: string): string | null {
         escaped = true;
         continue;
       }
-      if (current === quote) {
-        quote = null;
-      }
+      if (current === inString) inString = null;
       continue;
     }
 
     if (current === "/" && next === "*") {
-      commentDepth += 1;
+      inComment = true;
       index += 1;
       continue;
     }
-
     if (current === "'" || current === '"') {
-      quote = current;
+      inString = current;
       continue;
     }
-
-    if (current === "{") braces += 1;
-    else if (current === "}") braces -= 1;
-    else if (current === "(") parentheses += 1;
-    else if (current === ")") parentheses -= 1;
-    else if (current === "[") brackets += 1;
-    else if (current === "]") brackets -= 1;
-
-    if (braces < 0) return "多余的 '}'";
-    if (parentheses < 0) return "多余的 ')'";
-    if (brackets < 0) return "多余的 ']'";
+    if (current === "{") {
+      if (depth === 0) count += 1;
+      depth += 1;
+    } else if (current === "}") {
+      depth = Math.max(0, depth - 1);
+    }
   }
 
-  if (commentDepth > 0) return "注释未闭合";
-  if (quote) return `字符串未闭合：${quote}`;
-  if (braces > 0) return "缺少 '}'";
-  if (parentheses > 0) return "缺少 ')'";
-  if (brackets > 0) return "缺少 ']'";
-  return null;
+  return count;
 }
 
-function detectCssParsingIssue(
+export function validateMemoCss(
   css: string,
-  ruleCount: number | undefined,
-): string | null {
-  if (!css.trim()) return null;
-  if ((ruleCount || 0) !== 0) return null;
+  probe: MemoCssProbe = new CSSStyleSheet(),
+): string {
+  const trimmedCss = css.trim();
+  if (!trimmedCss) return "";
 
-  const strippedCss = css
-    .replace(/\/\*[\s\S]*?\*\//g, "")
-    .replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, "");
+  try {
+    probe.replaceSync(`${trimmedCss}\n${MEMO_CSS_PROBE_SENTINEL} {}`);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : `未知错误: ${String(error)}`;
+    return `CSS 语法错误：${message}`;
+  }
 
-  if (/{/.test(strippedCss)) {
+  const rules = probe.cssRules;
+  const lastRule = rules.length > 0 ? rules[rules.length - 1] : undefined;
+  const sentinelKept = lastRule?.cssText
+    ?.trimStart()
+    .startsWith(MEMO_CSS_PROBE_SENTINEL);
+
+  if (!sentinelKept) {
+    return "CSS 未正确闭合（可能缺少 '}'），其后的内容会被忽略";
+  }
+
+  const parsedUserRules = rules.length - 1;
+  const expectedUserRules = countTopLevelRuleStarts(trimmedCss);
+  if (parsedUserRules === 0) {
     return "浏览器未解析出任何规则，可能语法错误被忽略";
   }
-
-  return null;
-}
-
-export function resolveCustomCssStatus(
-  css: string,
-  result: ReturnType<typeof setCustomMemoCss>,
-): string {
-  const lintResult = lintCss(css);
-  if (lintResult) return `CSS 语法警告：${lintResult}`;
-  if (!result.ok) return `CSS 语法错误：${result.error || "无法解析"}`;
-
-  const parsingWarning = detectCssParsingIssue(css, result.ruleCount);
-  return parsingWarning ? `CSS 解析警告：${parsingWarning}` : "";
+  if (parsedUserRules < expectedUserRules) {
+    return `有 ${expectedUserRules - parsedUserRules} 条规则未被浏览器解析（选择器或 @规则可能有误）`;
+  }
+  return "";
 }

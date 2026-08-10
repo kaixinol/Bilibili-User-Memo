@@ -5,7 +5,7 @@ import {
   applyCustomFontColor,
   applyTheme,
   getResolvedCustomFontColor,
-  resolveCustomCssStatus,
+  validateMemoCss,
 } from "./custom-css";
 import { setCustomMemoCss } from "@/core/injection/injector";
 
@@ -25,6 +25,7 @@ export interface PanelPrefsStore {
   clearCustomColor(): void;
   closeAdvancedCss(): void;
   applyMemoCss(): void;
+  saveMemoCss(): void;
 }
 
 interface PanelPrefsDeps {
@@ -81,13 +82,19 @@ export function createPanelPrefsStore({
     },
 
     closeAdvancedCss() {
+      if (this.showAdvancedCss) this.saveMemoCss();
       this.showAdvancedCss = false;
     },
 
     applyMemoCss() {
       const nextCss = this.customMemoCss || "";
-      const result = setCustomMemoCss(nextCss);
-      this.cssStatus = resolveCustomCssStatus(nextCss, result);
+      setCustomMemoCss(nextCss);
+    },
+
+    saveMemoCss() {
+      const nextCss = this.customMemoCss || "";
+      setCustomMemoCss(nextCss);
+      this.cssStatus = validateMemoCss(nextCss);
     },
   };
 }

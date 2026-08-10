@@ -13,7 +13,6 @@ declare module "*.css?inline" {
 }
 // 引入类型（使用 type-only import 避免运行时副作用）
 import type Alpine from "alpinejs";
-import type { TestApi } from "./features/debugger/test-api";
 import type { BiliFixAPI } from "./core/api/bili-api";
 
 
@@ -30,7 +29,6 @@ declare global {
   interface Window {
     Alpine: typeof Alpine;
     __INITIAL_STATE__?: InitialState;
-    __biliMemoTest?: TestApi;
   }
   interface WindowEventMap {
     "biliFix:request-api": CustomEvent<BiliFixAPI>;

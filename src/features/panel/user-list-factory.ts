@@ -58,7 +58,7 @@ async function waitForUsersSnapshotIdle() {
 
 export function createUserListStore(): InternalUserListStore {
   const preloadAllCards = persistWithGmStorage("panelPreloadAllCards", true);
-  const shouldPreloadImmediately = __IS_DEBUG__ || preloadAllCards;
+  const shouldPreloadImmediately = preloadAllCards;
 
   const rawAutoOpen = getGmValue<boolean>("debug.autoOpenPanel", false);
 

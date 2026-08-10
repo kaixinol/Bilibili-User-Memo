@@ -64,13 +64,16 @@ import { logger } from "./utils/logger";
     `${preloadAllCards ? "✅" : "⬜"}默认预注入全部卡片`,
     () => {
       const next = !getPanelPreloadAllCards();
-      setPanelPreloadAllCards(next);
 
       const userList = Alpine.store("userList") as
         | { setPreloadAllCards?: (value: boolean) => void }
         | undefined;
 
-      userList?.setPreloadAllCards?.(next);
+      if (userList?.setPreloadAllCards) {
+        userList.setPreloadAllCards(next);
+      } else {
+        setPanelPreloadAllCards(next);
+      }
 
       showAlert(
         next

@@ -7,7 +7,12 @@ import {
   readImportUsersFromDialog,
 } from "./user-list-io";
 import { getSearchForms, matchesChineseSearch } from "@/utils/chinese-search";
-import { getGmValue, persistWithGmStorage } from "@/utils/gm-storage";
+import {
+  getGmValue,
+  getPanelPreloadAllCards,
+  persistWithGmStorage,
+  setPanelPreloadAllCards,
+} from "@/utils/gm-storage";
 import { afterFramesAndIdle, delay } from "@/utils/scheduler";
 import { showAlert } from "./dialogs";
 import type { UserListStore } from "./user-list-types";
@@ -16,7 +21,6 @@ export interface InternalUserListStore extends UserListStore {
   _usersMap: Map<string, BiliUser>;
   _usersList: BiliUser[];
   syncUsersSnapshot(users: readonly BiliUser[]): void;
-  resetUsersSnapshot(): void;
 }
 
 function syncUsersSnapshot(store: InternalUserListStore, users: readonly BiliUser[]) {
@@ -58,7 +62,7 @@ async function waitForUsersSnapshotIdle() {
 
 export function createUserListStore(): InternalUserListStore {
   const preloadAllCards = persistWithGmStorage("panelPreloadAllCards", true);
-  const shouldPreloadImmediately = preloadAllCards;
+  const shouldPreloadImmediately = getPanelPreloadAllCards();
 
   const rawAutoOpen = getGmValue<boolean>("debug.autoOpenPanel", false);
 
@@ -75,10 +79,6 @@ export function createUserListStore(): InternalUserListStore {
     },
     syncUsersSnapshot(users: readonly BiliUser[]) {
       syncUsersSnapshot(this, users);
-    },
-    resetUsersSnapshot() {
-      this._usersMap.clear();
-      this._usersList.length = 0;
     },
     removeUser(userId: string) {
       userStore.removeUser(userId);
@@ -185,20 +185,17 @@ export function createUserListStore(): InternalUserListStore {
 
     setPreloadAllCards(next: boolean) {
       const shouldPreload = Boolean(next);
+      if (this.preloadAllCards === shouldPreload) return;
+
       this.preloadAllCards = shouldPreload;
+      setPanelPreloadAllCards(shouldPreload);
 
       if (shouldPreload) {
         if (this.hasLoadedUsers) return;
         this.syncUsersSnapshot(userStore.getUsers());
         this.hasLoadedUsers = true;
         this.isUsersLoading = false;
-        return;
       }
-
-      if (this.isOpen) return;
-      this.resetUsersSnapshot();
-      this.hasLoadedUsers = false;
-      this.isUsersLoading = false;
     },
 
     async ensureUsersLoaded() {

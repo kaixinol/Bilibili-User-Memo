@@ -168,7 +168,7 @@ src/
 - `pnpm dev` 生成调试版脚本（不压缩，保留变量名）
 - 调试版（`pnpm dev`）启动后自动打开调试窗口
 - 使用 `logger.debug()` 输出调试日志
-- 调试版暴露 `window.__biliMemoTest` API，可用于非 DOM 相关的自动化测试（查询用户、搜索过滤、多选、导出、刷新等），避免直接操作 DOM
+- 调试版和正式版都暴露 `window.Alpine.store('userList')`，可直接用于非 DOM 相关的自动化测试（查询用户、搜索过滤、多选、导出、刷新等），避免直接操作 DOM；预注入关闭时（列表未加载）先 `await window.Alpine.store('userList').ensureUsersLoaded()`
 - 调试器命中数从批量扫描快照（`getLatestScan()`）读取，不再对每规则单独调用 `querySelectorAllDeep`
 
 ### 为什么我的规则没有生效？

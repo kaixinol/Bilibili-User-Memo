@@ -46,7 +46,7 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - CSS uses LightningCSS with browserslist targets; shared styles use Constructable Stylesheets
 - Dead code = any function/class not imported anywhere under `src/`
 
-- Debug builds expose `window.__biliMemoTest` for MCP/automated testing — use this API for non-DOM tests (store queries, search, selection, export, refresh) instead of manipulating DOM directly
+- For non-DOM operations (store queries, search, selection, export, refresh) use the existing Alpine store directly — `window.Alpine.store('userList')` — instead of manipulating DOM. It's available in debug and production. When preload-all-cards is off (dev), the list is empty until loaded: `await window.Alpine.store('userList').ensureUsersLoaded()` first.
 
 ## Rule system
 

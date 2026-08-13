@@ -49,9 +49,7 @@ export function querySelectorAllDeep(
 
   const startedAt = performance.now();
   const caller = getCaller();
-  if (root instanceof Document){
-    logger.debug( `🔍 querySelectorAllDeep: selector=${selector}, root=document, caller=${caller}`,)
-  }
+  logger.debug(`🔍 querySelectorAllDeep: selector=${selector}, root=document, caller=${caller}`,)
   try {
     const elements = rawQuerySelectorAllDeep(selector, rawRoot);
     recordQueryDiagnostic({

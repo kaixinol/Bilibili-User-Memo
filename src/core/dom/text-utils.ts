@@ -2,7 +2,7 @@ import type { BiliUser } from "../types";
 import type {
   PageRule,
 } from "@/core/rules/rule-types";
-import { querySelectorAllDeep } from "@/utils/query-dom";
+import { containerSelectorList } from "@/core/injection/rule-runtime";
 import { logger } from "@/utils/logger";
 
 function readPreferredText(node: HTMLElement | null): string | null {
@@ -38,7 +38,7 @@ function resolveSelfTextTarget(
  */
 function resolveContainerTextTarget(
   el: HTMLElement,
-  container: string,
+  container: string | string[],
   textSelector: string,
 ): HTMLElement | null {
   if (el.matches(textSelector)) return el;
@@ -46,23 +46,9 @@ function resolveContainerTextTarget(
   const childTextEl = el.querySelector(textSelector) as HTMLElement | null;
   if (childTextEl) return childTextEl;
 
-  const directContainer = el.closest(container);
-  if (directContainer) {
-    return directContainer.querySelector(textSelector) as HTMLElement | null;
-  }
-
-  const watchTargets = querySelectorAllDeep(container, document);
-  for (const target of watchTargets) {
-    const scope = target.shadowRoot || target;
-    if (scope.contains(el)) {
-      return scope.querySelector(textSelector) as HTMLElement | null;
-    }
-  }
-
-  const first = watchTargets[0];
-  if (!first) return null;
-  const fallbackScope = first.shadowRoot || first;
-  return fallbackScope.querySelector(textSelector) as HTMLElement | null;
+  const directContainer = el.closest(containerSelectorList(container));
+  if (!directContainer) return null;
+  return directContainer.querySelector(textSelector) as HTMLElement | null;
 }
 
 /**

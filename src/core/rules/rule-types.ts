@@ -6,7 +6,7 @@ export const DYNAMIC_SCAN_INTERVAL_MS = 750;
 export type RawRule = {
   name: string;
   styleScope: StyleScope;
-  container?: string;
+  container?: string | string[];
   uidResolver?: UidResolverFn;
   originalNameResolver?: OriginalNameResolverFn;
 } & (

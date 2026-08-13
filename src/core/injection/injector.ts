@@ -19,6 +19,7 @@ import type { ScanScope } from "./scan-scope";
 import {
   buildMergedSelector,
   buildRuleSelector,
+  containerSelectorList,
   getMatchedRules,
 } from "./rule-runtime";
 import { RemoteChangeBuffer } from "./remote-change-buffer";
@@ -206,7 +207,7 @@ class PageInjector {
 
       for (const { matchSelector, rule } of selectorRules) {
         if (!el.matches(matchSelector)) continue;
-        if (rule.container && !el.closest(rule.container)) continue;
+        if (rule.container && !el.closest(containerSelectorList(rule.container))) continue;
 
         if (firstMatchedRule) {
           logger.warn(`[injector] Element matched by multiple rules: "${firstMatchedRule}" and "${rule.name}"`, el);

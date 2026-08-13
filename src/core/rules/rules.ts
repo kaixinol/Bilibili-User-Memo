@@ -196,6 +196,7 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Minimal,
             aSelector:
                 ".opus-paragraph-children p a[href*='space.bilibili.com']",
+            container: ["div.bili-dyn-content","div.opus-module-content"]
         }
     },
     // 弹出层规则

@@ -15,12 +15,22 @@ function buildRuleSelector(rule: PageRule): string | null {
   return rule.aSelector || rule.textSelector || null;
 }
 
+function expandContainer(container?: string | string[]): string[] {
+  return container ? (Array.isArray(container) ? container : [container]) : [];
+}
+
+export function containerSelectorList(container?: string | string[]): string {
+  return expandContainer(container).join(", ");
+}
+
 export function buildMergedSelector(rules: PageRule[]): string | null {
   const selectors = rules
-    .map((r) => {
+    .flatMap((r) => {
       const sel = buildRuleSelector(r);
-      if (!sel) return null;
-      return r.container ? `${r.container} ${sel}` : sel;
+      if (!sel) return [];
+      const containers = expandContainer(r.container);
+      if (containers.length === 0) return [sel];
+      return containers.map((c) => `${c} ${sel}`);
     })
     .filter((s): s is string => s !== null);
   const unique = [...new Set(selectors)];

@@ -178,7 +178,9 @@ export function initDebugger() {
             name: rule.name,
             styleScope: rule.styleScope,
             selector,
-            container: rule.container,
+            container: Array.isArray(rule.container)
+              ? rule.container.join(", ")
+              : rule.container,
             matchCount: snapshot?.perRuleCounts[rule.name] ?? 0,
           };
         });

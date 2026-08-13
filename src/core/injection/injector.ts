@@ -37,6 +37,7 @@ class PageInjector {
   private domReady = false;
   private readonly urlMonitor: UrlMonitor;
   private readonly pendingRemoteChanges = new RemoteChangeBuffer();
+  private readonly warnedRulePairs = new Set<string>();
   private matchedRules: PageRule[] = [];
   private scanTimer: number | null = null;
 
@@ -210,7 +211,11 @@ class PageInjector {
         if (rule.container && !el.closest(containerSelectorList(rule.container))) continue;
 
         if (firstMatchedRule) {
-          logger.warn(`[injector] Element matched by multiple rules: "${firstMatchedRule}" and "${rule.name}"`, el);
+          const pairKey = `${firstMatchedRule} & ${rule.name}`;
+          if (!this.warnedRulePairs.has(pairKey)) {
+            this.warnedRulePairs.add(pairKey);
+            logger.warn(`[injector] Element matched by multiple rules: "${firstMatchedRule}" and "${rule.name}"`, el);
+          }
         } else {
           firstMatchedRule = rule.name;
         }

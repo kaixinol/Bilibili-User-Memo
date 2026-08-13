@@ -6,7 +6,7 @@ import {
 } from "@/core/rules/rule-types";
 import { logger } from "@/utils/logger";
 import { extractUid } from "../dom/uid-extractor";
-import { getElementDisplayName } from "../dom/text-utils";
+import { getElementDisplayName, resolveRuleTextTarget } from "../dom/text-utils";
 import { refreshRenderedMemoNodes } from "../render/dom-refresh";
 import { injectMemoRenderer } from "../render/renderer";
 
@@ -216,7 +216,9 @@ class PageInjector {
 
         if (__IS_DEBUG__) perRuleCounts[rule.name]++;
 
-        const storedUid = el.dataset.bilimemoUid;
+        const storedUid =
+          el.dataset.bilimemoUid ??
+          resolveRuleTextTarget(el, rule)?.dataset.bilimemoUid;
         let preResolvedUid: string | null = null;
         if (storedUid) {
           const originalName =

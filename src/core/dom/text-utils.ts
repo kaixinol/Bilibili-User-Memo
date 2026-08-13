@@ -3,13 +3,18 @@ import type {
   PageRule,
 } from "@/core/rules/rule-types";
 import { querySelectorAllDeep } from "@/utils/query-dom";
+import { logger } from "@/utils/logger";
 
 function readPreferredText(node: HTMLElement | null): string | null {
   if (!node) return null;
-  const original = node.dataset.bilimemoOriginal?.trim();
-  if (original) return original;
   const text = node.textContent?.trim();
-  return text || null;
+  if (text) return text;
+  const original = node.dataset.bilimemoOriginal?.trim();
+  if (original) {
+    logger.warn("⚠️ DOM 文本为空，回退读取 data-bilimemo-original:", original);
+    return original;
+  }
+  return null;
 }
 
 function resolveSelfTextTarget(

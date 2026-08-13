@@ -205,7 +205,7 @@ const rawConfig: RawConfig[] = [
             name: "最近-UP动态",
             styleScope: StyleScope.Editable,
             aSelector: "div.user-name a",
-            container: "div.header-content-panel",
+            container: "div.header-dynamic-list-item",
         }
     },
     {

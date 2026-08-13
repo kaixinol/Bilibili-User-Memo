@@ -114,7 +114,12 @@ export function createUserListStore(): InternalUserListStore {
             queryForms,
             this.fuzzySearchEnabled,
           ) ||
-          matchesChineseSearch(user.memo, queryForms, this.fuzzySearchEnabled)
+          matchesChineseSearch(user.memo, queryForms, this.fuzzySearchEnabled) ||
+          matchesChineseSearch(
+            user.memoDetail,
+            queryForms,
+            this.fuzzySearchEnabled,
+          )
         );
       });
     },

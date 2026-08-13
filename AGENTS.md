@@ -22,7 +22,7 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - `src/main.ts` — Entry: Alpine init, GM_registerMenuCommand, lifecycle orchestration
 - `src/core/rules/rules.ts` — All page rules as `RawConfig[]` (urlPattern + rule)
 - `src/core/injection/` — Rule runtime, single-timer scan, selector merging
-- `src/core/injection/rule-runtime.ts` — Selector building (`buildMergedSelector`)
+- `src/core/injection/rule-runtime.ts` — Selector building (`buildMergedSelector`, `containerSelectorList`, `expandContainer`)
 - `src/core/render/renderer.ts` — `renderMinimal` (class injection) vs `renderEditable` (wrapper span)
 - `src/core/render/rendered-node.ts` — `syncRenderedNodeState` for memoDetail title sync
 - `src/core/store/store.ts` — `UserStore` singleton with listener pattern, GM_addValueChangeListener for cross-tab sync
@@ -47,12 +47,13 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - Dead code = any function/class not imported anywhere under `src/`
 
 - For non-DOM operations (store queries, search, selection, export, refresh) use the existing Alpine store directly — `window.Alpine.store('userList')` — instead of manipulating DOM. It's available in debug and production. When preload-all-cards is off (dev), the list is empty until loaded: `await window.Alpine.store('userList').ensureUsersLoaded()` first.
+- Panel list search matches nickname, memo, memoDetail and UID (via `matchesChineseSearch`)
 
 ## Rule system
 
 - `StyleScope.Minimal` → adds CSS classes to the original DOM element (no wrapper)
 - `StyleScope.Editable` → creates a `<span class="editable-textarea">` wrapper after the original element, hides original
-- `container` → optional scope selector; rules with `container` verify `el.closest(container)` before processing, rules without it scan globally. All rules share one `setInterval` (750ms) scanning via `buildMergedSelector`
+- `container` → optional scope selector, accepts `string | string[]` (multiple containers); `buildMergedSelector` generates one prefixed selector per container, and matches are validated via `el.closest(containerSelectorList(container))`. Rules without `container` scan globally. All rules share one `setInterval` (750ms) scanning via `buildMergedSelector`
 - `matchByName` → fallback to name-based lookup when UID is unavailable; requires `textSelector`
 - `uidResolver` / `originalNameResolver` → custom extraction for non-standard DOM structures
 
@@ -63,4 +64,5 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - `a.bili-memo-tag` may render as `<a>` in mention scenarios → CSS must handle both
 - Panel toggle button cursor: base is `context-menu` with `.is-windows-chrome` override to `cursor: help`
 - memoDetail title sync: `syncRenderedNodeState` appends `详细备注：` to element title, uses `\n` separator for existing titles
+- `readPreferredText` (src/core/dom/text-utils.ts) prefers live `textContent` over `data-bilimemo-original`; the data attr is only a fallback when DOM text is empty (avoids stale names read from reused DOM nodes)
 

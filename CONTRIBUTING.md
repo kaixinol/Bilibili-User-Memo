@@ -45,7 +45,8 @@ URL 匹配 → 规则系统 → DOM 扫描/注入 → 渲染备注
 ### 扫描方式
 
 所有规则共享一个 `setInterval`（750ms），通过 `buildMergedSelector` 生成合并选择器，单次 `querySelectorAllDeep` 扫描。
-- 有 `container` 的规则：扫描到元素后额外校验 `el.closest(container)`，通过后才处理
+- `container` 支持 `string | string[]`（多个容器）；`buildMergedSelector` 会为每个容器生成一个前缀选择器（`${container} ${selector}`）后合并
+- 有 `container` 的规则：扫描到元素后通过 `containerSelectorList(container)` 校验 `el.closest(...)`，通过后才处理
 - 无 `container` 的规则：全局扫描，所有匹配元素均处理
 
 ### 样式隔离
@@ -80,7 +81,7 @@ import { UserType, createUser } from './utils'
 2. **高频事件**：使用 Alpine.js `.debounce` 修饰符，如 `@input.debounce.100ms`
 3. **批量操作**：遵循"批量读，批量写"原则，结合 `requestAnimationFrame`
 4. **空闲规避**：`querySelectorAllDeep` 通过 `activityMonitor.isIdle()` 在用户闲置 3s 后跳过扫描，避免后台标签页的性能浪费
-5. **动态扫描**：使用 `setInterval` 轮询（750ms），`container` 字段自动拼接到选择器前（`${container} ${selector}`），所有规则统一生成合并选择器
+5. **动态扫描**：使用 `setInterval` 轮询（750ms），`container` 字段自动拼接到选择器前（`${container} ${selector}`，支持数组多容器，见 `containerSelectorList`），所有规则统一生成合并选择器
 
 ## 项目结构
 
@@ -123,7 +124,7 @@ src/
         styleScope: StyleScope.Minimal,  // 或 Editable
         aSelector: ".target-element",     // 目标元素选择器
         textSelector: "span.name",        // 可选：文本内容选择器
-        container: "#app",                // 可选：限定扫描容器，有 container 的规则会在匹配时校验 el.closest(container)
+        container: "#app",                // 可选：限定扫描容器，支持 string | string[]（多个容器），匹配时校验 el.closest(containerSelectorList(...))
         uidResolver: (el) => ...,         // 可选：自定义 UID 提取
         matchByName: true,                // 可选：按名称匹配（无 UID 时回退，需同时设置 textSelector）
     }

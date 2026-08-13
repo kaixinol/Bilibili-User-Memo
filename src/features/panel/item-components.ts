@@ -117,7 +117,9 @@ export function registerCopyableUid() {
     },
     refreshOverflow() {
       runOnNextTick(this, () => {
-        const element = getCurrentElement(this);
+        const element = getCurrentElement(this)?.querySelector<HTMLElement>(
+          ".user-id",
+        );
         if (!element) return;
         this.canExpand = element.scrollWidth > element.clientWidth;
       });

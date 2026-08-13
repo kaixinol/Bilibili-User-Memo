@@ -27,15 +27,13 @@
       decoding="async"
     />
   </div>
-  <div class="user-info-section">
+  <div class="user-info-section" x-data="copyableUid(user.id)"
+    @mouseenter="handleMouseEnter()" @mouseleave="handleMouseLeave()">
     <div class="user-info-label">BilibiliID</div>
     <div
       class="user-id"
-      x-data="copyableUid(user.id)"
       x-text="displayText"
       @click="copy()"
-      @mouseenter="handleMouseEnter()"
-      @mouseleave="handleMouseLeave()"
       :class="{ 'can-expand': canExpand }"
       :title="copied ? '' : '点击复制 ID'"
     ></div>
@@ -52,7 +50,11 @@
       :title="currentUser?.isDeleted ? '该用户已标注为已注销' : (currentUser?.nickname || user.id)"
     ></a>
   </div>
-  <div class="user-note-section" x-data="memoEditor(user.id, currentUser?.memo || '')" x-effect="syncDraft()" @contextmenu.prevent="$store.memoDetailDialog.open(user.id)" :title="currentUser?.memoDetail || '右键可设置详细备注'" maxlength="240" minlength="1">
+  <div class="user-note-section"
+    x-data="memoEditor(user.id, currentUser?.memo || '')" x-effect="syncDraft()"
+    @contextmenu.prevent="$store.memoDetailDialog.open(user.id)"
+    :title="currentUser?.memoDetail || '右键可设置详细备注'" maxlength="240"
+    minlength="1">
     <div class="user-info-label">备注</div>
     <input
       x-ref="memoInput"

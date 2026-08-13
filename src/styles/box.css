@@ -169,7 +169,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  line-height: normal;
+  line-height: 20px;
 }
 
 .user-nickname-link.is-deleted {
@@ -202,6 +202,7 @@
   /* 基础样式保持不变 */
   font-family: monospace;
   font-size: 12px;
+  line-height: 20px;
   width: 100%;
   white-space: nowrap;
   overflow: hidden;
@@ -211,7 +212,7 @@
   cursor: pointer;
 }
 
-.user-id.can-expand:hover {
+.user-info-section:hover .user-id.can-expand {
   overflow: visible;
   position: absolute;
   width: fit-content;
@@ -240,6 +241,7 @@
   color: var(--custom-font-color, var(--primary-color));
   background: transparent;
   padding: 0;
+  line-height: 20px;
   cursor: pointer;
 
   /* 提示用户可以点击 */
@@ -305,7 +307,7 @@
   color: var(--text-sub);
 }
 
-.memo-container-dark-theme .user-id.can-expand:hover {
+.memo-container-dark-theme .user-info-section:hover .user-id.can-expand {
   background-color: var(--bg-sub);
   color: var(--text-inverse);
   box-shadow: var(--shadow-dark);

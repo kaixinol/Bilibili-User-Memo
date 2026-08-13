@@ -45,6 +45,17 @@ const rawConfig: RawConfig[] = [
     },
     {
         urlPattern:
+            /^https:\/\/space\.bilibili\.com\/\d+(?:\?.*)?$/,
+        rule: {
+            name: "空间-最近投币/点赞",
+            styleScope: StyleScope.Minimal,
+            aSelector: "a.bili-video-card__author",
+            textSelector: ".bili-video-card__text span[title]",
+            container: "section.home-section",
+        }
+    },
+    {
+        urlPattern:
             /^https:\/\/space\.bilibili\.com\/\d+\/favlist\?(?=[^#]*\bfid=\d+\b)(?=[^#]*\bftype=create\b)[^#]*(?:#.*)?$/,
         rule: {
             name: "空间收藏夹",
@@ -262,9 +273,9 @@ const rawConfig: RawConfig[] = [
             }
         }
     }, {
-        urlPattern: USER_SPACE_DYNAMIC,
+        urlPattern: new RegExp(`${USER_SPACE_DYNAMIC.source}|${NEW_DYNAMIC_OPUS_ONE.source}|${DYNAMIC_PAGE.source}|${OLD_DYNAMIC_PAGE.source}`),
         rule: {
-            name: "用户空间动态-转发",
+            name: "动态-转发",
             styleScope: StyleScope.Minimal,
             textSelector: "span.dyn-orig-author__name",
             container: "div.dyn-orig-author",
@@ -274,9 +285,9 @@ const rawConfig: RawConfig[] = [
         }
     },
     {
-        urlPattern: USER_SPACE_DYNAMIC,
+        urlPattern: new RegExp(`${USER_SPACE_DYNAMIC.source}|${DYNAMIC_PAGE.source}`),
         rule: {
-            name: "用户空间动态-点赞",
+            name: "动态-点赞",
             styleScope: StyleScope.Minimal,
             aSelector: 'span[data-module="desc"]',
             container: "div.bili-dyn-interaction__item",

@@ -5,7 +5,7 @@ export { StyleScope, } from "./rule-types";
 const COMMON_REG = /^https:\/\/[a-z0-9.]+\.bilibili\.com\/.*/;
 const VIDEO_REG = /^https:\/\/www\.bilibili\.com\/(video|list)\/.*/;
 
-const VIDEO_CARD_A_SELECTOR = ".bili-video-card__info--owner:not(:has(.bili-video-card__info--ad)), .bili-video-card__author, a.up-name";
+const VIDEO_CARD_A_SELECTOR = "a.bili-video-card__info--owner[href*='space.bilibili.com'], .bili-video-card__author, a.up-name";
 const VIDEO_CARD_TEXT_SELECTOR = ".bili-video-card__info--author, .bili-video-card__text span[title], .up-name__text";
 const NEW_DYNAMIC_OPUS_ONE = /^https:\/\/www\.bilibili\.com\/opus\/\d+/
 const USER_SPACE_DYNAMIC = /^https:\/\/space\.bilibili\.com\/\d+\/dynamic/;
@@ -77,7 +77,7 @@ const rawConfig: RawConfig[] = [
         }
     },
     {
-        urlPattern: /^https:\/\/www\.bilibili\.com\/?(?:\?[^#]*)?(?:#.*)?$/,
+        urlPattern: /^https:\/\/www\.bilibili\.com\/?(?:index\.html)?(?:\?[^#]*)?(?:#.*)?$/,
         rule: {
             name: "首页",
             styleScope: StyleScope.Minimal,
@@ -96,13 +96,16 @@ const rawConfig: RawConfig[] = [
         }
     },
     {
-        urlPattern: /^https:\/\/www\.bilibili\.com\/v\/popular\/?(?:\?[^#]*)?(?:#.*)?$/,
+        urlPattern: /^https:\/\/www\.bilibili\.com\/v\/popular(?:\/[a-z_]+)?\/?(?:\?[^#]*)?(?:#.*)?$/,
         rule: {
             name: "热门",
             styleScope: StyleScope.Minimal,
-            aSelector: VIDEO_CARD_A_SELECTOR,
-            textSelector: VIDEO_CARD_TEXT_SELECTOR,
-            container: "#app",
+            aSelector: ".up-name",
+            container: "div.popular-container",
+            uidResolver: (el) =>
+                (el.closest(".video-card") as HTMLElement | null)?.__vue__?.$props?.videoData
+                    ?.owner?.mid?.toString() ||
+                null,
         }
     },
     {
@@ -296,8 +299,10 @@ const rawConfig: RawConfig[] = [
         urlPattern: /^https:\/\/search\.bilibili\.com\/(all|live|upuser)/,
         rule: {
             name: "搜索页面-UP主",
-            styleScope: StyleScope.Editable,
-            aSelector: "a.user-name, a.p_relative, a.live-title",
+            styleScope: StyleScope.Minimal,
+            aSelector: "a.user-name, a.p_relative, a.live-title, a.bili-live-card__info--uname",
+            textSelector: "a.live-title span, span.bili-live-card__info--author",
+            matchByName: true, // 因为搜索结果的UP主链接也可能不是UID
         }
     }, {
         urlPattern: VIDEO_REG,

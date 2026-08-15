@@ -186,9 +186,7 @@ class PageInjector {
         const sel = buildRuleSelector(r);
         return {
           selector: sel,
-          matchSelector: sel
-            ? sel.split(/[\s>+~]+/).pop()!
-            : null,
+          matchSelector: sel,
           rule: r,
         };
       })

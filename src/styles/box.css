@@ -1,15 +1,9 @@
-/* --- 用户列表容器：改为一行三列 --- */
 .panel-users-list {
   display: grid;
-
-  /* 默认为三列布局，利用率更高 */
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
   gap: 10px;
-
-  /* 间距缩小，更紧凑 */
   width: 100%;
 }
-
 .panel-empty-state {
   grid-column: 1 / -1;
   display: flex;

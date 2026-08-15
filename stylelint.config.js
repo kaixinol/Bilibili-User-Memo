@@ -55,6 +55,7 @@ export default {
       true,
       {
         ignore: ["css-nesting", "intrinsic-width", "extended-system-fonts"],
+        ignorePartialSupport: true,
       },
     ],
 

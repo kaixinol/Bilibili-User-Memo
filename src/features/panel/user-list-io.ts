@@ -77,6 +77,11 @@ export function exportUsersAsJson(users: BiliUser[]) {
       data.isDeleted = true;
     }
 
+    // Only include memoDetail if it's not empty
+    if (user.memoDetail) {
+      data.memoDetail = user.memoDetail;
+    }
+
     return data;
   });
   const jsonContent = JSON.stringify(exportData, null, 2);
@@ -126,4 +131,3 @@ export async function fetchLatestProfiles(
   await Promise.allSettled(tasks);
   return profiles;
 }
-

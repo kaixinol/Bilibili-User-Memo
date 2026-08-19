@@ -1,26 +1,29 @@
 import {
   string,
   optional,
-  object,
+  strictObject,
   record,
   array,
   union,
   safeParse,
+  boolean,
 } from "valibot";
 
 // --- 1. Schema 定义 ---
 const UID = string();
 
 // 新版模型
-const UserSchema = object({
+const UserSchema = strictObject({
   id: UID,
   nickname: string(),
   avatar: optional(string()),
   memo: string(),
+  memoDetail: optional(string()),
+  isDeleted: optional(boolean()),
 });
 
 // 旧版模型
-const UserSchemaOld = object({
+const UserSchemaOld = strictObject({
   bid: UID,
   nickname: string(),
   memo: string(),

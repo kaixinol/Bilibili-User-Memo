@@ -34,14 +34,14 @@
     "stylelint-no-unsupported-browser-features": "^8.1.1",
     "terser": "^5.50.0",
     "typescript": "^6.0.3",
-    "vite": "^8.2.1",
+    "vite": "^8.2.2",
     "vite-plugin-monkey": "^8.1.0",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   },
   "dependencies": {
-    "@alpinejs/persist": "^3.16.1",
+    "@alpinejs/persist": "^3.16.2",
     "@trim21/gm-fetch": "^0.3.0",
-    "alpinejs": "^3.16.1",
+    "alpinejs": "^3.16.2",
     "opencc-js": "^1.4.1",
     "p-limit": "^7.3.1",
     "query-selector-shadow-dom": "^1.0.1",

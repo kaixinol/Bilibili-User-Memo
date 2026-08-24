@@ -1,5 +1,4 @@
 // Rewritten from SocialSisterYi/bilibili-API-collect/docs/misc/sign/wbi.md#javascript
-import GM_fetch from "@trim21/gm-fetch";
 import { logger } from "@/utils/logger";
 import { withLimit } from "./request-limiter";
 import { DEFAULT_AVATAR_URL } from "@/core/dom/avatar-utils";
@@ -118,8 +117,8 @@ async function getWbiKeys(): Promise<{ img_key: string; sub_key: string }> {
   }
 
   try {
-    const res = await GM_fetch("https://api.bilibili.com/x/web-interface/nav", {
-      headers: { Referer: "https://www.bilibili.com/" },
+    const res = await fetch("https://api.bilibili.com/x/web-interface/nav", {
+      credentials: "include",
     });
     const json = await res.json();
     const { img_url, sub_url } = json.data.wbi_img;
@@ -193,8 +192,8 @@ async function _getUserInfo(mid: string): Promise<UserInfo | null> {
     const signedQuery = encWbi(params, img_key, sub_key);
     const url = `https://api.bilibili.com/x/space/wbi/acc/info?${signedQuery}`;
 
-    const response = await GM_fetch(url, {
-      headers: { Referer: "https://space.bilibili.com/" },
+    const response = await fetch(url, {
+      credentials: "include",
     });
 
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);

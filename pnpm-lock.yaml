@@ -11,9 +11,6 @@ importers:
       '@alpinejs/persist':
         specifier: ^3.16.2
         version: 3.16.2
-      '@trim21/gm-fetch':
-        specifier: ^0.3.0
-        version: 0.3.0
       alpinejs:
         specifier: ^3.16.2
         version: 3.16.2
@@ -472,9 +469,6 @@ packages:
 
   '@standard-schema/spec@1.1.0':
     resolution: {integrity: sha512-l2aFy5jALhniG5HgqrD6jXLi/rUWrKvqN/qJx6yoJsgKhblVd+iqqU4RCXavm/jPityDo5TCvKMnpjKnOriy0w==}
-
-  '@trim21/gm-fetch@0.3.0':
-    resolution: {integrity: sha512-HMZvNUX1dX9uuE0ZjZijPoy39ueNEL1ScsDsDqV4YxtH5izf532ioDhPzDZQqv78ni10BT0IOmR5Fi0GahjFzQ==}
 
   '@types/alpinejs@3.13.11':
     resolution: {integrity: sha512-3KhGkDixCPiLdL3Z/ok1GxHwLxEWqQOKJccgaQL01wc0EVM2tCTaqlC3NIedmxAXkVzt/V6VTM8qPgnOHKJ1MA==}
@@ -2022,8 +2016,6 @@ snapshots:
   '@sindresorhus/merge-streams@4.0.0': {}
 
   '@standard-schema/spec@1.1.0': {}
-
-  '@trim21/gm-fetch@0.3.0': {}
 
   '@types/alpinejs@3.13.11': {}
 

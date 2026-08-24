@@ -283,7 +283,7 @@ const rawConfig: RawConfig[] = [
             textSelector: "span.dyn-orig-author__name",
             container: "div.dyn-orig-author",
             uidResolver: el => {
-                return getOpusAuthorUid(el);
+                return getOpusAuthorUid(el.parentElement) || getOpusAuthorUid(el);
             }
         }
     },

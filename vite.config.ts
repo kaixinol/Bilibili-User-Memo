@@ -62,7 +62,6 @@ export default defineConfig(({ mode }) => {
           "GM_setValue",
           "GM_getValue",
           "GM_addValueChangeListener",
-          "unsafeWindow",
           "GM_registerMenuCommand",
         ],
         "run-at": "document-body",

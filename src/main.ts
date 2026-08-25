@@ -2,7 +2,7 @@ import Alpine from "alpinejs";
 import persist from "@alpinejs/persist";
 import { initMainPanel } from "@/features/panel/panel";
 import { initPageInjection } from "@/core/injection/injector";
-import { unsafeWindow, GM_registerMenuCommand } from "$";
+import { GM_registerMenuCommand } from "$";
 import {
   getPanelPreloadAllCards,
   setPanelPreloadAllCards,
@@ -29,8 +29,13 @@ import { logger } from "./utils/logger";
   }
   Alpine.plugin(persist);
 
-  // 👉 统一 Alpine 实例（很关键）
-  unsafeWindow.Alpine = Alpine;
+  if (__IS_DEBUG__) {
+    window.$biliMemoAlpine = Alpine;
+    Object.defineProperty(window, "$$biliMemo", {
+      configurable: true,
+      get: () => Alpine.store("userList"),
+    });
+  }
 
   const currentScopePattern = getCurrentPageScopePattern();
   const pageDisabled = isCurrentPageDisabled();

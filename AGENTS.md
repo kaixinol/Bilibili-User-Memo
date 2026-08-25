@@ -46,7 +46,7 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - CSS uses LightningCSS with browserslist targets; shared styles use Constructable Stylesheets
 - Dead code = any function/class not imported anywhere under `src/`
 
-- For non-DOM operations (store queries, search, selection, export, refresh) use the existing Alpine store directly — `window.Alpine.store('userList')` — instead of manipulating DOM. It's available in debug and production. When preload-all-cards is off (dev), the list is empty until loaded: `await window.Alpine.store('userList').ensureUsersLoaded()` first.
+- For non-DOM operations (store queries, search, selection, export, refresh) in debug builds, use the exposed Alpine store — `window.$biliMemoAlpine.store('userList')`, or the quick accessor `$$biliMemo` (returns the store) — instead of manipulating DOM. Both are injected only in debug (`__IS_DEBUG__`). When preload-all-cards is off (dev), the list is empty until loaded: `await $$biliMemo.ensureUsersLoaded()` first.
 - Panel list search matches nickname, memo, memoDetail and UID (via `matchesChineseSearch`)
 
 ## Rule system

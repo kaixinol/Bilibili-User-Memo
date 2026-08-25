@@ -14,6 +14,7 @@ declare module "*.css?inline" {
 // 引入类型（使用 type-only import 避免运行时副作用）
 import type Alpine from "alpinejs";
 import type { BiliFixAPI } from "./core/api/bili-api";
+import type { UserListStore } from "./features/panel/user-list-types";
 
 
 type InitialState = {
@@ -27,7 +28,8 @@ declare global {
   const __IS_DEBUG__: boolean;
   const __VERSION__: string;
   interface Window {
-    Alpine: typeof Alpine;
+    $biliMemoAlpine: typeof Alpine;
+    $$biliMemo?: UserListStore;
     __INITIAL_STATE__?: InitialState;
   }
   interface WindowEventMap {

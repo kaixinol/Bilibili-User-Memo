@@ -14,7 +14,6 @@ import { userStore, type UserStoreChange } from "../store/store";
 import { createUrlMonitor, type UrlMonitor } from "./url-monitor";
 import { syncSpaceProfile } from "./space-profile";
 import type { BiliUser } from "../types";
-import { unsafeWindow } from "$";
 import type { ScanScope } from "./scan-scope";
 import {
   buildMergedSelector,
@@ -23,7 +22,6 @@ import {
   getMatchedRules,
 } from "./rule-runtime";
 import { RemoteChangeBuffer } from "./remote-change-buffer";
-import { waitUntil } from "@/utils/scheduler";
 import {
   describeElementForDiagnostics,
   getLatestScan,
@@ -51,7 +49,6 @@ class PageInjector {
     this.urlMonitor = createUrlMonitor(() => this.handleUrlChange());
     this.urlMonitor.start();
     this.onDomReady(async () => {
-      await this.waitForBiliEnvironment();
       await new Promise((resolve) => requestAnimationFrame(resolve));
       this.domReady = true;
       this.handleUrlChange();
@@ -320,15 +317,6 @@ class PageInjector {
     window.addEventListener("DOMContentLoaded", () => callback(), {
       once: true,
     });
-  }
-
-  private async waitForBiliEnvironment(): Promise<void> {
-    const ready = await waitUntil(() => Boolean((unsafeWindow as any).__VUE__), {
-      timeoutMs: 5000,
-    });
-    if (!ready) {
-      logger.warn("等待 Bilibili Vue 环境超时，继续初始化页面注入");
-    }
   }
 }
 

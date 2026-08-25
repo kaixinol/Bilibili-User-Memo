@@ -1,12 +1,13 @@
 /* Debugger Panel Styles */
 input {
   color-scheme: light;
+
+  .memo-container-dark-theme & {
+    color-scheme: dark;
+  }
 }
 
 /* 父级有 .memo-container-dark-theme 时 */
-.memo-container-dark-theme input {
-  color-scheme: dark;
-}
 .debugger-window {
   position: fixed;
   background: var(--bg-main);
@@ -24,8 +25,7 @@ input {
   resize: both;
   overflow: hidden;
 
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   font-size: 13px;
   user-select: none;
 
@@ -35,6 +35,14 @@ input {
 
   /* GPU acceleration for dragging */
   will-change: transform;
+
+  .memo-container-dark-theme & {
+    background: var(--bg-sub);
+    color: var(--text-main);
+    border: 1px solid var(--border-main);
+    box-shadow: var(--shadow-dark);
+    color-scheme: dark; /* 自动调整内部原生组件(如滚动条) */
+  }
 }
 
 .debugger-header {
@@ -46,14 +54,24 @@ input {
   cursor: grab;
   border-radius: 6px 6px 0 0;
   transition: background 0.2s;
-}
 
-.debugger-header:active {
-  cursor: grabbing;
-}
+  &:active {
+    cursor: grabbing;
+  }
 
-.debugger-header:hover {
-  background: var(--bg-sub);
+  &:hover {
+    background: var(--bg-sub);
+  }
+
+  .memo-container-dark-theme & {
+    background: var(--bg-main);
+    border-bottom: 1px solid var(--border-main);
+    color: var(--text-main);
+
+    &:hover {
+      background: var(--bg-sub);
+    }
+  }
 }
 
 .drag-handle {
@@ -61,6 +79,10 @@ input {
   color: var(--text-sub);
   font-weight: bold;
   user-select: none;
+
+  .memo-container-dark-theme & {
+    color: var(--text-sub);
+  }
 }
 
 .debugger-title {
@@ -93,6 +115,11 @@ input {
   padding: 6px 8px;
   margin-bottom: 10px;
   font-size: 11px;
+
+  .memo-container-dark-theme & {
+    background: var(--bg-main);
+    border-color: var(--border-main);
+  }
 }
 
 .perf-item {
@@ -107,12 +134,20 @@ input {
 
 .perf-label {
   color: var(--text-sub);
+
+  .memo-container-dark-theme & {
+    color: var(--text-sub);
+  }
 }
 
 .perf-value {
   color: var(--text-main);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+
+  .memo-container-dark-theme & {
+    color: var(--text-main);
+  }
 }
 
 .debugger-controls {
@@ -120,6 +155,10 @@ input {
   gap: 8px;
   margin-bottom: 12px;
   align-items: center;
+
+  .debugger-input {
+    flex: 1;
+  }
 }
 
 .debugger-input {
@@ -131,19 +170,24 @@ input {
   outline: none;
   font-family: monospace;
   font-size: 11px;
-  transition:
-    border-color 0.2s,
-    box-shadow 0.2s;
+  transition: border-color 0.2s, box-shadow 0.2s;
   min-width: 0;
-}
 
-.debugger-controls .debugger-input {
-  flex: 1;
-}
+  &:focus {
+    border-color: var(--focus-color);
+    box-shadow: 0 0 0 3px var(--focus-ring);
+  }
 
-.debugger-input:focus {
-  border-color: var(--focus-color);
-  box-shadow: 0 0 0 3px var(--focus-ring);
+  .memo-container-dark-theme & {
+    background: var(--bg-main);
+    border-color: var(--border-main);
+    color: var(--text-main);
+
+    &:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 3px var(--primary-alpha);
+    }
+  }
 }
 
 .debugger-btn {
@@ -155,18 +199,31 @@ input {
   cursor: pointer;
   font-weight: 500;
   font-size: 12px;
-  transition:
-    background 0.2s,
-    border-color 0.2s;
-}
+  transition: background 0.2s, border-color 0.2s;
 
-.debugger-btn:hover {
-  background: var(--bg-sub);
-  border-color: var(--focus-color);
-}
+  &:hover {
+    background: var(--bg-sub);
+    border-color: var(--focus-color);
+  }
 
-.debugger-btn:active {
-  background: var(--bg-sub);
+  &:active {
+    background: var(--bg-sub);
+  }
+
+  .memo-container-dark-theme & {
+    background: var(--bg-sub);
+    border-color: var(--border-main);
+    color: var(--text-main);
+
+    &:hover {
+      background: var(--border-main);
+      border-color: var(--primary-color);
+    }
+
+    &:active {
+      background: var(--bg-main);
+    }
+  }
 }
 
 .debugger-scroll {
@@ -179,19 +236,28 @@ input {
   /* 兼容 Firefox 滚动条 */
   scrollbar-width: thin;
   scrollbar-color: var(--border-main) transparent;
-}
 
-.debugger-scroll::-webkit-scrollbar {
-  width: 6px;
-}
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
 
-.debugger-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
-.debugger-scroll::-webkit-scrollbar-thumb {
-  background: var(--border-main);
-  border-radius: 3px;
+  &::-webkit-scrollbar-thumb {
+    background: var(--border-main);
+    border-radius: 3px;
+  }
+
+  .memo-container-dark-theme & {
+    /* 兼容 Firefox 滚动条 */
+    scrollbar-color: var(--border-main) transparent;
+
+    &::-webkit-scrollbar-thumb {
+      background: var(--border-main);
+    }
+  }
 }
 
 .debugger-query-list {
@@ -202,28 +268,28 @@ input {
   /* 兼容 Firefox 滚动条 */
   scrollbar-width: thin;
   scrollbar-color: var(--border-main) transparent;
-}
 
-.debugger-query-list::-webkit-scrollbar {
-  width: 6px;
-}
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
 
-.debugger-query-list::-webkit-scrollbar-track {
-  background: transparent;
-}
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
 
-.debugger-query-list::-webkit-scrollbar-thumb {
-  background: var(--border-main);
-  border-radius: 3px;
+  &::-webkit-scrollbar-thumb {
+    background: var(--border-main);
+    border-radius: 3px;
+  }
 }
 
 .debugger-section {
   border-bottom: 1px solid var(--border-main);
   padding: 8px 0;
-}
 
-.debugger-section:first-child {
-  padding-top: 0;
+  &:first-child {
+    padding-top: 0;
+  }
 }
 
 .debugger-section-title {
@@ -265,12 +331,12 @@ input {
   color: var(--text-sub);
   cursor: pointer;
   user-select: none;
-}
 
-.debugger-checkbox-label input[type="checkbox"] {
-  margin: 0;
-  cursor: pointer;
-  accent-color: var(--primary-color);
+  input[type="checkbox"] {
+    margin: 0;
+    cursor: pointer;
+    accent-color: var(--primary-color);
+  }
 }
 
 .perf-row {
@@ -279,10 +345,10 @@ input {
   display: flex;
   flex-direction: column;
   gap: 3px;
-}
 
-.perf-row:hover {
-  background: var(--bg-sub);
+  &:hover {
+    background: var(--bg-sub);
+  }
 }
 
 .perf-row-slow {
@@ -341,9 +407,7 @@ input {
 
 .perf-row-selector,
 .debugger-code {
-  font-family:
-    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
-    monospace;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 }
 
 .debugger-code {
@@ -360,18 +424,26 @@ input {
   flex-direction: column;
   gap: 4px;
   transition: background 0.2s;
-}
 
-.rule-item:hover {
-  background: var(--bg-sub);
-}
+  &:hover {
+    background: var(--bg-sub);
+  }
 
-.rule-item:last-child {
-  border-bottom: none;
-}
+  &:last-child {
+    border-bottom: none;
+  }
 
-.rule-item.rule-expanded {
-  background: var(--bg-sub);
+  &.rule-expanded {
+    background: var(--bg-sub);
+  }
+
+  .memo-container-dark-theme & {
+    border-bottom-color: var(--border-main);
+
+    &:hover {
+      background: var(--bg-sub);
+    }
+  }
 }
 
 .rule-summary {
@@ -392,10 +464,10 @@ input {
   flex-shrink: 0;
   transition: background 0.15s, transform 0.15s;
   line-height: 1;
-}
 
-.rule-expand-btn:hover {
-  background: var(--border-main);
+  &:hover {
+    background: var(--border-main);
+  }
 }
 
 .rule-expanded-btn {
@@ -433,15 +505,15 @@ input {
   display: flex;
   align-items: center;
   gap: 6px;
-}
 
-.rule-detail-row label {
-  font-size: 10px;
-  font-weight: 600;
-  color: var(--text-sub);
-  min-width: 70px;
-  flex-shrink: 0;
-  text-transform: uppercase;
+  label {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--text-sub);
+    min-width: 70px;
+    flex-shrink: 0;
+    text-transform: uppercase;
+  }
 }
 
 .rule-mode-label {
@@ -460,98 +532,27 @@ input {
   border-radius: 3px;
   transition: border-color 0.2s;
   flex-shrink: 0;
-}
 
-.debugger-color-picker:hover {
-  border-color: var(--focus-color);
+  &:hover {
+    border-color: var(--focus-color);
+  }
+
+  .memo-container-dark-theme & {
+    border-color: var(--border-main);
+    background: var(--bg-main);
+  }
 }
 
 /* 适配夜间主题 */
-.memo-container-dark-theme .debugger-window {
-  background: var(--bg-sub);
-  color: var(--text-main);
-  border: 1px solid var(--border-main);
-  box-shadow: var(--shadow-dark);
-  color-scheme: dark; /* 自动调整内部原生组件(如滚动条) */
-}
 
 /* 头部样式 */
-.memo-container-dark-theme .debugger-header {
-  background: var(--bg-main);
-  border-bottom: 1px solid var(--border-main);
-  color: var(--text-main);
-}
-
-.memo-container-dark-theme .debugger-header:hover {
-  background: var(--bg-sub);
-}
-
-.memo-container-dark-theme .drag-handle {
-  color: var(--text-sub);
-}
 
 /* 性能指标区域 */
-.memo-container-dark-theme .debugger-perf {
-  background: var(--bg-main);
-  border-color: var(--border-main);
-}
-
-.memo-container-dark-theme .perf-label {
-  color: var(--text-sub);
-}
-
-.memo-container-dark-theme .perf-value {
-  color: var(--text-main);
-}
 
 /* 输入框适配 */
-.memo-container-dark-theme .debugger-input {
-  background: var(--bg-main);
-  border-color: var(--border-main);
-  color: var(--text-main);
-}
-
-.memo-container-dark-theme .debugger-input:focus {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px var(--primary-alpha);
-}
 
 /* 按钮适配 */
-.memo-container-dark-theme .debugger-btn {
-  background: var(--bg-sub);
-  border-color: var(--border-main);
-  color: var(--text-main);
-}
-
-.memo-container-dark-theme .debugger-btn:hover {
-  background: var(--border-main);
-  border-color: var(--primary-color);
-}
-
-.memo-container-dark-theme .debugger-btn:active {
-  background: var(--bg-main);
-}
 
 /* 列表项适配 */
-.memo-container-dark-theme .rule-item {
-  border-bottom-color: var(--border-main);
-}
-
-.memo-container-dark-theme .rule-item:hover {
-  background: var(--bg-sub);
-}
 
 /* 颜色选择器微调 */
-.memo-container-dark-theme .debugger-color-picker {
-  border-color: var(--border-main);
-  background: var(--bg-main);
-}
-
-.memo-container-dark-theme .debugger-scroll::-webkit-scrollbar-thumb {
-  background: var(--border-main);
-}
-
-.memo-container-dark-theme .debugger-scroll {
-  /* 兼容 Firefox 滚动条 */
-  scrollbar-color: var(--border-main) transparent;
-}

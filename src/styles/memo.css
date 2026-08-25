@@ -16,13 +16,15 @@
 
   text-shadow: 0 1px 2px var(--overlay);
 
-  transition:
-    border-color 0.2s ease,
-    background 0.2s ease,
-    opacity 0.2s ease;
+  transition: border-color 0.2s ease, background 0.2s ease, opacity 0.2s ease;
 
   opacity: 0.85;
   text-align: center;
+
+  &:hover {
+    opacity: 1;
+    background: color-mix(in srgb, var(--memo-textarea-bg), white 20%);
+  }
 }
 
 .editable-textarea,
@@ -34,11 +36,6 @@
 }
 
 /* hover 状态 - 使用 color-mix 动态提亮背景色，适配所有主题 */
-.editable-textarea:hover {
-  opacity: 1;
-  background: color-mix(in srgb, var(--memo-textarea-bg), white 20%);
-}
-
 .bili-memo-tag {
   cursor: pointer;
 }

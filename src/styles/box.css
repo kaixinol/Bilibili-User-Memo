@@ -4,6 +4,7 @@
   gap: 10px;
   width: 100%;
 }
+
 .panel-empty-state {
   grid-column: 1 / -1;
   display: flex;
@@ -24,6 +25,7 @@
 }
 
 /* --- 用户卡片单体 --- */
+
 .user-box {
   display: flex;
   align-items: center;
@@ -43,22 +45,42 @@
   box-shadow: var(--shadow-elevated);
   box-sizing: border-box;
   transition: all 0.2s ease;
-}
 
-.user-box:hover {
-  border-color: var(--primary-color);
-  background: var(--primary-alpha);
+  &:hover {
+    border-color: var(--primary-color);
+    background: var(--primary-alpha);
 
-  /* 悬浮时给个淡淡的底色 */
-}
+    /* 悬浮时给个淡淡的底色 */
+  }
 
-.user-box.is-selected {
-  border-color: var(--primary-color);
-  box-shadow: 0 0 0 2px var(--primary-alpha);
-}
+  &.is-selected {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px var(--primary-alpha);
+  }
 
-.user-box.multi-select {
-  cursor: pointer;
+  &.multi-select {
+    cursor: pointer;
+  }
+
+  .memo-container-dark-theme & {
+    background: var(--bg-sub);
+    border-color: var(--border-main);
+    box-shadow: none;
+
+    &:hover {
+      background: var(--bg-sub);
+      border-color: var(--primary-color);
+    }
+  }
+
+  &.has-detail-match {
+    height: auto;
+    min-height: 72px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
 }
 
 .user-select {
@@ -70,12 +92,34 @@
   margin-right: 8px;
   flex-shrink: 0;
   cursor: pointer;
-}
 
-.user-select input {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+
+    &:checked + .user-select-mark {
+      border-color: var(--primary-color);
+      background: var(--primary-color);
+      box-shadow: 0 0 0 2px var(--primary-alpha);
+
+      &::after {
+        content: "";
+        display: block;
+        width: 8px;
+        height: 4px;
+        border-left: 2px solid #fff;
+        border-bottom: 2px solid #fff;
+        transform: translate(3px, 4px) rotate(-45deg);
+      }
+
+      .memo-container-dark-theme & {
+        border-color: var(--primary-color);
+        background: var(--primary-color);
+        box-shadow: 0 0 0 2px var(--primary-alpha);
+      }
+    }
+  }
 }
 
 .user-select-mark {
@@ -85,28 +129,12 @@
   border: 1px solid var(--border-main);
   background: var(--bg-main);
   box-shadow: var(--shadow-elevated);
-}
 
-.memo-container-dark-theme .user-select-mark {
-  background: var(--bg-sub);
-  border-color: var(--text-sub);
-  box-shadow: var(--shadow-dark);
-}
-
-.user-select input:checked+.user-select-mark {
-  border-color: var(--primary-color);
-  background: var(--primary-color);
-  box-shadow: 0 0 0 2px var(--primary-alpha);
-}
-
-.user-select input:checked+.user-select-mark::after {
-  content: "";
-  display: block;
-  width: 8px;
-  height: 4px;
-  border-left: 2px solid #fff;
-  border-bottom: 2px solid #fff;
-  transform: translate(3px, 4px) rotate(-45deg);
+  .memo-container-dark-theme & {
+    background: var(--bg-sub);
+    border-color: var(--text-sub);
+    box-shadow: var(--shadow-dark);
+  }
 }
 
 /* 头像：稍微缩小一点 */
@@ -117,20 +145,20 @@
   border-radius: 50%;
   overflow: hidden;
   margin-right: 10px;
+
+  &.fake-noface:hover {
+    border: 2px dashed red;
+    border-radius: 50%;
+    box-sizing: border-box;
+
+    cursor: help;
+  }
 }
 
 .user-avatar {
   width: 100%;
   height: 100%;
   object-fit: cover;
-}
-
-.user-avatar-wrapper.fake-noface:hover {
-  border: 2px dashed red;
-  border-radius: 50%;
-  box-sizing: border-box;
-
-  cursor: help;
 }
 
 .user-info-section {
@@ -141,6 +169,32 @@
   position: relative;
 
   /* 为绝对定位提供基准 */
+
+  &:hover .user-id.can-expand {
+    overflow: visible;
+    position: absolute;
+    width: fit-content;
+    z-index: 100;
+    background-color: var(--bg-main);
+
+    /* 关键点 1：使用透明边框作为“鼠标粘滞区” */
+
+    /* 这样即使鼠标稍微偏离文字，只要在边框范围内，就不会缩回去 */
+    border: 10px solid transparent;
+    margin: -10px;
+
+    /* 用负外边距抵消边框位置，保持文字原地不动 */
+
+    padding: 2px 8px;
+    border-radius: 4px;
+    box-shadow: var(--shadow-elevated);
+
+    .memo-container-dark-theme & {
+      background-color: var(--bg-sub);
+      color: var(--text-inverse);
+      box-shadow: var(--shadow-dark);
+    }
+  }
 }
 
 /* 昵称部分：缩小间距，不再盲目扩张 */
@@ -164,12 +218,16 @@
   overflow: hidden;
   text-overflow: ellipsis;
   line-height: 20px;
-}
 
-.user-nickname-link.is-deleted {
-  cursor: not-allowed;
-  text-decoration: line-through;
-  opacity: 0.7;
+  &.is-deleted {
+    cursor: not-allowed;
+    text-decoration: line-through;
+    opacity: 0.7;
+  }
+
+  .memo-container-dark-theme & {
+    color: var(--link-color);
+  }
 }
 
 /* 备注部分：靠近昵称 */
@@ -190,6 +248,10 @@
   font-size: 12px;
   color: var(--text-main);
   margin-bottom: 2px;
+
+  .memo-container-dark-theme & {
+    color: var(--text-sub);
+  }
 }
 
 .user-id {
@@ -204,29 +266,14 @@
   display: block;
   transition: background 0.2s;
   cursor: pointer;
-}
 
-.user-info-section:hover .user-id.can-expand {
-  overflow: visible;
-  position: absolute;
-  width: fit-content;
-  z-index: 100;
-  background-color: var(--bg-main);
-
-  /* 关键点 1：使用透明边框作为“鼠标粘滞区” */
-
-  /* 这样即使鼠标稍微偏离文字，只要在边框范围内，就不会缩回去 */
-  border: 10px solid transparent;
-  margin: -10px;
-
-  /* 用负外边距抵消边框位置，保持文字原地不动 */
-
-  padding: 2px 8px;
-  border-radius: 4px;
-  box-shadow: var(--shadow-elevated);
+  .memo-container-dark-theme & {
+    color: var(--text-sub);
+  }
 }
 
 /* 默认样式 */
+
 .user-note-input {
   border: none;
   outline: none;
@@ -241,25 +288,36 @@
   /* 提示用户可以点击 */
   border-bottom: 2px dashed transparent;
   transition: all 0.2s;
+
+  &:hover {
+    border-bottom-color: var(--primary-alpha);
+  }
+
+  &.editing {
+    cursor: text;
+    background: var(--primary-alpha);
+
+    /* 淡淡的底色提示正在输入 */
+    border-bottom: 2px solid var(--primary-color);
+  }
+
+  .memo-container-dark-theme & {
+    color: var(--custom-font-color, var(--primary-color));
+
+    &.editing {
+      background: var(--primary-alpha);
+    }
+  }
 }
 
 /* 悬停时稍微显现底线 */
-.user-note-input:hover {
-  border-bottom-color: var(--primary-alpha);
-}
 
 /* 编辑状态下的样式 (对应 :class="{ 'editing': isEditing }") */
-.user-note-input.editing {
-  cursor: text;
-  background: var(--primary-alpha);
-
-  /* 淡淡的底色提示正在输入 */
-  border-bottom: 2px solid var(--primary-color);
-}
 
 /* --- 响应式断点优化 --- */
 
 /* 屏幕不够宽时，切换为一行两列 */
+
 @media (width <=1200px) {
   .panel-users-list {
     grid-template-columns: repeat(2, 1fr);
@@ -267,6 +325,7 @@
 }
 
 /* 屏幕比较窄时，切换为一行一列 */
+
 @media (width <=768px) {
   .panel-users-list {
     grid-template-columns: 1fr;
@@ -277,50 +336,7 @@
   }
 }
 
-.memo-container-dark-theme .user-box {
-  background: var(--bg-sub);
-  border-color: var(--border-main);
-  box-shadow: none;
-}
-
-.memo-container-dark-theme .user-box:hover {
-  background: var(--bg-sub);
-  border-color: var(--primary-color);
-}
-
-.memo-container-dark-theme .user-nickname-link {
-  color: var(--link-color);
-}
-
-.memo-container-dark-theme .user-info-label {
-  color: var(--text-sub);
-}
-
 /* 暗色模式适配 */
-.memo-container-dark-theme .user-id {
-  color: var(--text-sub);
-}
-
-.memo-container-dark-theme .user-info-section:hover .user-id.can-expand {
-  background-color: var(--bg-sub);
-  color: var(--text-inverse);
-  box-shadow: var(--shadow-dark);
-}
-
-.memo-container-dark-theme .user-note-input {
-  color: var(--custom-font-color, var(--primary-color));
-}
-
-.memo-container-dark-theme .user-note-input.editing {
-  background: var(--primary-alpha);
-}
-
-.memo-container-dark-theme .user-select input:checked+.user-select-mark {
-  border-color: var(--primary-color);
-  background: var(--primary-color);
-  box-shadow: 0 0 0 2px var(--primary-alpha);
-}
-
 .delete-btn {
   height: 16px;
   width: 16px;
@@ -330,21 +346,13 @@
   color: var(--primary-color);
   cursor: pointer;
   z-index: 10;
-}
 
-.delete-btn:hover {
-  stroke: var(--danger-color);
+  &:hover {
+    stroke: var(--danger-color);
+  }
 }
 
 /* 搜索命中「详细备注」时展示片段 */
-.user-box.has-detail-match {
-  height: auto;
-  min-height: 72px;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  padding-top: 8px;
-  padding-bottom: 8px;
-}
 
 .user-detail-match {
   flex-basis: 100%;
@@ -355,28 +363,28 @@
   padding-left: 54px;
   font-size: 12px;
   line-height: 1.4;
-}
 
-.user-detail-match .user-info-label {
-  flex: 0 0 auto;
-  margin-bottom: 0;
-  color: var(--text-sub);
-}
+  .user-info-label {
+    flex: 0 0 auto;
+    margin-bottom: 0;
+    color: var(--text-sub);
+  }
 
-.user-detail-match .detail-match-text {
-  color: var(--text-main);
-  overflow-wrap: break-word;
-  min-width: 0;
-}
+  .detail-match-text {
+    color: var(--text-main);
+    overflow-wrap: break-word;
+    min-width: 0;
+  }
 
-.user-detail-match mark {
-  background: #fff3a3;
-  color: inherit;
-  border-radius: 2px;
-  padding: 0 1px;
-}
+  mark {
+    background: #fff3a3;
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
 
-.memo-container-dark-theme .user-detail-match mark {
-  background: #5a4a00;
-  color: #fff7e0;
+    .memo-container-dark-theme & {
+      background: #5a4a00;
+      color: #fff7e0;
+    }
+  }
 }

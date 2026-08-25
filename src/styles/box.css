@@ -335,3 +335,48 @@
 .delete-btn:hover {
   stroke: var(--danger-color);
 }
+
+/* 搜索命中「详细备注」时展示片段 */
+.user-box.has-detail-match {
+  height: auto;
+  min-height: 72px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.user-detail-match {
+  flex-basis: 100%;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-top: 4px;
+  padding-left: 54px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.user-detail-match .user-info-label {
+  flex: 0 0 auto;
+  margin-bottom: 0;
+  color: var(--text-sub);
+}
+
+.user-detail-match .detail-match-text {
+  color: var(--text-main);
+  overflow-wrap: break-word;
+  min-width: 0;
+}
+
+.user-detail-match mark {
+  background: #fff3a3;
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+.memo-container-dark-theme .user-detail-match mark {
+  background: #5a4a00;
+  color: #fff7e0;
+}

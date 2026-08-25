@@ -4,6 +4,12 @@ export interface UserListStore {
   isOpen: boolean;
   users: BiliUser[];
   readonly filteredUsers: BiliUser[];
+  getDetailMatch(userId: string): {
+    before: string;
+    match: string;
+    after: string;
+    highlight: boolean;
+  } | null;
   isDark: boolean;
   fuzzySearchEnabled: boolean;
   silentAvatarUpdate: boolean;

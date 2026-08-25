@@ -21,6 +21,12 @@ export interface InternalUserListStore extends UserListStore {
   _usersMap: Map<string, BiliUser>;
   _usersList: BiliUser[];
   syncUsersSnapshot(users: readonly BiliUser[]): void;
+  getDetailMatch(userId: string): {
+    before: string;
+    match: string;
+    after: string;
+    highlight: boolean;
+  } | null;
 }
 
 function syncUsersSnapshot(store: InternalUserListStore, users: readonly BiliUser[]) {
@@ -122,6 +128,52 @@ export function createUserListStore(): InternalUserListStore {
           )
         );
       });
+    },
+
+    getDetailMatch(userId: string): {
+      before: string;
+      match: string;
+      after: string;
+      highlight: boolean;
+    } | null {
+      const query = this.searchQuery.trim();
+      if (!query) return null;
+
+      const user = this.getUserById(userId);
+      const detail = user?.memoDetail;
+      if (!detail || !detail.trim()) return null;
+
+      const forms = getSearchForms(query);
+      if (!forms.raw) return null;
+      if (!matchesChineseSearch(detail, forms, this.fuzzySearchEnabled)) {
+        return null;
+      }
+
+      const lower = detail.toLowerCase();
+      for (const variant of forms.variants) {
+        const idx = lower.indexOf(variant);
+        if (idx !== -1) {
+          const start = Math.max(0, idx - 30);
+          const end = Math.min(detail.length, idx + variant.length + 30);
+          return {
+            before: (start > 0 ? "…" : "") + detail.slice(start, idx),
+            match: detail.slice(idx, idx + variant.length),
+            after:
+              detail.slice(idx + variant.length, end) +
+              (end < detail.length ? "…" : ""),
+            highlight: true,
+          };
+        }
+      }
+
+      // 模糊匹配无精确子串：仅展示开头片段，不高亮
+      const snip = Math.min(detail.length, 60);
+      return {
+        before: detail.slice(0, snip) + (detail.length > snip ? "…" : ""),
+        match: "",
+        after: "",
+        highlight: false,
+      };
     },
 
     updateUser(id: string, updates: Partial<BiliUser>) {

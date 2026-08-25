@@ -310,32 +310,6 @@
   }
 }
 
-/* 悬停时稍微显现底线 */
-
-/* 编辑状态下的样式 (对应 :class="{ 'editing': isEditing }") */
-
-/* --- 响应式断点优化 --- */
-
-/* 屏幕不够宽时，切换为一行两列 */
-
-@media (width <=1200px) {
-  .panel-users-list {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* 屏幕比较窄时，切换为一行一列 */
-
-@media (width <=768px) {
-  .panel-users-list {
-    grid-template-columns: 1fr;
-  }
-
-  .user-box {
-    height: 65px;
-  }
-}
-
 /* 暗色模式适配 */
 .delete-btn {
   height: 16px;

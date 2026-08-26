@@ -22,6 +22,7 @@ import {
   getMatchedRules,
 } from "./rule-runtime";
 import { RemoteChangeBuffer } from "./remote-change-buffer";
+import { waitUntil } from "@/utils/scheduler";
 import {
   describeElementForDiagnostics,
   getLatestScan,
@@ -49,6 +50,7 @@ class PageInjector {
     this.urlMonitor = createUrlMonitor(() => this.handleUrlChange());
     this.urlMonitor.start();
     this.onDomReady(async () => {
+      await this.waitForBiliEnvironment();
       await new Promise((resolve) => requestAnimationFrame(resolve));
       this.domReady = true;
       this.handleUrlChange();
@@ -317,6 +319,20 @@ class PageInjector {
     window.addEventListener("DOMContentLoaded", () => callback(), {
       once: true,
     });
+  }
+
+  private async waitForBiliEnvironment(): Promise<void> {
+    const isVueReady = () => {
+      const app = document.getElementById("app");
+      return !!app?.__vue__ || !!app?.__vue_app__;
+    };
+    const ready = await waitUntil(isVueReady, {
+      timeoutMs: 5000,
+    }); // 不等待的话，会卡死Bilibili加载
+    logger.debug("Bilibili Vue 环境就绪:", ready);
+    if (!ready) {
+      logger.warn("等待 Bilibili Vue 环境超时，继续初始化页面注入");
+    }
   }
 }
 

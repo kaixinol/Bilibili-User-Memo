@@ -42,8 +42,9 @@ declare global {
     [key: string]: any;
   }
 
-  interface HTMLElement {
-    __vue__?: VueInstance;
+  interface Element {
+    __vue__?: VueInstance; // vue 2
+    __vue_app__?: VueInstance; // vue 3
   }
   interface DOMStringMap {
     bilimemoUid?: string;

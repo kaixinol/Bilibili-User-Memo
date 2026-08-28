@@ -209,7 +209,7 @@ const rawConfig: RawConfig[] = [
             name: "动态正文-提及",
             styleScope: StyleScope.Minimal,
             aSelector:
-                ".opus-paragraph-children p a[href*='space.bilibili.com']",
+                "p a[href*='space.bilibili.com']",
             container: ["div.bili-dyn-content","div.opus-module-content"]
         }
     },

@@ -38,6 +38,7 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - `verbatimModuleSyntax: true` → always `import type { X }` for type-only imports
 - `@/*` path alias → `./src/*`
 - `$` import → Tampermonkey GM API (from vite-plugin-monkey)
+- Network requests (Bilibili API, e.g. `src/core/api/bilibili-user.ts`) use native `fetch` with `credentials: "include"` to read the login state.
 - `__IS_DEBUG__`, `__VERSION__` → compile-time defines in vite.config.ts
 - `externalGlobals` in vite.config.ts → alpinejs, opencc-js, query-selector-shadow-dom are CDN-loaded (must have UMD global). `@alpinejs/persist` is NOT externalized (CDN build auto-registers via `alpine:init`, no global).
 - No `beforeunload` listener — data persists via real-time saves + GM_addValueChangeListener
@@ -47,7 +48,8 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - Dead code = any function/class not imported anywhere under `src/`
 
 - For non-DOM operations (store queries, search, selection, export, refresh) in debug builds, use the exposed Alpine store — `window.$biliMemoAlpine.store('userList')`, or the quick accessor `$$biliMemo` (returns the store) — instead of manipulating DOM. Both are injected only in debug (`__IS_DEBUG__`). When preload-all-cards is off (dev), the list is empty until loaded: `await $$biliMemo.ensureUsersLoaded()` first.
-- Panel list search matches nickname, memo, memoDetail and UID (via `matchesChineseSearch`)
+- Panel list search matches nickname, memo, memoDetail and UID (via `matchesChineseSearch`); when a query hits the detailed memo, the card renders a highlighted snippet of the matched text (detailed-memo fragment + `<mark>`)
+- Deleted-user filter: `userList.deletedFilter` (`"all" | "deleted" | "active"`) provides a tri-state dropdown (All / Deleted only / Hide deleted); shown only when `hasDeletedUsers` is true, and resets to `"all"` each time the panel opens (not persisted). `isDeleted` is synced by data refresh (`getUserInfo` returns `false` for normal accounts, `true` for deleted), correcting the flag in both directions.
 
 ## Rule system
 
@@ -65,4 +67,5 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - Panel toggle button cursor: base is `context-menu` with `.is-windows-chrome` override to `cursor: help`
 - memoDetail title sync: `syncRenderedNodeState` appends `详细备注：` to element title, uses `\n` separator for existing titles
 - `readPreferredText` (src/core/dom/text-utils.ts) prefers live `textContent` over `data-bilimemo-original`; the data attr is only a fallback when DOM text is empty (avoids stale names read from reused DOM nodes)
+- Panel user cards (`.user-box`) use `content-visibility: auto` + `contain-intrinsic-size: auto 72px` to skip off-screen rendering, reducing list jank when there are many cards.
 

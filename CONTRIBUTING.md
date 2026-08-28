@@ -68,6 +68,10 @@ import { createUser } from './utils'
 import { UserType, createUser } from './utils'
 ```
 
+### 网络请求
+
+- 访问 Bilibili 接口使用原生 `fetch` 并携带 `credentials: "include"` 以读取登录态
+
 ### CSS 样式
 
 - **共享样式**：在 Shadow DOM 和主文档中使用的样式必须提取到独立 CSS 文件
@@ -170,7 +174,7 @@ src/
 - 调试版（`pnpm dev`）启动后自动打开调试窗口
 - 使用 `logger.debug()` 输出调试日志
 - 调试版暴露 `window.$biliMemoAlpine.store('userList')`（完整 Alpine），以及快速访问器 `$$biliMemo`（直接返回 `userList` store），均可用于非 DOM 相关的自动化测试（查询用户、搜索过滤、多选、导出、刷新等），避免直接操作 DOM；两者仅在调试版（`__IS_DEBUG__`）注入。预注入关闭时（列表未加载）先 `await $$biliMemo.ensureUsersLoaded()`
-- 调试器命中数从批量扫描快照（`getLatestScan()`）读取，不再对每规则单独调用 `querySelectorAllDeep`
+- 调试器命中数从批量扫描快照（`getLatestScan()`）读取
 
 ### 为什么我的规则没有生效？
 

@@ -36,6 +36,10 @@
 
   /* 高度稍微收缩，更显精致 */
 
+  /* 跳过离屏卡片的布局/绘制，缓解卡片过多时的列表卡顿 */
+  content-visibility: auto;
+  contain-intrinsic-size: auto 72px;
+
   padding: 0 12px;
   background: var(--bg-main);
   border: 1px solid var(--border-main);

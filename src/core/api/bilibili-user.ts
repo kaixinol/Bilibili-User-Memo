@@ -220,6 +220,7 @@ async function _getUserInfo(mid: string): Promise<UserInfo | null> {
     return {
       nickname: res.data.name,
       avatar: res.data.face + "@96w_96h_1c_1s.avif",
+      isDeleted: false,
     };
   } catch (error) {
     logger.error("getUserInfo failed", error,);

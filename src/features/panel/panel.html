@@ -186,6 +186,21 @@
         />
         <span>模糊搜索</span>
       </label>
+      <label
+        class="panel-deleted-filter"
+        title="按账号注销状态筛选"
+        x-show="userList.hasDeletedUsers"
+      >
+        <span>注销筛选</span>
+        <select
+          :value="userList.deletedFilter"
+          @change="userList.setDeletedFilter($event.target.value)"
+        >
+          <option value="all">全部</option>
+          <option value="deleted">仅显示已注销</option>
+          <option value="active">隐藏已注销</option>
+        </select>
+      </label>
       <button x-bind="panelExportBtn">导出</button>
     </div>
 

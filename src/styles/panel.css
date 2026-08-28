@@ -468,6 +468,49 @@
   }
 }
 
+/* Deleted-user filter dropdown */
+.panel-deleted-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-sub);
+  cursor: default;
+  white-space: nowrap;
+  user-select: none;
+
+  span {
+    pointer-events: none;
+  }
+
+  select {
+    font-size: 12px;
+    color: var(--text-main);
+    background: var(--bg-sub);
+    border: 1px solid var(--border-main);
+    border-radius: 8px;
+    padding: 3px 6px;
+    cursor: pointer;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+
+    &:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px var(--primary-alpha);
+    }
+  }
+
+  .memo-container-dark-theme & {
+    color: var(--text-sub);
+
+    select {
+      color: var(--text-main);
+      background: var(--bg-sub);
+      border-color: var(--border-main);
+    }
+  }
+}
+
 /* Users List Container */
 
 .panel-users-container {

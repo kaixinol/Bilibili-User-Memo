@@ -15,7 +15,7 @@ import {
 } from "@/utils/gm-storage";
 import { afterFramesAndIdle, delay } from "@/utils/scheduler";
 import { showAlert } from "./dialogs";
-import type { UserListStore } from "./user-list-types";
+import type { DeletedFilter, UserListStore } from "./user-list-types";
 
 export interface InternalUserListStore extends UserListStore {
   _usersMap: Map<string, BiliUser>;
@@ -62,6 +62,12 @@ function syncUsersSnapshot(store: InternalUserListStore, users: readonly BiliUse
   store.selectedIds = store.selectedIds.filter((id) => nextIds.has(id));
 }
 
+function resetDeletedFilterIfNoDeleted(store: InternalUserListStore) {
+  if (store.deletedFilter !== "all" && !store._usersList.some((u) => u.isDeleted)) {
+    store.deletedFilter = "all";
+  }
+}
+
 async function waitForUsersSnapshotIdle() {
   await afterFramesAndIdle(5, 1000);
 }
@@ -83,9 +89,10 @@ export function createUserListStore(): InternalUserListStore {
     getUserById(id: string) {
       return this._usersMap.get(id);
     },
-    syncUsersSnapshot(users: readonly BiliUser[]) {
-      syncUsersSnapshot(this, users);
-    },
+  syncUsersSnapshot(users: readonly BiliUser[]) {
+    syncUsersSnapshot(this, users);
+    resetDeletedFilterIfNoDeleted(this);
+  },
     removeUser(userId: string) {
       userStore.removeUser(userId);
     },
@@ -102,32 +109,49 @@ export function createUserListStore(): InternalUserListStore {
     searchQuery: "",
     isMultiSelect: false,
     selectedIds: [],
+    deletedFilter: "all" as DeletedFilter,
+
+    get hasDeletedUsers() {
+      return this._usersList.some((user) => user.isDeleted);
+    },
 
     get filteredUsers() {
       const query = this.searchQuery.trim();
-      if (!query) {
-        return this._usersList;
+      let list = this._usersList;
+
+      if (query) {
+        const queryForms = getSearchForms(query);
+        if (queryForms.raw) {
+          list = list.filter((user) => {
+            return (
+              String(user.id || "").includes(query) ||
+              matchesChineseSearch(
+                user.nickname,
+                queryForms,
+                this.fuzzySearchEnabled,
+              ) ||
+              matchesChineseSearch(
+                user.memo,
+                queryForms,
+                this.fuzzySearchEnabled,
+              ) ||
+              matchesChineseSearch(
+                user.memoDetail,
+                queryForms,
+                this.fuzzySearchEnabled,
+              )
+            );
+          });
+        }
       }
 
-      const queryForms = getSearchForms(query);
-      if (!queryForms.raw) return this._usersList;
+      if (this.deletedFilter === "deleted") {
+        list = list.filter((user) => user.isDeleted);
+      } else if (this.deletedFilter === "active") {
+        list = list.filter((user) => !user.isDeleted);
+      }
 
-      return this._usersList.filter((user) => {
-        return (
-          String(user.id || "").includes(query) ||
-          matchesChineseSearch(
-            user.nickname,
-            queryForms,
-            this.fuzzySearchEnabled,
-          ) ||
-          matchesChineseSearch(user.memo, queryForms, this.fuzzySearchEnabled) ||
-          matchesChineseSearch(
-            user.memoDetail,
-            queryForms,
-            this.fuzzySearchEnabled,
-          )
-        );
-      });
+      return list;
     },
 
     getDetailMatch(userId: string): {
@@ -226,6 +250,10 @@ export function createUserListStore(): InternalUserListStore {
       if (shouldEnable === this.fuzzySearchEnabled) return;
       this.fuzzySearchEnabled = shouldEnable;
     },
+    setDeletedFilter(next: DeletedFilter) {
+      this.deletedFilter =
+        next === "deleted" || next === "active" ? next : "all";
+    },
     setSilentAvatarUpdate(next: boolean) {
       const shouldEnable = Boolean(next);
       if (shouldEnable === this.silentAvatarUpdate) return;
@@ -236,6 +264,7 @@ export function createUserListStore(): InternalUserListStore {
       const shouldOpen = Boolean(next);
       this.isOpen = shouldOpen;
       if (shouldOpen) {
+        this.deletedFilter = "all";
         void this.ensureUsersLoaded();
       }
     },

@@ -1,9 +1,13 @@
 import type { BiliUser } from "@/core/types";
 
+export type DeletedFilter = "all" | "deleted" | "active";
+
 export interface UserListStore {
   isOpen: boolean;
   users: BiliUser[];
   readonly filteredUsers: BiliUser[];
+  readonly hasDeletedUsers: boolean;
+  deletedFilter: DeletedFilter;
   getDetailMatch(userId: string): {
     before: string;
     match: string;
@@ -34,6 +38,7 @@ export interface UserListStore {
   setDisplayMode(mode: number): void;
   setFuzzySearchEnabled(next: boolean): void;
   setSilentAvatarUpdate(next: boolean): void;
+  setDeletedFilter(next: DeletedFilter): void;
   setOpen(next: boolean): void;
   setPreloadAllCards(next: boolean): void;
   ensureUsersLoaded(): Promise<void>;

@@ -37,7 +37,7 @@ interface RuleApplyDiagnostic {
   slow: boolean;
 }
 
-export interface FlowDiagnostic {
+interface FlowDiagnostic {
   id: number;
   time: number;
   source: string;
@@ -97,7 +97,7 @@ export interface LongTaskDiagnostic {
   relatedDeltaMs?: number;
 }
 
-export interface RulePerfSummary {
+interface RulePerfSummary {
   id: string;
   ruleName: string;
   mode: string;
@@ -399,22 +399,6 @@ function findLongTaskRelation(startTime: number, endTime: number): {
     kind: nearest.kind,
     label: nearest.label,
     deltaMs: nearest.deltaMs,
-  };
-}
-
-export function getPerfDiagnosticsSnapshot() {
-  return {
-    slowRules: Array.from(ruleSummaries.values()).filter((r) => r.slow),
-    longTasks: longTasks.slice(0, 20),
-    recentFlows: recentFlows.slice(0, 20),
-    recentQueries: recentQueries.slice(0, 60),
-    slowQueries: recentQueries
-      .filter(
-        (q) =>
-          q.durationMs >= PERF_DIAGNOSTIC_THRESHOLDS.slowRuleScanMs ||
-          Boolean(q.error),
-      )
-      .slice(0, 20),
   };
 }
 

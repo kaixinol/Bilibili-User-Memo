@@ -218,7 +218,7 @@ const rawConfig: RawConfig[] = [
         urlPattern: COMMON_REG,
         rule: {
             name: "最近-UP动态",
-            styleScope: StyleScope.Editable,
+            styleScope: StyleScope.Minimal,
             aSelector: "div.user-name a",
             container: "div.header-dynamic-list-item",
         }
@@ -237,7 +237,7 @@ const rawConfig: RawConfig[] = [
         urlPattern: COMMON_REG,
         rule: {
             name: "最近-历史",
-            styleScope: StyleScope.Editable,
+            styleScope: StyleScope.Minimal,
             textSelector: "div.header-history-card__info--name span",
             container: "div.history-panel-popover",
             matchByName: true,

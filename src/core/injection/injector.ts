@@ -34,6 +34,7 @@ import {
 
 class PageInjector {
   private domReady = false;
+  private initialScanDone = false;
   private readonly urlMonitor: UrlMonitor;
   private readonly pendingRemoteChanges = new RemoteChangeBuffer();
   private readonly warnedRulePairs = new Set<string>();
@@ -132,14 +133,17 @@ class PageInjector {
   }
 
   private handleUrlChange() {
-    if (!this.domReady) return;
-
     void syncSpaceProfile();
 
     this.matchedRules = getMatchedRules();
 
     if (this.matchedRules.length > 0) {
-      this.scanAndInjectRulesBatch(this.matchedRules, document);
+      if (!this.initialScanDone) {
+        this.initialScanDone = true;
+        this.scanAndInjectRulesBatch(this.matchedRules, document);
+      }
+    } else {
+      this.initialScanDone = false;
     }
 
     this.startScanTimer();

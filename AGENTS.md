@@ -43,7 +43,7 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - `pnpm lint` runs `knip`, which reports `Unresolved imports (3)` for the virtual `$` module (`import ... from "$"`) in `src/main.ts`, `src/core/store/store.ts` and `src/utils/gm-storage.ts`. These are false positives — vite-plugin-monkey provides the `$` GM API virtual module at build time — and can be safely ignored.
 - Network requests (Bilibili API, e.g. `src/core/api/bilibili-user.ts`) use native `fetch` with `credentials: "include"` to read the login state.
 - `__IS_DEBUG__`, `__VERSION__` → compile-time defines in vite.config.ts
-- `externalGlobals` in vite.config.ts → alpinejs, opencc-js, query-selector-shadow-dom are CDN-loaded (must have UMD global). `@alpinejs/persist` is NOT externalized (CDN build auto-registers via `alpine:init`, no global).
+- `externalGlobals` in vite.config.ts → alpinejs, opencc-js, query-selector-shadow-dom-modern are CDN-loaded (must have a UMD build exposing a global; it ships `dist/umd/index.min.js` → global `querySelectorShadowDom`). `@alpinejs/persist` is NOT externalized (CDN build auto-registers via `alpine:init`, no global).
 - No `beforeunload` listener — data persists via real-time saves + GM_addValueChangeListener
 - `ensureUser()` returns temp object without saving to store; only `updateUser()` persists
 - HTML files are minified at build time via custom Vite plugin (transform `?raw` imports)
@@ -53,6 +53,8 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - For non-DOM operations (store queries, search, selection, export, refresh) in debug builds, use the exposed Alpine store — `window.$biliMemoAlpine.store('userList')`, or the quick accessor `$$biliMemo` (returns the store) — instead of manipulating DOM. Both are injected only in debug (`__IS_DEBUG__`). When preload-all-cards is off (dev), the list is empty until loaded: `await $$biliMemo.ensureUsersLoaded()` first.
 - Panel list search matches nickname, memo, memoDetail and UID (via `matchesChineseSearch`); when a query hits the detailed memo, the card renders a highlighted snippet of the matched text (detailed-memo fragment + `<mark>`)
 - Deleted-user filter: `userList.deletedFilter` (`"all" | "deleted" | "active"`) provides a tri-state dropdown (All / Deleted only / Hide deleted); shown only when `hasDeletedUsers` is true, and resets to `"all"` each time the panel opens (not persisted). `isDeleted` is synced by data refresh (`getUserInfo` returns `false` for normal accounts, `true` for deleted), correcting the flag in both directions.
+- Dark theme is pure-CSS: JS only toggles the `dark` class on `<html>` (`applyTheme()` in `src/features/panel/custom-css.ts`); all dark visuals live under `html.dark`. `src/styles/global.css` holds the light tokens in `:root` and their dark overrides in `html.dark`; components consume semantic variables (`--surface-bg`, `--card-shadow`, `--fill-hover`, `--on-primary`, …) instead of writing per-theme rules. Only genuinely non-tokenizable tweaks (`box-shadow: none`, `border-width`, extra property in one theme) use `html.dark &` nested rules inside the component block. Never reintroduce a theme class like `.memo-container-dark-theme` or theme branches in TS/HTML (`x-show="isDark"`).
+- Stylesheets use native CSS nesting (kept as-is by lightningcss — browserslist is "last 2 versions", so no flattening). After adding flat rules, re-nest with the NYCSS CLI: `npx @nycss/cli "src/styles/*.css" --out-dir <tmp> -m nest -i 2 -c -d 3`, then move comments back inside the blocks (the engine relocates standalone comments).
 
 ## Rule system
 
@@ -64,6 +66,8 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 
 ## Gotchas
 
+- pnpm 11 `remove`/`install` may fail with `ERR_PNPM_RESOLUTION_POLICY_VIOLATIONS_UNHANDLED` (internal bug: minimumReleaseAge policy has no handler in the remove path) → append `--config.minimumReleaseAge=0`
+- pnpm picks the nearest ancestor `.pnpm-store` as store; since `/mnt/data/.pnpm-store` is the real one the project's `node_modules` links from, commands run from an env where HOME differs may want to purge `node_modules` (`ERR_PNPM_UNEXPECTED_STORE`) → pin `--store-dir=/mnt/data/.pnpm-store/v11` (or set `CI=true` only when you really intend a relink); never let it silently re-download into `<project>/.pnpm-store`
 - Windows Chrome: `@supports (cursor: context-menu)` returns true but renderer can't draw it → use JS UA detection for fallback
 - Bilibili CDN supports CORS (`access-control-allow-origin: *`) → can read pixel data from cross-origin `<img>` with `crossorigin="anonymous"`
 - `a.bili-memo-tag` may render as `<a>` in mention scenarios → CSS must handle both

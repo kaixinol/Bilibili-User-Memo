@@ -24,9 +24,6 @@ export function registerPanelSettings() {
     set displayModeProxy(mode: number) {
       this.userList.setDisplayMode(Number(mode));
     },
-    get isDark(): boolean {
-      return this.prefs.isDark;
-    },
     get customFontColor(): string {
       return this.prefs.customFontColor;
     },

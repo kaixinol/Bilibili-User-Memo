@@ -14,8 +14,12 @@ export function applyCustomFontColor(color: string) {
   document.documentElement.style.setProperty("--custom-font-color", color);
 }
 
+/**
+ * 主题切换：只负责在 <html> 上挂/摘 `dark` 类，
+ * 所有暗色视觉表现均由 CSS 的 `html.dark` 作用域内的变量与规则决定。
+ */
 export function applyTheme(dark: boolean) {
-  document.documentElement.classList.toggle("memo-container-dark-theme", dark);
+  document.documentElement.classList.toggle("dark", dark);
 }
 
 export function getResolvedCustomFontColor(): string {

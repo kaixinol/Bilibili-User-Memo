@@ -41,18 +41,18 @@
   contain-intrinsic-size: auto 72px;
 
   padding: 0 12px;
-  background: var(--bg-main);
+  background: var(--surface-bg);
   border: 1px solid var(--border-main);
   border-radius: 8px;
 
   /* 略微减小圆角，适合紧凑布局 */
-  box-shadow: var(--shadow-elevated);
+  box-shadow: var(--card-shadow);
   box-sizing: border-box;
   transition: all 0.2s ease;
 
   &:hover {
     border-color: var(--primary-color);
-    background: var(--primary-alpha);
+    background: var(--card-bg-hover);
 
     /* 悬浮时给个淡淡的底色 */
   }
@@ -64,17 +64,6 @@
 
   &.multi-select {
     cursor: pointer;
-  }
-
-  .memo-container-dark-theme & {
-    background: var(--bg-sub);
-    border-color: var(--border-main);
-    box-shadow: none;
-
-    &:hover {
-      background: var(--bg-sub);
-      border-color: var(--primary-color);
-    }
   }
 
   &.has-detail-match {
@@ -101,28 +90,22 @@
     position: absolute;
     opacity: 0;
     pointer-events: none;
+  }
+}
 
-    &:checked + .user-select-mark {
-      border-color: var(--primary-color);
-      background: var(--primary-color);
-      box-shadow: 0 0 0 2px var(--primary-alpha);
+.user-select input:checked + .user-select-mark {
+  border-color: var(--primary-color);
+  background: var(--primary-color);
+  box-shadow: 0 0 0 2px var(--primary-alpha);
 
-      &::after {
-        content: "";
-        display: block;
-        width: 8px;
-        height: 4px;
-        border-left: 2px solid #fff;
-        border-bottom: 2px solid #fff;
-        transform: translate(3px, 4px) rotate(-45deg);
-      }
-
-      .memo-container-dark-theme & {
-        border-color: var(--primary-color);
-        background: var(--primary-color);
-        box-shadow: 0 0 0 2px var(--primary-alpha);
-      }
-    }
+  &::after {
+    content: "";
+    display: block;
+    width: 8px;
+    height: 4px;
+    border-left: 2px solid #fff;
+    border-bottom: 2px solid #fff;
+    transform: translate(3px, 4px) rotate(-45deg);
   }
 }
 
@@ -130,15 +113,9 @@
   width: 16px;
   height: 16px;
   border-radius: 4px;
-  border: 1px solid var(--border-main);
-  background: var(--bg-main);
+  border: 1px solid var(--surface-border);
+  background: var(--surface-bg);
   box-shadow: var(--shadow-elevated);
-
-  .memo-container-dark-theme & {
-    background: var(--bg-sub);
-    border-color: var(--text-sub);
-    box-shadow: var(--shadow-dark);
-  }
 }
 
 /* 头像：稍微缩小一点 */
@@ -179,7 +156,7 @@
     position: absolute;
     width: fit-content;
     z-index: 100;
-    background-color: var(--bg-main);
+    background-color: var(--surface-bg);
 
     /* 关键点 1：使用透明边框作为“鼠标粘滞区” */
 
@@ -193,10 +170,9 @@
     border-radius: 4px;
     box-shadow: var(--shadow-elevated);
 
-    .memo-container-dark-theme & {
-      background-color: var(--bg-sub);
+    /* 暗色：展开的 UID 浮层用反色文字，与浮层底色拉开对比 */
+    html.dark & {
       color: var(--text-inverse);
-      box-shadow: var(--shadow-dark);
     }
   }
 }
@@ -228,10 +204,6 @@
     text-decoration: line-through;
     opacity: 0.7;
   }
-
-  .memo-container-dark-theme & {
-    color: var(--link-color);
-  }
 }
 
 /* 备注部分：靠近昵称 */
@@ -250,12 +222,8 @@
 
 .user-info-label {
   font-size: 12px;
-  color: var(--text-main);
+  color: var(--label-color);
   margin-bottom: 2px;
-
-  .memo-container-dark-theme & {
-    color: var(--text-sub);
-  }
 }
 
 .user-id {
@@ -271,7 +239,8 @@
   transition: background 0.2s;
   cursor: pointer;
 
-  .memo-container-dark-theme & {
+  /* 暗色：UID 降级为次级文字色，避免与昵称抢注意力 */
+  html.dark & {
     color: var(--text-sub);
   }
 }
@@ -304,17 +273,8 @@
     /* 淡淡的底色提示正在输入 */
     border-bottom: 2px solid var(--primary-color);
   }
-
-  .memo-container-dark-theme & {
-    color: var(--custom-font-color, var(--primary-color));
-
-    &.editing {
-      background: var(--primary-alpha);
-    }
-  }
 }
 
-/* 暗色模式适配 */
 .delete-btn {
   height: 16px;
   width: 16px;
@@ -355,14 +315,9 @@
   }
 
   mark {
-    background: #fff3a3;
-    color: inherit;
+    background: var(--mark-bg);
+    color: var(--mark-color);
     border-radius: 2px;
     padding: 0 1px;
-
-    .memo-container-dark-theme & {
-      background: #5a4a00;
-      color: #fff7e0;
-    }
   }
 }

@@ -1,20 +1,16 @@
 /* Debugger Panel Styles */
 input {
-  color-scheme: light;
-
-  .memo-container-dark-theme & {
-    color-scheme: dark;
-  }
+  color-scheme: var(--color-scheme);
 }
 
-/* 父级有 .memo-container-dark-theme 时 */
 .debugger-window {
   position: fixed;
-  background: var(--bg-main);
+  background: var(--surface-bg);
   color: var(--text-main);
   border: 1px solid var(--border-main);
   border-radius: 6px;
   box-shadow: var(--shadow-elevated);
+  color-scheme: var(--color-scheme); /* 自动调整内部原生组件(如滚动条) */
   z-index: 2147483647;
 
   width: clamp(260px, 40vw, 90vw);
@@ -35,19 +31,11 @@ input {
 
   /* GPU acceleration for dragging */
   will-change: transform;
-
-  .memo-container-dark-theme & {
-    background: var(--bg-sub);
-    color: var(--text-main);
-    border: 1px solid var(--border-main);
-    box-shadow: var(--shadow-dark);
-    color-scheme: dark; /* 自动调整内部原生组件(如滚动条) */
-  }
 }
 
 .debugger-header {
   padding: 8px 12px;
-  background: var(--bg-sub);
+  background: var(--bg-sub-alt);
   border-bottom: 1px solid var(--border-main);
   display: flex;
   align-items: center;
@@ -62,16 +50,6 @@ input {
   &:hover {
     background: var(--bg-sub);
   }
-
-  .memo-container-dark-theme & {
-    background: var(--bg-main);
-    border-bottom: 1px solid var(--border-main);
-    color: var(--text-main);
-
-    &:hover {
-      background: var(--bg-sub);
-    }
-  }
 }
 
 .drag-handle {
@@ -79,10 +57,6 @@ input {
   color: var(--text-sub);
   font-weight: bold;
   user-select: none;
-
-  .memo-container-dark-theme & {
-    color: var(--text-sub);
-  }
 }
 
 .debugger-title {
@@ -109,17 +83,12 @@ input {
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
-  background: var(--bg-sub);
+  background: var(--bg-sub-alt);
   border: 1px solid var(--border-main);
   border-radius: 4px;
   padding: 6px 8px;
   margin-bottom: 10px;
   font-size: 11px;
-
-  .memo-container-dark-theme & {
-    background: var(--bg-main);
-    border-color: var(--border-main);
-  }
 }
 
 .perf-item {
@@ -134,20 +103,12 @@ input {
 
 .perf-label {
   color: var(--text-sub);
-
-  .memo-container-dark-theme & {
-    color: var(--text-sub);
-  }
 }
 
 .perf-value {
   color: var(--text-main);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-
-  .memo-container-dark-theme & {
-    color: var(--text-main);
-  }
 }
 
 .debugger-controls {
@@ -174,19 +135,8 @@ input {
   min-width: 0;
 
   &:focus {
-    border-color: var(--focus-color);
-    box-shadow: 0 0 0 3px var(--focus-ring);
-  }
-
-  .memo-container-dark-theme & {
-    background: var(--bg-main);
-    border-color: var(--border-main);
-    color: var(--text-main);
-
-    &:focus {
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 3px var(--primary-alpha);
-    }
+    border-color: var(--accent-strong);
+    box-shadow: 0 0 0 3px var(--accent-soft);
   }
 }
 
@@ -202,27 +152,12 @@ input {
   transition: background 0.2s, border-color 0.2s;
 
   &:hover {
-    background: var(--bg-sub);
-    border-color: var(--focus-color);
+    background: var(--btn-bg-hover);
+    border-color: var(--accent-strong);
   }
 
   &:active {
-    background: var(--bg-sub);
-  }
-
-  .memo-container-dark-theme & {
-    background: var(--bg-sub);
-    border-color: var(--border-main);
-    color: var(--text-main);
-
-    &:hover {
-      background: var(--border-main);
-      border-color: var(--primary-color);
-    }
-
-    &:active {
-      background: var(--bg-main);
-    }
+    background: var(--bg-sub-alt);
   }
 }
 
@@ -248,15 +183,6 @@ input {
   &::-webkit-scrollbar-thumb {
     background: var(--border-main);
     border-radius: 3px;
-  }
-
-  .memo-container-dark-theme & {
-    /* 兼容 Firefox 滚动条 */
-    scrollbar-color: var(--border-main) transparent;
-
-    &::-webkit-scrollbar-thumb {
-      background: var(--border-main);
-    }
   }
 }
 
@@ -436,14 +362,6 @@ input {
   &.rule-expanded {
     background: var(--bg-sub);
   }
-
-  .memo-container-dark-theme & {
-    border-bottom-color: var(--border-main);
-
-    &:hover {
-      background: var(--bg-sub);
-    }
-  }
 }
 
 .rule-summary {
@@ -527,32 +445,13 @@ input {
   height: 24px;
   border: 1px solid var(--border-main);
   padding: 0;
-  background: none;
+  background: var(--picker-bg);
   cursor: pointer;
   border-radius: 3px;
   transition: border-color 0.2s;
   flex-shrink: 0;
 
   &:hover {
-    border-color: var(--focus-color);
-  }
-
-  .memo-container-dark-theme & {
-    border-color: var(--border-main);
-    background: var(--bg-main);
+    border-color: var(--accent-strong);
   }
 }
-
-/* 适配夜间主题 */
-
-/* 头部样式 */
-
-/* 性能指标区域 */
-
-/* 输入框适配 */
-
-/* 按钮适配 */
-
-/* 列表项适配 */
-
-/* 颜色选择器微调 */

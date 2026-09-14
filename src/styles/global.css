@@ -9,7 +9,12 @@ input {
   font-family: inherit;
 }
 
-/* Color Variables */
+/*
+ * 主题令牌：亮色为默认值。
+ * 暗色主题不散落在各组件里，而是统一在文件末尾 html.dark 作用域内覆盖变量，
+ * 组件只消费语义变量，无需关心当前主题。
+ */
+
 :root {
   /* Brand */
   --primary-color: #fb7299;
@@ -30,7 +35,7 @@ input {
 
   /* Shadows */
   --shadow-elevated: 0 4px 12px rgb(0 0 0 / 15%);
-  --shadow-dark: 0 8px 24px rgb(0 0 0 / 40%);
+  --shadow-panel: 0 -4px 12px rgb(0 0 0 / 8%);
 
   /* Overlays */
   --overlay: rgb(0 0 0 / 15%);
@@ -44,6 +49,44 @@ input {
   --danger-color: #d73a49;
   --danger-alpha: rgb(215 58 73 / 10%);
 
+  /* 原生控件配色（滚动条 / 表单控件 / 颜色选择器） */
+  --color-scheme: light;
+
+  /* --- 语义令牌：暗色时由 html.dark 统一翻转 --- */
+
+  /* 卡片 / 窗口 / 浮层 / 表单控件 */
+  --surface-bg: var(--bg-main);
+  --surface-border: var(--border-main);
+  --card-shadow: var(--shadow-elevated);
+  --card-bg-hover: var(--primary-alpha);
+
+  /* 反向次级底色（标题栏 / 指标区 / 按钮按下态） */
+  --bg-sub-alt: var(--bg-sub);
+
+  /* 悬浮填充 */
+  --fill-hover: var(--overlay);
+  --fill-hover-soft: var(--bg-sub);
+  --btn-bg-hover: var(--bg-sub);
+
+  /* 描边按钮：亮色实心、暗色透明 */
+  --btn-outline-bg: var(--bg-main);
+
+  /* 主色之上的文字色 */
+  --on-primary: var(--text-inverse);
+
+  /* 文本 */
+  --label-color: var(--text-main);
+  --title-color: var(--text-main);
+
+  /* 强调色（聚焦 / 悬停描边） */
+  --accent-strong: var(--focus-color);
+  --accent-soft: var(--focus-ring);
+
+  /* 其它 */
+  --picker-bg: none;
+  --mark-bg: #fff3a3;
+  --mark-color: var(--text-main);
+
   /* Memo Theme */
   --memo-tag-color: var(--custom-font-color, black);
   --memo-textarea-color: var(--custom-font-color, black);
@@ -52,13 +95,48 @@ input {
   --memo-input-color: initial;
 }
 
-.memo-container-dark-theme {
+/* Dark Theme：所有暗色适配都收敛在 html.dark 作用域内（仅覆盖变量） */
+
+html.dark {
+  /* 基础色板 */
   --bg-main: #18181b;
   --bg-sub: #202024;
   --border-main: #2f2f33;
   --text-main: #e5e7eb;
   --text-sub: #a1a1aa;
   --link-color: #7dd3fc;
+  --color-scheme: dark;
+
+  /* 阴影 */
+  --shadow-elevated: 0 8px 24px rgb(0 0 0 / 40%);
+  --shadow-panel: 0 -6px 16px rgb(0 0 0 / 50%);
+
+  /* 语义表面 */
+  --surface-bg: var(--bg-sub);
+  --surface-border: var(--text-sub);
+  --card-shadow: none;
+  --card-bg-hover: var(--bg-sub);
+  --bg-sub-alt: var(--bg-main);
+
+  /* 交互填充 */
+  --fill-hover: var(--glass);
+  --fill-hover-soft: var(--overlay);
+  --btn-bg-hover: var(--border-main);
+  --btn-outline-bg: transparent;
+  --on-primary: var(--text-main);
+
+  /* 文本 / 强调色 */
+  --label-color: var(--text-sub);
+  --title-color: var(--text-inverse);
+  --accent-strong: var(--primary-color);
+  --accent-soft: var(--primary-alpha);
+
+  /* 其它 */
+  --picker-bg: var(--bg-main);
+  --mark-bg: #5a4a00;
+  --mark-color: #fff7e0;
+
+  /* Memo Theme */
   --memo-tag-color: var(--custom-font-color, white);
   --memo-textarea-color: var(--custom-font-color, white);
   --memo-textarea-bg: var(--overlay);

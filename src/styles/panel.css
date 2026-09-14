@@ -1,7 +1,7 @@
 /* Panel Container - 增加柔和阴影和更平滑的过渡 */
 
 .panel-container {
-  color-scheme: light;
+  color-scheme: var(--color-scheme);
   position: fixed;
   height: 46vh;
   left: 0;
@@ -10,7 +10,7 @@
   z-index: 9999;
   background: var(--bg-main);
   border-top: 2px solid var(--primary-color);
-  box-shadow: 0 -4px 12px rgb(0 0 0 / 8%);
+  box-shadow: var(--shadow-panel);
   transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
   &.closed {
@@ -19,13 +19,6 @@
 
   &.open {
     transform: translateY(0%);
-  }
-
-  .memo-container-dark-theme & {
-    background: var(--bg-main);
-    border-top-color: var(--primary-color);
-    box-shadow: 0 -6px 16px rgb(0 0 0 / 50%);
-    color-scheme: dark;
   }
 }
 
@@ -64,11 +57,6 @@
 
   &.is-windows-chrome {
     cursor: help;
-  }
-
-  .memo-container-dark-theme & {
-    background: var(--primary-color);
-    color: var(--text-inverse);
   }
 }
 
@@ -236,11 +224,7 @@
   &:hover {
     color: var(--primary-color); /* 强制悬停变粉 */
     transform: rotate(20deg);
-    background: var(--overlay);
-
-    .memo-container-dark-theme & {
-      background: var(--glass);
-    }
+    background: var(--fill-hover);
   }
 
   svg {
@@ -250,11 +234,21 @@
   }
 }
 
-/* 统一处理悬停效果 */
+/* 主题图标：亮色显示太阳、暗色显示月亮，完全由 html.dark 决定 */
+.theme-icon-sun {
+  html.dark & {
+    display: none;
+  }
+}
 
-/* 夜间模式悬停背景 */
+.theme-icon-moon {
+  display: none;
 
-/* 如果是黑夜模式，可以给个不一样的悬停色 */
+  html.dark & {
+    display: block;
+  }
+}
+
 [x-cloak] {
   display: none !important;
 }
@@ -264,10 +258,6 @@
   font-size: 15px;
   font-weight: 600;
   color: var(--text-main);
-
-  .memo-container-dark-theme & {
-    color: var(--text-main);
-  }
 }
 
 .panel-mode-option {
@@ -277,10 +267,6 @@
   font-size: 14px;
   color: var(--text-sub);
   cursor: pointer;
-
-  .memo-container-dark-theme & {
-    color: var(--text-sub);
-  }
 }
 
 /* Control Bar */
@@ -296,7 +282,7 @@
 .panel-btn {
   padding: 6px 16px;
   border: 1px solid var(--primary-color);
-  background: var(--bg-main);
+  background: var(--btn-outline-bg);
   border-radius: 20px; /* 圆角按钮更现代 */
   color: var(--primary-color);
   cursor: pointer;
@@ -306,7 +292,7 @@
 
   &:hover {
     background: var(--primary-color);
-    color: var(--text-inverse);
+    color: var(--on-primary);
   }
 
   &:disabled, &.btn-disabled {
@@ -321,17 +307,6 @@
     background: var(--primary-color);
     color: var(--text-inverse);
   }
-
-  .memo-container-dark-theme & {
-    background: transparent;
-    color: var(--primary-color);
-    border-color: var(--primary-color);
-
-    &:hover {
-      background: var(--primary-color);
-      color: var(--text-main);
-    }
-  }
 }
 
 .panel-icon-btn {
@@ -340,7 +315,7 @@
   gap: 6px;
   padding: 6px 10px;
   border: 1px solid var(--primary-color);
-  background: var(--bg-main);
+  background: var(--btn-outline-bg);
   border-radius: 18px;
   color: var(--primary-color);
   cursor: pointer;
@@ -354,7 +329,7 @@
 
   &:hover {
     background: var(--primary-color);
-    color: var(--text-inverse);
+    color: var(--on-primary);
   }
 
   &:disabled {
@@ -363,17 +338,6 @@
     cursor: not-allowed;
     opacity: 0.8;
     transform: none;
-  }
-
-  .memo-container-dark-theme & {
-    background: transparent;
-    color: var(--primary-color);
-    border-color: var(--primary-color);
-
-    &:hover {
-      background: var(--primary-color);
-      color: var(--text-main);
-    }
   }
 }
 
@@ -384,12 +348,8 @@
 .panel-title {
   font-size: 16px;
   font-weight: bold;
-  color: var(--text-main);
+  color: var(--title-color);
   flex-grow: 1;
-
-  .memo-container-dark-theme & {
-    color: var(--text-inverse);
-  }
 }
 
 /* Search Box - 增加 Focus 状态 */
@@ -410,9 +370,9 @@
     box-shadow: 0 0 0 2px var(--primary-alpha);
   }
 
-  .memo-container-dark-theme & {
-    background: var(--bg-sub);
-    border: 2px solid var(--primary-color);
+  /* 暗色：搜索框描边加粗，避免深色背景上边框被"吃掉" */
+  html.dark & {
+    border-width: 2px;
   }
 }
 
@@ -430,10 +390,6 @@
   font-size: 14px;
   background: transparent;
   color: var(--text-main);
-
-  .memo-container-dark-theme & {
-    color: var(--text-main);
-  }
 }
 
 /* Fuzzy Search Toggle */
@@ -457,14 +413,6 @@
 
   &:hover {
     color: var(--primary-color);
-  }
-
-  .memo-container-dark-theme & {
-    color: var(--text-sub);
-
-    &:hover {
-      color: var(--primary-color);
-    }
   }
 }
 
@@ -499,16 +447,6 @@
       box-shadow: 0 0 0 2px var(--primary-alpha);
     }
   }
-
-  .memo-container-dark-theme & {
-    color: var(--text-sub);
-
-    select {
-      color: var(--text-main);
-      background: var(--bg-sub);
-      border-color: var(--border-main);
-    }
-  }
 }
 
 /* Users List Container */
@@ -532,15 +470,6 @@
     border-radius: 10px;
 
     &:hover {
-      background: var(--border-main);
-    }
-  }
-
-  .memo-container-dark-theme & {
-    /* 兼容 Firefox 滚动条 */
-    scrollbar-color: var(--border-main) transparent;
-
-    &::-webkit-scrollbar-thumb {
       background: var(--border-main);
     }
   }
@@ -632,12 +561,8 @@
   transition: background 0.2s, color 0.2s;
 
   &:hover {
-    background: var(--bg-sub);
+    background: var(--fill-hover-soft);
     color: var(--text-main);
-
-    .memo-container-dark-theme & {
-      background: var(--overlay);
-    }
   }
 }
 
@@ -692,6 +617,7 @@
     color: var(--text-main);
     font-size: 14px;
     outline: none;
+    color-scheme: var(--color-scheme);
     transition: border-color 0.2s, box-shadow 0.2s;
 
     &:focus {
@@ -702,10 +628,6 @@
     &::placeholder {
       color: var(--text-sub);
       opacity: 0.7;
-    }
-
-    .memo-container-dark-theme & {
-      color-scheme: dark;
     }
   }
 }
@@ -728,5 +650,3 @@
     color: var(--text-main);
   }
 }
-
-/* dialog 夜间模式：仅覆盖非变量硬编码的部分 */

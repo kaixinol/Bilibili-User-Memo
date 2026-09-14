@@ -20,9 +20,9 @@ importers:
       p-limit:
         specifier: ^7.3.2
         version: 7.3.2
-      query-selector-shadow-dom:
-        specifier: ^1.0.1
-        version: 1.0.1
+      query-selector-shadow-dom-modern:
+        specifier: ^1.1.0
+        version: 1.1.0
       valibot:
         specifier: ^1.5.0
         version: 1.5.0(typescript@6.0.3)
@@ -36,9 +36,6 @@ importers:
       '@types/node':
         specifier: ^26.5.1
         version: 26.5.1
-      '@types/query-selector-shadow-dom':
-        specifier: ^1.0.4
-        version: 1.0.4
       '@typescript-eslint/eslint-plugin':
         specifier: ^8.70.0
         version: 8.70.0(@typescript-eslint/parser@8.70.0(eslint@10.10.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(eslint@10.10.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)
@@ -502,9 +499,6 @@ packages:
 
   '@types/node@26.5.1':
     resolution: {integrity: sha512-CzNm2FezW4VR/LjG6yUdiEgLE/rAQ9Slj5gCu/C2VrdcW7I0ahNZ8DRbHT7zOZ6r3ONgd/bsQIeSaoDGrd1C6g==}
-
-  '@types/query-selector-shadow-dom@1.0.4':
-    resolution: {integrity: sha512-8jfGPD0wCMCdyBvrvOrWVn8bHL1UEjkPVJKsqNZpEXp+a7mIIvvGpJMd6n6dlNl7IkG2ryxIVqFI516RPE0uhQ==}
 
   '@typescript-eslint/eslint-plugin@8.70.0':
     resolution: {integrity: sha512-/v8HZt6RlyIZxB3ntehELOcUcfxKPVGWXnQdJuHRmzrqgF8nQypcC/oxGW+Ot4VGKDq81XugPKxx0n5PBtf9PA==}
@@ -1373,8 +1367,8 @@ packages:
     resolution: {integrity: sha512-+Owyggi9IxT1ePKGafcI87ubSmxol6smwJ+RAHDQlx9+9cPwFWDiKFFCPuWhr9ignlGpZ9vDQLw67N4dcTVFEA==}
     engines: {node: '>=20'}
 
-  query-selector-shadow-dom@1.0.1:
-    resolution: {integrity: sha512-lT5yCqEBgfoMYpf3F2xQRK7zEr1rhIIZuceDK6+xRkJQ4NMbHTwXqk4NkwDwQMNqXgG9r9fyHnzwNVs6zV5KRw==}
+  query-selector-shadow-dom-modern@1.1.0:
+    resolution: {integrity: sha512-yhHMWlJ/OcqAgESRc0RDamFltuzIsWhf89ZWPTLE6PjQbfwG+1E5JfYRNlmP9lKSsMqQPpijUuzI2UsiSS3H1g==}
 
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
@@ -2044,8 +2038,6 @@ snapshots:
   '@types/node@26.5.1':
     dependencies:
       undici-types: 8.9.0
-
-  '@types/query-selector-shadow-dom@1.0.4': {}
 
   '@typescript-eslint/eslint-plugin@8.70.0(@typescript-eslint/parser@8.70.0(eslint@10.10.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(eslint@10.10.0(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3)':
     dependencies:
@@ -2877,7 +2869,7 @@ snapshots:
     dependencies:
       hookified: 2.2.0
 
-  query-selector-shadow-dom@1.0.1: {}
+  query-selector-shadow-dom-modern@1.1.0: {}
 
   queue-microtask@1.2.3: {}
 

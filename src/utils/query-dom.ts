@@ -1,7 +1,7 @@
 import {
   querySelectorAllDeep as rawQuerySelectorAllDeep,
   querySelectorDeep as rawQuerySelectorDeep,
-} from "query-selector-shadow-dom";
+} from "query-selector-shadow-dom-modern";
 import { getCaller } from "./caller";
 import { recordQueryDiagnostic } from "./perf-diagnostics";
 import { logger } from "./logger";

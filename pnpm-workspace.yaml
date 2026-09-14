@@ -2,3 +2,5 @@ allowBuilds:
   esbuild: true
 ignoredBuiltDependencies:
   - esbuild
+minimumReleaseAgeExclude:
+  - query-selector-shadow-dom-modern@1.1.0

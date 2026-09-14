@@ -23,7 +23,6 @@
     "@types/alpinejs": "^3.13.11",
     "@types/alpinejs__persist": "^3.13.4",
     "@types/node": "^26.5.1",
-    "@types/query-selector-shadow-dom": "^1.0.4",
     "@typescript-eslint/eslint-plugin": "^8.70.0",
     "@typescript-eslint/parser": "^8.70.0",
     "browserslist": "^4.28.9",
@@ -43,7 +42,7 @@
     "alpinejs": "^3.17.2",
     "opencc-js": "^1.4.2",
     "p-limit": "^7.3.2",
-    "query-selector-shadow-dom": "^1.0.1",
+    "query-selector-shadow-dom-modern": "^1.1.0",
     "valibot": "^1.5.0"
   },
   "browserslist": [

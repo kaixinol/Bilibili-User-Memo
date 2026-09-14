@@ -236,13 +236,11 @@
   overflow: hidden;
   text-overflow: ellipsis;
   display: block;
+
+  /* UID 降级为次级文字色，避免与昵称抢注意力 */
+  color: var(--text-sub);
   transition: background 0.2s;
   cursor: pointer;
-
-  /* 暗色：UID 降级为次级文字色，避免与昵称抢注意力 */
-  html.dark & {
-    color: var(--text-sub);
-  }
 }
 
 /* 默认样式 */

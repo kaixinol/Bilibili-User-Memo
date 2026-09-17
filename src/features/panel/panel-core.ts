@@ -15,12 +15,20 @@ export const DISPLAY_MODE_OPTIONS: DisplayModeOption[] = [
   { value: 3, label: "备注" },
 ];
 
+/**
+ * 组件外读取 store。返回类型由 ./store-types.d.ts 的 Stores augmentation 提供，
+ * 所以既不需要 `as UserListStore` 这类断言，注册端也会做类型校验。
+ *
+ * 之所以还要这两个 helper 而不是统一用 `this.$store.xxx`：Alpine.data 里的
+ * `this` 会退化成 any（ThisType 依赖 T 自身，TS 解不开这个循环），
+ * 走 helper 才能拿到真实类型。详见 ALPINE-AUDIT.md。
+ */
 export function getUserListStore(): UserListStore {
-  return Alpine.store("userList") as UserListStore;
+  return Alpine.store("userList");
 }
 
 export function getPanelPrefsStore(): PanelPrefsStore {
-  return Alpine.store("panelPrefs") as PanelPrefsStore;
+  return Alpine.store("panelPrefs");
 }
 
 let panelBindingsRegistered = false;
@@ -92,9 +100,6 @@ export function registerPanelToggleBtn() {
         this.$el.classList.add("is-windows-chrome");
       }
     },
-    get prefs(): PanelPrefsStore {
-      return getPanelPrefsStore();
-    },
     get isOpen(): boolean {
       return getUserListStore().isOpen;
     },
@@ -102,16 +107,16 @@ export function registerPanelToggleBtn() {
       getUserListStore().setOpen(next);
     },
     get openText(): string {
-      return this.prefs.openText;
+      return getPanelPrefsStore().openText;
     },
     get closeText(): string {
-      return this.prefs.closeText;
+      return getPanelPrefsStore().closeText;
     },
     togglePanel() {
       this.isOpen = !this.isOpen;
     },
     editToggleText() {
-      this.prefs.editToggleText(this.isOpen);
+      getPanelPrefsStore().editToggleText(this.isOpen);
     },
   }));
 }
@@ -125,16 +130,13 @@ export function registerPanelActions() {
     /** 输入法组合中：拼音还没上屏，此时的内容不该拿来搜索 */
     isComposing: false,
     searchTimer: 0,
-    get userList(): UserListStore {
-      return getUserListStore();
-    },
     init() {
-      this.draftSearchQuery = this.userList.searchQuery;
+      this.draftSearchQuery = getUserListStore().searchQuery;
     },
     handleSearchInput(value: string) {
       if (!String(value ?? "").trim()) {
         this.cancelPendingSearch();
-        this.userList.searchQuery = "";
+        getUserListStore().searchQuery = "";
         return;
       }
       this.scheduleSearch();
@@ -168,17 +170,17 @@ export function registerPanelActions() {
       this.applySearchQuery();
     },
     applySearchQuery() {
-      this.userList.searchQuery = this.draftSearchQuery.trim();
+      getUserListStore().searchQuery = this.draftSearchQuery.trim();
     },
     toggleFuzzySearch(event: Event) {
       const checked = (event.target as HTMLInputElement).checked;
-      this.userList.setFuzzySearchEnabled(checked);
+      getUserListStore().setFuzzySearchEnabled(checked);
     },
     confirmRemoveSelected() {
-      const count = this.userList.selectedIds.length;
+      const count = getUserListStore().selectedIds.length;
       if (count === 0) return;
       if (confirmDialog(`确定要删除所选 ${count} 个用户吗？`)) {
-        this.userList.removeSelected();
+        getUserListStore().removeSelected();
       }
     },
   }));

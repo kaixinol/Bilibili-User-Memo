@@ -6,7 +6,7 @@ import type { BiliUser } from "@/core/types";
 import { showAlert } from "./dialogs";
 import { AVATAR_URL_INVALID_MESSAGE, isValidAvatarUrl } from "./avatar-url";
 
-type AddUserDialogStore = {
+export type AddUserDialogStore = {
   isOpen: boolean;
   uid: string;
   memo: string;

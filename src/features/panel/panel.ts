@@ -5,13 +5,10 @@ import "@/styles/panel.css";
 import "@/styles/global.css";
 import "@/styles/box.css";
 import { createPanelPrefsStore } from "./panel-prefs";
-import { registerUserStore, type UserListStore } from "./user-list-store";
+import { getUserListStore } from "./panel-core";
+import { registerUserStore } from "./user-list-store";
 import { markOwnedElement } from "@/core/dom/owned-node";
 import { registerPanelComponents } from "./panel-components";
-
-function useUserListStore(): UserListStore {
-  return Alpine.store("userList") as UserListStore;
-}
 
 export function initMainPanel() {
   if (document.getElementById("bili-memo-container")) return;
@@ -20,7 +17,7 @@ export function initMainPanel() {
   if (!Alpine.store("panelPrefs")) {
     Alpine.store(
       "panelPrefs",
-      createPanelPrefsStore({ getUserListStore: useUserListStore }),
+      createPanelPrefsStore({ getUserListStore }),
     );
   }
   registerPanelComponents();

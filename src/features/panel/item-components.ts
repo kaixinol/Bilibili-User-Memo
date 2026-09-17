@@ -1,6 +1,6 @@
 import Alpine from "alpinejs";
 import type { BiliUser } from "@/core/types";
-import type { DetailMatch, UserListStore } from "./user-list-store";
+import type { DetailMatch } from "./user-list-store";
 import { confirmDialog, promptText, showAlert } from "./dialogs";
 import { biliFixAPIReady } from "@/core/api/bili-api";
 import { isNoFaceAvatar } from "@/core/dom/avatar-utils";
@@ -14,7 +14,7 @@ import { validateInputLength } from "@/core/dom/text-utils";
 
 const processedUID = new WeakSet<Element>();
 
-type MemoDetailDialogStore = {
+export type MemoDetailDialogStore = {
   isOpen: boolean;
   uid: string;
   detail: string;
@@ -60,35 +60,32 @@ export function registerMemoDetailDialog() {
 export function registerUserCard() {
   Alpine.data("userCard", (userId: string) => ({
     userId,
-    get userList(): UserListStore {
-      return getUserListStore();
-    },
     get currentUser(): BiliUser | undefined {
-      return this.userList.getUserById(this.userId);
+      return getUserListStore().getUserById(this.userId);
     },
     get isVisible(): boolean {
-      return this.userList.isUserVisible(this.userId);
+      return getUserListStore().isUserVisible(this.userId);
     },
     get detailMatch(): DetailMatch | null {
-      return this.userList.getDetailMatch(this.userId);
+      return getUserListStore().getDetailMatch(this.userId);
     },
     get isSelected(): boolean {
-      return this.userList.selectedIds.includes(this.userId);
+      return getUserListStore().selectedIds.includes(this.userId);
     },
     get isMultiSelect(): boolean {
-      return this.userList.isMultiSelect;
+      return getUserListStore().isMultiSelect;
     },
     get selectedIds(): string[] {
-      return this.userList.selectedIds;
+      return getUserListStore().selectedIds;
     },
     set selectedIds(next: string[]) {
-      this.userList.selectedIds = next;
+      getUserListStore().selectedIds = next;
     },
     toggleSelected() {
-      const next = new Set(this.userList.selectedIds);
+      const next = new Set(getUserListStore().selectedIds);
       if (next.has(this.userId)) next.delete(this.userId);
       else next.add(this.userId);
-      this.userList.selectedIds = Array.from(next);
+      getUserListStore().selectedIds = Array.from(next);
     },
     handleCardClick(event: MouseEvent) {
       if (!this.isMultiSelect) return;
@@ -101,7 +98,7 @@ export function registerUserCard() {
     },
     confirmRemove() {
       if (confirmDialog("确定要删除吗？")) {
-        this.userList.removeUser(this.userId);
+        getUserListStore().removeUser(this.userId);
       }
     },
   }));
@@ -151,11 +148,8 @@ export function registerAvatarEditor() {
     userId,
     fakeNoFace: false,
     checked: false,
-    get userList(): UserListStore {
-      return getUserListStore();
-    },
     get currentUser(): BiliUser | undefined {
-      return this.userList.getUserById(this.userId);
+      return getUserListStore().getUserById(this.userId);
     },
     get currentAvatar(): string {
       return this.currentUser?.avatar || "";
@@ -180,17 +174,17 @@ export function registerAvatarEditor() {
     },
     handleMiddleClick(event: MouseEvent) {
       if (event.button !== 1) return;
-      if (this.userList.isMultiSelect) return;
+      if (getUserListStore().isMultiSelect) return;
       if (isNoFaceAvatar(this.currentAvatar)) return;
 
       event.preventDefault();
 
-      if (this.userList.silentAvatarUpdate) {
+      if (getUserListStore().silentAvatarUpdate) {
         const disableSilent = confirmDialog(
           "是否同时关闭静默更新头像功能？\n关闭后访问空间页将不再自动更新此用户头像。",
         );
         if (disableSilent) {
-          this.userList.setSilentAvatarUpdate(false);
+          getUserListStore().setSilentAvatarUpdate(false);
         }
       }
 
@@ -202,10 +196,10 @@ export function registerAvatarEditor() {
         return;
       }
 
-      this.userList.updateUser(this.userId, { avatar: nextAvatar });
+      getUserListStore().updateUser(this.userId, { avatar: nextAvatar });
     },
     editAvatar(event: MouseEvent) {
-      if (this.userList.isMultiSelect || !this.canEditAvatar) {
+      if (getUserListStore().isMultiSelect || !this.canEditAvatar) {
         return;
       }
       event.preventDefault();
@@ -218,7 +212,7 @@ export function registerAvatarEditor() {
         return;
       }
 
-      this.userList.updateUser(this.userId, { avatar: nextAvatar });
+      getUserListStore().updateUser(this.userId, { avatar: nextAvatar });
     },
   }));
 }
@@ -228,14 +222,11 @@ export function registerMemoEditor() {
     userId,
     isEditing: false,
     memoDraft: String(initialMemo ?? ""),
-    get userList(): UserListStore {
-      return getUserListStore();
-    },
     get isMultiSelect(): boolean {
-      return this.userList.isMultiSelect;
+      return getUserListStore().isMultiSelect;
     },
     get currentMemo(): string {
-      return this.userList.getUserById(this.userId)?.memo || "";
+      return getUserListStore().getUserById(this.userId)?.memo || "";
     },
     syncDraft() {
       if (!this.isEditing) {
@@ -254,7 +245,7 @@ export function registerMemoEditor() {
       const nextMemo = typeof this.memoDraft === "string"
         ? this.memoDraft
         : String(this.memoDraft ?? "");
-      this.userList.updateUser(this.userId, { memo: nextMemo });
+      getUserListStore().updateUser(this.userId, { memo: nextMemo });
     },
     cancel() {
       this.memoDraft = this.currentMemo;

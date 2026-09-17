@@ -1,6 +1,4 @@
 import Alpine from "alpinejs";
-import type { PanelPrefsStore } from "./panel-prefs";
-import type { UserListStore } from "./user-list-store";
 import {
   DISPLAY_MODE_OPTIONS,
   getUserListStore,
@@ -10,35 +8,29 @@ import {
 export function registerPanelSettings() {
   Alpine.data("panelSettings", () => ({
     displayModes: DISPLAY_MODE_OPTIONS,
-    get userList(): UserListStore {
-      return getUserListStore();
-    },
-    get prefs(): PanelPrefsStore {
-      return getPanelPrefsStore();
-    },
     get displayModeProxy(): number {
-      return this.userList.displayMode;
+      return getUserListStore().displayMode;
     },
     set displayModeProxy(mode: number) {
-      this.userList.setDisplayMode(Number(mode));
+      getUserListStore().setDisplayMode(Number(mode));
     },
     get customFontColor(): string {
-      return this.prefs.customFontColor;
+      return getPanelPrefsStore().customFontColor;
     },
     set customFontColor(next: string) {
-      this.prefs.customFontColor = next;
+      getPanelPrefsStore().customFontColor = next;
     },
     get customMemoCss(): string {
-      return this.prefs.customMemoCss;
+      return getPanelPrefsStore().customMemoCss;
     },
     set customMemoCss(next: string) {
-      this.prefs.customMemoCss = next;
+      getPanelPrefsStore().customMemoCss = next;
     },
     get cssStatus(): string {
-      return this.prefs.cssStatus;
+      return getPanelPrefsStore().cssStatus;
     },
     get showAdvancedCss(): boolean {
-      return this.prefs.showAdvancedCss;
+      return getPanelPrefsStore().showAdvancedCss;
     },
     syncAdvancedCssDialog() {
       const dialog = this.$refs.memoCssDialog as HTMLDialogElement | undefined;
@@ -57,28 +49,28 @@ export function registerPanelSettings() {
       }
     },
     toggleTheme() {
-      this.prefs.toggleTheme();
+      getPanelPrefsStore().toggleTheme();
     },
     onCustomColorInput() {
-      this.prefs.onCustomColorInput();
+      getPanelPrefsStore().onCustomColorInput();
     },
     closeAdvancedCss() {
-      this.prefs.closeAdvancedCss();
+      getPanelPrefsStore().closeAdvancedCss();
     },
     handleColorSettingContextMenu(event: MouseEvent) {
       event.preventDefault();
-      this.prefs.showAdvancedCss = !this.prefs.showAdvancedCss;
+      getPanelPrefsStore().showAdvancedCss = !getPanelPrefsStore().showAdvancedCss;
     },
     handleColorSettingMouseDown(event: MouseEvent) {
       if (event.button !== 1) return;
       event.preventDefault();
-      this.prefs.clearCustomColor();
+      getPanelPrefsStore().clearCustomColor();
     },
     applyMemoCss() {
-      this.prefs.applyMemoCss();
+      getPanelPrefsStore().applyMemoCss();
     },
     saveMemoCss() {
-      this.prefs.saveMemoCss();
+      getPanelPrefsStore().saveMemoCss();
     },
   }));
 }

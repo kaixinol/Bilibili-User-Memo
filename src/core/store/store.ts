@@ -248,7 +248,7 @@ class UserStore {
   /**
    * 获取用户记录；不存在时返回临时对象（不入库）
    */
-  public ensureUser(uid: string, originalName: string): BiliUser {
+  public getUserOrPlaceholder(uid: string, originalName: string): BiliUser {
     const existing = this.userIndex.get(uid);
     if (existing) {
       return existing;

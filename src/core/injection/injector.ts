@@ -6,7 +6,7 @@ import {
 } from "@/core/rules/rule-types";
 import { logger } from "@/utils/logger";
 import { extractUid } from "../dom/uid-extractor";
-import { getElementDisplayName, resolveRuleTextTarget } from "../dom/text-utils";
+import { getElementOriginalName, resolveRuleTextTarget } from "../dom/text-utils";
 import { refreshRenderedMemoNodes } from "../render/dom-refresh";
 import { injectMemoRenderer } from "../render/renderer";
 
@@ -229,7 +229,7 @@ class PageInjector {
         let preResolvedUid: string | null = null;
         if (storedUid) {
           const originalName =
-            rule.originalNameResolver?.(el, rule) || getElementDisplayName(el, rule);
+            rule.originalNameResolver?.(el, rule) || getElementOriginalName(el, rule);
           preResolvedUid = await this.resolveElementUid(el, rule, originalName);
           if (preResolvedUid && storedUid === preResolvedUid) continue;
         }
@@ -259,7 +259,7 @@ class PageInjector {
 
     try {
       const originalName =
-        rule.originalNameResolver?.(el, rule) || getElementDisplayName(el, rule);
+        rule.originalNameResolver?.(el, rule) || getElementOriginalName(el, rule);
       const uid = preResolvedUid ?? await this.resolveElementUid(el, rule, originalName);
       uidResolved = Boolean(uid);
       if (!uid) return;
@@ -267,7 +267,7 @@ class PageInjector {
         const sibling = el.nextElementSibling as HTMLElement | null;
         if (sibling?.classList.contains("editable-textarea") && sibling.dataset.bilimemoUid === uid) return;
       }
-      const user = userStore.ensureUser(uid, originalName);
+      const user = userStore.getUserOrPlaceholder(uid, originalName);
       applied = await injectMemoRenderer(el, user, rule, { uid, originalName });
     } finally {
       if (__IS_DEBUG__) {

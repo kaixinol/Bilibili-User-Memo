@@ -163,13 +163,13 @@ function resetDeletedFilterIfNoDeleted(store: InternalUserListStore) {
   }
 }
 
-async function waitForUsersSnapshotIdle() {
+async function waitForIdleFrames() {
   await afterFramesAndIdle(5, 1000);
 }
 
 export function createUserListStore(): InternalUserListStore {
   const preloadAllCards = persistWithGmStorage("panelPreloadAllCards", true);
-  const shouldPreloadImmediately = getPanelPreloadAllCards();
+  const preloadAllCardsEnabled = getPanelPreloadAllCards();
 
   const rawAutoOpen = getGmValue<boolean>("debug.autoOpenPanel", false);
 
@@ -203,7 +203,7 @@ export function createUserListStore(): InternalUserListStore {
     silentAvatarUpdate: persistWithGmStorage("panelSilentAvatarUpdate", false),
     preloadAllCards,
     isUsersLoading: false,
-    hasLoadedUsers: shouldPreloadImmediately,
+    hasLoadedUsers: preloadAllCardsEnabled,
     isRefreshing: false,
     refreshCurrent: 0,
     refreshTotal: 0,
@@ -337,7 +337,7 @@ export function createUserListStore(): InternalUserListStore {
       if (this.hasLoadedUsers || this.isUsersLoading) return;
       this.isUsersLoading = true;
 
-      await waitForUsersSnapshotIdle();
+      await waitForIdleFrames();
 
       const latestUsers = userStore.getUsers();
       this.syncUsersSnapshot(latestUsers);

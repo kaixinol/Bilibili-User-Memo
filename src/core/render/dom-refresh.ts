@@ -5,14 +5,14 @@ import {
   getTrackedElementsForIds,
 } from "./render-index";
 
-function refreshTag(
-  tag: HTMLElement,
+function refreshRenderedNode(
+  node: HTMLElement,
   user: BiliUser | undefined,
   displayMode: number,
 ) {
-  const originalName = tag.dataset.bilimemoOriginal || "";
-  syncRenderedNodeState(tag, user, originalName, displayMode, {
-    isEditableWrapper: tag.classList.contains("editable-textarea"),
+  const originalName = node.dataset.bilimemoOriginal || "";
+  syncRenderedNodeState(node, user, originalName, displayMode, {
+    isEditableWrapper: node.classList.contains("editable-textarea"),
   });
 }
 
@@ -30,19 +30,19 @@ export function refreshRenderedMemoNodes(
       }
     });
 
-    const uidTagMap = getTrackedElementsForIds(uniqueIds);
+    const uidNodeMap = getTrackedElementsForIds(uniqueIds);
     uniqueIds.forEach((uid) => {
-      const tags = uidTagMap.get(uid) || [];
+      const nodes = uidNodeMap.get(uid) || [];
       const user = userMap.get(uid);
-      tags.forEach((tag) => refreshTag(tag, user, displayMode));
+      nodes.forEach((node) => refreshRenderedNode(node, user, displayMode));
     });
     return;
   }
 
   const userMap = new Map(users.map((u) => [u.id, u]));
   const entries = getAllTrackedEntries();
-  entries.forEach(([uid, tags]) => {
+  entries.forEach(([uid, nodes]) => {
     const user = userMap.get(uid);
-    tags.forEach((tag) => refreshTag(tag, user, displayMode));
+    nodes.forEach((node) => refreshRenderedNode(node, user, displayMode));
   });
 }

@@ -18,13 +18,13 @@ export function syncRenderedNodeState(
     el.textContent = text;
   }
 
-  const shouldHighlight = Boolean(
+  const isMemoTag = Boolean(
     !options.isEditableWrapper &&
     user?.memo &&
     user.memo !== originalName &&
     text !== originalName,
   );
-  el.classList.toggle("bili-memo-tag", shouldHighlight);
+  el.classList.toggle("bili-memo-tag", isMemoTag);
 
   // 同步详细备注 title
   if (user?.memoDetail) {

@@ -93,7 +93,7 @@ export function registerPanelShell() {
     set isOpen(next: boolean) {
       getUserListStore().setOpen(next);
     },
-    handleSelectAll(event: KeyboardEvent) {
+    handleInvertSelectionShortcut(event: KeyboardEvent) {
       const userList = getUserListStore();
       if (!userList.isMultiSelect) return;
       if (!(event.ctrlKey || event.metaKey)) return;

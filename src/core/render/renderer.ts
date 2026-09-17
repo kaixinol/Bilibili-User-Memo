@@ -117,7 +117,7 @@ function renderEditable(
       if (!uid) return;
 
       // 每次点击都从 store 取最新用户，避免闭包捕获旧对象导致编辑值回退
-      const latestUser = userStore.ensureUser(uid, originalName);
+      const latestUser = userStore.getUserOrPlaceholder(uid, originalName);
       enterEditMode(wrapper!, latestUser);
     });
 
@@ -134,7 +134,7 @@ function renderEditable(
       if (e.button !== 1) return;
       const uid = wrapper?.dataset.bilimemoUid;
       if (!uid) return;
-      const currentUser = userStore.ensureUser(uid, "");
+      const currentUser = userStore.getUserOrPlaceholder(uid, "");
       if (!currentUser?.memo) return;
       e.preventDefault();
       openMemoDetailDialog(uid);

@@ -100,16 +100,16 @@ export async function fetchLatestProfiles(
 ): Promise<UserProfile[]> {
   const profiles: UserProfile[] = [];
   const limit = pLimit(REFRESH_PROFILE_CONCURRENCY);
-  let aborted = false;
+  let stoppedByApiError = false;
 
   const tasks = users.map((user) => limit(async () => {
     try {
-      if (aborted) return;
+      if (stoppedByApiError) return;
 
       const newData = await getUserInfo(String(user.id));
-      if (aborted) return;
+      if (stoppedByApiError) return;
       if (!newData) {
-        aborted = true;
+        stoppedByApiError = true;
         return;
       }
       if (!newData.nickname) {
@@ -122,7 +122,7 @@ export async function fetchLatestProfiles(
         isDeleted: newData.isDeleted,
       });
     } catch (error) {
-      if (aborted) return;
+      if (stoppedByApiError) return;
       logger.error(`刷新用户 [${user.id}] 失败:`, error);
     } finally {
       onProgress();

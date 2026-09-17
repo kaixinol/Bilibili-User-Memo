@@ -3,7 +3,7 @@
   x-show="true"
   class="panel-container"
   :class="{ open: isOpen, closed: !isOpen }"
-  @keydown.window="handleSelectAll($event)"
+  @keydown.window="handleInvertSelectionShortcut($event)"
   x-cloak
 >
   <div class="panel-inner" x-data="panelSettings">

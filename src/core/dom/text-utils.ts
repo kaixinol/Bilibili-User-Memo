@@ -70,7 +70,7 @@ export function resolveRuleTextTarget(
 /**
  * 获取元素应显示的原始名称。
  */
-export function getElementDisplayName(el: HTMLElement, rule: PageRule): string {
+export function getElementOriginalName(el: HTMLElement, rule: PageRule): string {
   return (
     readPreferredText(resolveRuleTextTarget(el, rule)) ||
     readPreferredText(el) ||

@@ -5,8 +5,6 @@ import {
   DISPLAY_MODE_OPTIONS,
   getUserListStore,
   getPanelPrefsStore,
-  runOnNextTick,
-  getRef,
 } from "./panel-core";
 
 export function registerPanelSettings() {
@@ -43,13 +41,13 @@ export function registerPanelSettings() {
       return this.prefs.showAdvancedCss;
     },
     syncAdvancedCssDialog() {
-      const dialog = getRef<HTMLDialogElement>(this, "memoCssDialog");
+      const dialog = this.$refs.memoCssDialog as HTMLDialogElement | undefined;
       if (!dialog) return;
 
       if (this.showAdvancedCss && !dialog.open) {
         dialog.showModal();
-        runOnNextTick(this, () => {
-          getRef<HTMLTextAreaElement>(this, "memoCssInput")?.focus();
+        this.$nextTick(() => {
+          (this.$refs.memoCssInput as HTMLTextAreaElement | undefined)?.focus();
         });
         return;
       }

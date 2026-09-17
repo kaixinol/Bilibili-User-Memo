@@ -3,12 +3,6 @@ import type { PanelPrefsStore } from "./panel-prefs";
 import type { UserListStore } from "./user-list-store";
 import { confirmDialog } from "./dialogs";
 
-interface AlpineMagicContext {
-  $el?: HTMLElement;
-  $nextTick?: (callback: () => void) => void;
-  $refs?: Record<string, Element | undefined>;
-}
-
 interface DisplayModeOption {
   value: number;
   label: string;
@@ -27,21 +21,6 @@ export function getUserListStore(): UserListStore {
 
 export function getPanelPrefsStore(): PanelPrefsStore {
   return Alpine.store("panelPrefs") as PanelPrefsStore;
-}
-
-export function runOnNextTick(context: object, callback: () => void) {
-  (context as AlpineMagicContext).$nextTick?.(callback);
-}
-
-export function getRef<T extends Element>(
-  context: object,
-  key: string,
-): T | undefined {
-  return (context as AlpineMagicContext).$refs?.[key] as T | undefined;
-}
-
-export function getCurrentElement(context: object): HTMLElement | undefined {
-  return (context as AlpineMagicContext).$el;
 }
 
 let panelBindingsRegistered = false;
@@ -110,7 +89,7 @@ export function registerPanelToggleBtn() {
     init() {
       const ua = navigator.userAgent;
       if (ua.includes("Windows") && ua.includes("Chrome")) {
-        getCurrentElement(this)?.classList.add("is-windows-chrome");
+        this.$el.classList.add("is-windows-chrome");
       }
     },
     get prefs(): PanelPrefsStore {

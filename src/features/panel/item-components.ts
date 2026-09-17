@@ -9,9 +9,6 @@ import { isFakeNoFaceAvatarFromImg } from "./perceptual-hash";
 import { logger } from "@/utils/logger";
 import {
   getUserListStore,
-  runOnNextTick,
-  getRef,
-  getCurrentElement,
 } from "./panel-core";
 import { validateInputLength } from "@/core/dom/text-utils";
 
@@ -122,10 +119,8 @@ export function registerCopyableUid() {
       this.refreshOverflow();
     },
     refreshOverflow() {
-      runOnNextTick(this, () => {
-        const element = getCurrentElement(this)?.querySelector<HTMLElement>(
-          ".user-id",
-        );
+      this.$nextTick(() => {
+        const element = this.$el.querySelector<HTMLElement>(".user-id");
         if (!element) return;
         this.canExpand = element.scrollWidth > element.clientWidth;
       });
@@ -175,8 +170,7 @@ export function registerAvatarEditor() {
     },
     checkFakeNoFace() {
       if (this.checked || isNoFaceAvatar(this.currentAvatar)) return;
-      const wrapper = getCurrentElement(this);
-      const img = wrapper?.querySelector<HTMLImageElement>("img.user-avatar");
+      const img = this.$el.querySelector<HTMLImageElement>("img.user-avatar");
       if (!img) {
         logger.debug("[avatarEditor] 未找到头像img元素");
         return;
@@ -251,8 +245,8 @@ export function registerMemoEditor() {
     startEdit() {
       if (this.isMultiSelect) return;
       this.isEditing = true;
-      runOnNextTick(this, () => {
-        getRef<HTMLInputElement>(this, "memoInput")?.focus();
+      this.$nextTick(() => {
+        this.$refs.memoInput?.focus();
       });
     },
     commit() {
@@ -267,7 +261,7 @@ export function registerMemoEditor() {
       this.isEditing = false;
     },
     blurInput() {
-      getRef<HTMLInputElement>(this, "memoInput")?.blur();
+      this.$refs.memoInput?.blur();
     },
     handleInput(input: HTMLInputElement) {
       validateInputLength(input);

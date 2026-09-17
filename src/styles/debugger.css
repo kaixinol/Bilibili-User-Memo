@@ -186,29 +186,6 @@ input {
   }
 }
 
-.debugger-query-list {
-  max-height: 180px;
-  overflow-y: auto;
-  padding-right: 4px;
-
-  /* 兼容 Firefox 滚动条 */
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-main) transparent;
-
-  &::-webkit-scrollbar {
-    width: 6px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: var(--border-main);
-    border-radius: 3px;
-  }
-}
-
 .debugger-section {
   border-bottom: 1px solid var(--border-main);
   padding: 8px 0;
@@ -245,10 +222,6 @@ input {
   font-size: 11px;
 }
 
-.debugger-filter-control {
-  padding: 4px 4px 6px;
-}
-
 .debugger-checkbox-label {
   display: flex;
   align-items: center;
@@ -265,78 +238,8 @@ input {
   }
 }
 
-.perf-row {
-  padding: 6px 4px;
-  border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-
-  &:hover {
-    background: var(--bg-sub);
-  }
-}
-
-.perf-row-slow {
-  border-left: 2px solid var(--danger-color);
-  padding-left: 6px;
-}
-
-.perf-row-main {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.perf-row-title {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: 600;
-  line-height: 1.1;
-}
-
-.perf-row-badge {
-  flex-shrink: 0;
-  padding: 1px 4px;
-  border-radius: 3px;
-  background: var(--border-main);
-  color: var(--text-sub);
-  font-size: 10px;
-}
-
-.perf-row-total {
-  flex-shrink: 0;
-  color: var(--text-main);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-
-.perf-row-sub,
-.perf-row-selector {
-  color: var(--text-sub);
-  font-size: 10px;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.perf-row-sub {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.perf-row-selector,
 .debugger-code {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-}
-
-.debugger-code {
   color: var(--text-sub);
   font-size: 10px;
   overflow-wrap: anywhere;

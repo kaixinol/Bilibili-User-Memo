@@ -61,6 +61,7 @@ export default defineConfig(({ mode }) => {
         grant: [
           "GM_setValue",
           "GM_getValue",
+          "GM_deleteValue",
           "GM_addValueChangeListener",
           "GM_registerMenuCommand",
         ],

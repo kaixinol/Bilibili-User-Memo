@@ -151,12 +151,17 @@ function renderEditable(
   }
 
   const currentHref = (el as HTMLAnchorElement).href;
-  if (currentHref?.includes("/list/") && !wrapper.title.includes("没有任何视频投稿")) {
+  const isDeleted = currentHref?.includes("/list/");
+  const hasNoVideo = el.title.includes("没有任何视频投稿");
+
+  if (isDeleted && !hasNoVideo) {
     wrapper.title = el.title ? `${el.title}\n发现注销用户！右键可跳转` : "发现注销用户！右键可跳转";
     wrapper.style.cursor = "pointer";
+  } else if (isDeleted && hasNoVideo) {
+    wrapper.title = el.title;
+    wrapper.style.cursor = "not-allowed";
   } else {
-    wrapper.title = "";
-    wrapper.style.cursor = "";
+    wrapper.title = el.title;
   }
 
   // 更新数据

@@ -2,18 +2,22 @@ import type { BiliUser } from "@/core/types";
 
 export type DeletedFilter = "all" | "deleted" | "active";
 
+export interface DetailMatch {
+  before: string;
+  match: string;
+  after: string;
+  highlight: boolean;
+}
+
 export interface UserListStore {
   isOpen: boolean;
   users: BiliUser[];
   readonly filteredUsers: BiliUser[];
   readonly hasDeletedUsers: boolean;
   deletedFilter: DeletedFilter;
-  getDetailMatch(userId: string): {
-    before: string;
-    match: string;
-    after: string;
-    highlight: boolean;
-  } | null;
+  /** 卡片是否通过当前筛选（用于 x-show，避免重建 DOM） */
+  isUserVisible(userId: string): boolean;
+  getDetailMatch(userId: string): DetailMatch | null;
   isDark: boolean;
   fuzzySearchEnabled: boolean;
   silentAvatarUpdate: boolean;

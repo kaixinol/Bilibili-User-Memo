@@ -1,8 +1,8 @@
 <div
   class="user-box"
   x-data="userCard(user.id)"
-  x-show="currentUser"
-  :class="{ 'is-selected': isSelected, 'multi-select': isMultiSelect, 'has-detail-match': $store.userList.getDetailMatch(user.id) }"
+  x-show="currentUser && isVisible"
+  :class="{ 'is-selected': isSelected, 'multi-select': isMultiSelect, 'has-detail-match': detailMatch }"
   @click="handleCardClick($event)"
 >
   <label class="user-select" x-show="isMultiSelect" @click.stop>
@@ -70,11 +70,11 @@
       @input="handleInput($el)"
     />
   </div>
-  <template x-if="$store.userList.getDetailMatch(user.id)">
+  <template x-if="detailMatch">
     <div class="user-detail-match">
       <span class="user-info-label">详细备注</span>
       <span class="detail-match-text">
-        <span x-text="$store.userList.getDetailMatch(user.id)?.before"></span><mark x-show="$store.userList.getDetailMatch(user.id)?.highlight" x-text="$store.userList.getDetailMatch(user.id)?.match"></mark><span x-text="$store.userList.getDetailMatch(user.id)?.after"></span>
+        <span x-text="detailMatch?.before"></span><mark x-show="detailMatch?.highlight" x-text="detailMatch?.match"></mark><span x-text="detailMatch?.after"></span>
       </span>
     </div>
   </template>

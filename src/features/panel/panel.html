@@ -167,11 +167,13 @@
             name="bilibili-user-memo-panel-search"
             autocomplete="on"
             placeholder="搜索昵称、备注或ID..."
-            title="输入实时搜索，按 Enter 记录搜索历史"
+            title="停止输入后自动搜索（中文输入法需上屏），按 Enter 立即搜索"
             class="panel-search-input"
             x-model="draftSearchQuery"
-            @input="if (!$el.value.trim()) userList.searchQuery = ''"
-            @input.debounce.200ms="applySearchQuery()"
+            @input="handleSearchInput($el.value)"
+            @compositionstart="beginComposition()"
+            @compositionupdate="beginComposition()"
+            @compositionend="endComposition()"
           />
         </form>
       </search>
@@ -217,7 +219,7 @@
           class="panel-users-list"
         >
           <template
-            x-for="user in $store.userList.filteredUsers"
+            x-for="user in $store.userList.users"
             :key="user.id"
           >
             ${boxTemplate}

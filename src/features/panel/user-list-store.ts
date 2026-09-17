@@ -2,7 +2,7 @@ import Alpine from "alpinejs";
 import { userStore } from "@/core/store/store";
 import { createUserListStore, type InternalUserListStore } from "./user-list-factory";
 
-export type { UserListStore } from "./user-list-types";
+export type { DetailMatch, UserListStore } from "./user-list-types";
 
 export function registerUserStore() {
   if (Alpine.store("userList")) return;

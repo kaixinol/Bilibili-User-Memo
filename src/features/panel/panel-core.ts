@@ -137,16 +137,55 @@ export function registerPanelToggleBtn() {
   }));
 }
 
+/** 停止输入多久后才真正触发搜索 */
+const SEARCH_DEBOUNCE_MS = 200;
+
 export function registerPanelActions() {
   Alpine.data("panelActions", () => ({
     draftSearchQuery: "",
+    /** 输入法组合中：拼音还没上屏，此时的内容不该拿来搜索 */
+    isComposing: false,
+    searchTimer: 0,
     get userList(): UserListStore {
       return getUserListStore();
     },
     init() {
       this.draftSearchQuery = this.userList.searchQuery;
     },
+    handleSearchInput(value: string) {
+      if (!String(value ?? "").trim()) {
+        this.cancelPendingSearch();
+        this.userList.searchQuery = "";
+        return;
+      }
+      this.scheduleSearch();
+    },
+    scheduleSearch(delay = SEARCH_DEBOUNCE_MS) {
+      this.cancelPendingSearch();
+      // 组合中不算「打完字」，直接跳过；上屏后由 compositionend 重新排程
+      if (this.isComposing) return;
+      this.searchTimer = window.setTimeout(() => {
+        this.searchTimer = 0;
+        this.applySearchQuery();
+      }, delay);
+    },
+    cancelPendingSearch() {
+      if (this.searchTimer) {
+        window.clearTimeout(this.searchTimer);
+        this.searchTimer = 0;
+      }
+    },
+    beginComposition() {
+      this.isComposing = true;
+      this.cancelPendingSearch();
+    },
+    endComposition() {
+      this.isComposing = false;
+      // 延后一个宏任务：compositionend 与最终 input 的先后顺序各浏览器不一致
+      this.scheduleSearch(0);
+    },
     commitSearch() {
+      this.cancelPendingSearch();
       this.applySearchQuery();
     },
     applySearchQuery() {

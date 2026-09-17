@@ -1,6 +1,6 @@
 import Alpine from "alpinejs";
 import type { BiliUser } from "@/core/types";
-import type { UserListStore } from "./user-list-store";
+import type { DetailMatch, UserListStore } from "./user-list-store";
 import { confirmDialog, promptText, showAlert } from "./dialogs";
 import { biliFixAPIReady } from "@/core/api/bili-api";
 import { isNoFaceAvatar } from "@/core/dom/avatar-utils";
@@ -68,6 +68,12 @@ export function registerUserCard() {
     },
     get currentUser(): BiliUser | undefined {
       return this.userList.getUserById(this.userId);
+    },
+    get isVisible(): boolean {
+      return this.userList.isUserVisible(this.userId);
+    },
+    get detailMatch(): DetailMatch | null {
+      return this.userList.getDetailMatch(this.userId);
     },
     get isSelected(): boolean {
       return this.userList.selectedIds.includes(this.userId);

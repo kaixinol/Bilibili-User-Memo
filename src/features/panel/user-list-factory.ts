@@ -6,7 +6,11 @@ import {
   fetchLatestProfiles,
   readImportUsersFromDialog,
 } from "./user-list-io";
-import { getSearchForms, matchesChineseSearch } from "@/utils/chinese-search";
+import {
+  getSearchForms,
+  matchesChineseSearch,
+  type SearchForms,
+} from "@/utils/chinese-search";
 import {
   getGmValue,
   getPanelPreloadAllCards,
@@ -15,18 +19,109 @@ import {
 } from "@/utils/gm-storage";
 import { afterFramesAndIdle, delay } from "@/utils/scheduler";
 import { showAlert } from "./dialogs";
-import type { DeletedFilter, UserListStore } from "./user-list-types";
+import type {
+  DeletedFilter,
+  DetailMatch,
+  UserListStore,
+} from "./user-list-types";
 
 export interface InternalUserListStore extends UserListStore {
   _usersMap: Map<string, BiliUser>;
   _usersList: BiliUser[];
   syncUsersSnapshot(users: readonly BiliUser[]): void;
-  getDetailMatch(userId: string): {
-    before: string;
-    match: string;
-    after: string;
-    highlight: boolean;
-  } | null;
+  /** 当前筛选结果快照（带缓存，避免每个卡片重复过滤） */
+  _filterState(): FilterState;
+  getDetailMatch(userId: string): DetailMatch | null;
+}
+
+export interface FilterState {
+  /** 通过筛选的用户（保持原始顺序） */
+  list: BiliUser[];
+  /** 通过筛选的用户 id，供卡片 O(1) 判断是否可见 */
+  visible: Set<string>;
+  /** 详细备注的命中片段，仅在有搜索词时计算 */
+  detailMatches: Map<string, DetailMatch>;
+}
+
+function buildDetailMatch(
+  detail: string | undefined,
+  forms: SearchForms,
+  enableFuzzySearch: boolean,
+): DetailMatch | null {
+  if (!detail || !detail.trim()) return null;
+  if (!matchesChineseSearch(detail, forms, enableFuzzySearch)) return null;
+
+  const lower = detail.toLowerCase();
+  for (const variant of forms.variants) {
+    const idx = lower.indexOf(variant);
+    if (idx !== -1) {
+      const start = Math.max(0, idx - 30);
+      const end = Math.min(detail.length, idx + variant.length + 30);
+      return {
+        before: (start > 0 ? "…" : "") + detail.slice(start, idx),
+        match: detail.slice(idx, idx + variant.length),
+        after:
+          detail.slice(idx + variant.length, end) +
+          (end < detail.length ? "…" : ""),
+        highlight: true,
+      };
+    }
+  }
+
+  // 模糊匹配无精确子串：仅展示开头片段，不高亮
+  const snip = Math.min(detail.length, 60);
+  return {
+    before: detail.slice(0, snip) + (detail.length > snip ? "…" : ""),
+    match: "",
+    after: "",
+    highlight: false,
+  };
+}
+
+/**
+ * 一次遍历同时算出：命中列表、命中 id 集合、详细备注高亮片段。
+ * 搜索词为空时不做任何字符串匹配。
+ */
+function computeFilterState(
+  users: readonly BiliUser[],
+  query: string,
+  enableFuzzySearch: boolean,
+  deletedFilter: DeletedFilter,
+): FilterState {
+  const forms = query ? getSearchForms(query) : null;
+  const searching = Boolean(forms?.raw);
+
+  const list: BiliUser[] = [];
+  const visible = new Set<string>();
+  const detailMatches = new Map<string, DetailMatch>();
+
+  for (const user of users) {
+    if (searching && forms) {
+      const hit =
+        String(user.id || "").includes(query) ||
+        matchesChineseSearch(user.nickname, forms, enableFuzzySearch) ||
+        matchesChineseSearch(user.memo, forms, enableFuzzySearch) ||
+        matchesChineseSearch(user.memoDetail, forms, enableFuzzySearch);
+      if (!hit) continue;
+    }
+
+    if (deletedFilter === "deleted" && !user.isDeleted) continue;
+    if (deletedFilter === "active" && user.isDeleted) continue;
+
+    list.push(user);
+    visible.add(user.id);
+
+    if (searching && forms) {
+      const match = buildDetailMatch(
+        user.memoDetail,
+        forms,
+        enableFuzzySearch,
+      );
+      if (match) detailMatches.set(user.id, match);
+    }
+  }
+
+  return { list, visible, detailMatches };
 }
 
 function syncUsersSnapshot(store: InternalUserListStore, users: readonly BiliUser[]) {
@@ -78,6 +173,12 @@ export function createUserListStore(): InternalUserListStore {
 
   const rawAutoOpen = getGmValue<boolean>("debug.autoOpenPanel", false);
 
+  // 筛选结果缓存：用户数据每次同步都会 bump usersVersion，
+  // 因此 (usersVersion, query, fuzzy, deletedFilter) 足以作为缓存键。
+  let usersVersion = 0;
+  let filterCacheKey = "";
+  let filterCache: FilterState | null = null;
+
   return {
     isOpen: rawAutoOpen,
     _usersMap: Alpine.reactive(new Map<string, BiliUser>()),
@@ -90,6 +191,7 @@ export function createUserListStore(): InternalUserListStore {
       return this._usersMap.get(id);
     },
   syncUsersSnapshot(users: readonly BiliUser[]) {
+    usersVersion++;
     syncUsersSnapshot(this, users);
     resetDeletedFilterIfNoDeleted(this);
   },
@@ -115,89 +217,36 @@ export function createUserListStore(): InternalUserListStore {
       return this._usersList.some((user) => user.isDeleted);
     },
 
-    get filteredUsers() {
+    _filterState(): FilterState {
+      // 注意：这里必须读取全部输入，Alpine 才能正确收集依赖
       const query = this.searchQuery.trim();
-      let list = this._usersList;
+      const fuzzy = Boolean(this.fuzzySearchEnabled);
+      const deletedFilter = this.deletedFilter;
+      const key = `${usersVersion}|${query}|${fuzzy ? 1 : 0}|${deletedFilter}`;
 
-      if (query) {
-        const queryForms = getSearchForms(query);
-        if (queryForms.raw) {
-          list = list.filter((user) => {
-            return (
-              String(user.id || "").includes(query) ||
-              matchesChineseSearch(
-                user.nickname,
-                queryForms,
-                this.fuzzySearchEnabled,
-              ) ||
-              matchesChineseSearch(
-                user.memo,
-                queryForms,
-                this.fuzzySearchEnabled,
-              ) ||
-              matchesChineseSearch(
-                user.memoDetail,
-                queryForms,
-                this.fuzzySearchEnabled,
-              )
-            );
-          });
-        }
-      }
+      if (filterCache && filterCacheKey === key) return filterCache;
 
-      if (this.deletedFilter === "deleted") {
-        list = list.filter((user) => user.isDeleted);
-      } else if (this.deletedFilter === "active") {
-        list = list.filter((user) => !user.isDeleted);
-      }
-
-      return list;
+      const next = computeFilterState(
+        this._usersList,
+        query,
+        fuzzy,
+        deletedFilter,
+      );
+      filterCacheKey = key;
+      filterCache = next;
+      return next;
     },
 
-    getDetailMatch(userId: string): {
-      before: string;
-      match: string;
-      after: string;
-      highlight: boolean;
-    } | null {
-      const query = this.searchQuery.trim();
-      if (!query) return null;
+    get filteredUsers() {
+      return this._filterState().list;
+    },
 
-      const user = this.getUserById(userId);
-      const detail = user?.memoDetail;
-      if (!detail || !detail.trim()) return null;
+    isUserVisible(userId: string): boolean {
+      return this._filterState().visible.has(userId);
+    },
 
-      const forms = getSearchForms(query);
-      if (!forms.raw) return null;
-      if (!matchesChineseSearch(detail, forms, this.fuzzySearchEnabled)) {
-        return null;
-      }
-
-      const lower = detail.toLowerCase();
-      for (const variant of forms.variants) {
-        const idx = lower.indexOf(variant);
-        if (idx !== -1) {
-          const start = Math.max(0, idx - 30);
-          const end = Math.min(detail.length, idx + variant.length + 30);
-          return {
-            before: (start > 0 ? "…" : "") + detail.slice(start, idx),
-            match: detail.slice(idx, idx + variant.length),
-            after:
-              detail.slice(idx + variant.length, end) +
-              (end < detail.length ? "…" : ""),
-            highlight: true,
-          };
-        }
-      }
-
-      // 模糊匹配无精确子串：仅展示开头片段，不高亮
-      const snip = Math.min(detail.length, 60);
-      return {
-        before: detail.slice(0, snip) + (detail.length > snip ? "…" : ""),
-        match: "",
-        after: "",
-        highlight: false,
-      };
+    getDetailMatch(userId: string): DetailMatch | null {
+      return this._filterState().detailMatches.get(userId) ?? null;
     },
 
     updateUser(id: string, updates: Partial<BiliUser>) {

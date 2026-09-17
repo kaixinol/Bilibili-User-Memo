@@ -51,21 +51,21 @@
     ></a>
   </div>
   <div class="user-note-section"
-    x-data="memoEditor(user.id, currentUser?.memo || '')" x-effect="syncDraft()"
+    x-data="memoEditor(user.id)"
     @contextmenu.prevent="$store.memoDetailDialog.open(user.id)"
     :title="currentUser?.memoDetail || '右键可设置详细备注'" maxlength="240"
     minlength="1">
     <div class="user-info-label">备注</div>
     <input
       x-ref="memoInput"
-      x-model="memoDraft"
-      :readonly="!isEditing"
+      x-model.blur="memo"
+      :readonly="!isEditing || isMultiSelect"
       :class="{ 'editing': isEditing }"
       class="user-note-input"
-      @click="startEdit()"
-      @blur="commit()"
-      @keydown.enter.prevent="blurInput()"
-      @keydown.escape.prevent="cancel(); blurInput()"
+      @click="isEditing = true"
+      @blur="isEditing = false"
+      @keydown.enter.prevent="$el.blur()"
+      @keydown.escape.prevent="cancelEdit()"
       maxlength="24"
       @input="handleInput($el)"
     />

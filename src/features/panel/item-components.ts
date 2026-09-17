@@ -218,41 +218,33 @@ export function registerAvatarEditor() {
 }
 
 export function registerMemoEditor() {
-  Alpine.data("memoEditor", (userId: string, initialMemo = "") => ({
+  Alpine.data("memoEditor", (userId: string) => ({
     userId,
     isEditing: false,
-    memoDraft: String(initialMemo ?? ""),
     get isMultiSelect(): boolean {
       return getUserListStore().isMultiSelect;
     },
-    get currentMemo(): string {
-      return getUserListStore().getUserById(this.userId)?.memo || "";
+    /**
+     * x-model 会识别 `{ get, set }` 形态的值并调用它的 setter
+     * （见 Alpine 源码 x-model.js 的 isGetterSetter 分支），
+     * 配合模板侧的 `x-model.blur` 就能只在失焦时写回 store，省掉整套 draft 状态机。
+     */
+    get memo(): { get(): string; set(value: string): void } {
+      const userList = getUserListStore();
+      return {
+        get: () => userList.getUserById(userId)?.memo ?? "",
+        set: (value) => userList.updateUser(userId, { memo: value }),
+      };
     },
-    syncDraft() {
-      if (!this.isEditing) {
-        this.memoDraft = this.currentMemo;
-      }
-    },
-    startEdit() {
-      if (this.isMultiSelect) return;
-      this.isEditing = true;
-      this.$nextTick(() => {
-        this.$refs.memoInput?.focus();
-      });
-    },
-    commit() {
-      this.isEditing = false;
-      const nextMemo = typeof this.memoDraft === "string"
-        ? this.memoDraft
-        : String(this.memoDraft ?? "");
-      getUserListStore().updateUser(this.userId, { memo: nextMemo });
-    },
-    cancel() {
-      this.memoDraft = this.currentMemo;
-      this.isEditing = false;
-    },
-    blurInput() {
-      this.$refs.memoInput?.blur();
+    /**
+     * Esc 回滚。草稿层被去掉后 input.value 是唯一的暂存区，
+     * 所以必须先把 DOM 值显式恢复成 store 里的旧值，再让它失焦——
+     * 随后 x-model.blur 写回同一个值，等于幂等。
+     */
+    cancelEdit() {
+      const input = this.$refs.memoInput as HTMLInputElement | undefined;
+      if (input) input.value = getUserListStore().getUserById(userId)?.memo ?? "";
+      input?.blur();
     },
     handleInput(input: HTMLInputElement) {
       validateInputLength(input);

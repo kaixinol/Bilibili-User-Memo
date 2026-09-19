@@ -35,14 +35,12 @@
   min-height: max(21px, calc(1em + 6px));
 }
 
-/* hover 状态 - 使用 color-mix 动态提亮背景色，适配所有主题 */
-.bili-memo-tag {
-  cursor: pointer;
-}
-
-/* 提及场景下 bili-memo-tag 可能渲染为 <a> 标签 */
-a.bili-memo-tag {
-  color: var(--Lb7, #58B1D4);
+/* 提及场景：沿用 B 站链接色，避免 Minimal 备注把站内链接整体改色
+   对应规则：动态正文-提及 / 视频简介-提及 / 视频-提及 */
+p a.bili-memo-tag[href*="space.bilibili.com"],
+.basic-desc-info a.mention-user.bili-memo-tag,
+a.bili-memo-tag[data-type="mention"] {
+  color: var(--custom-font-color, var(--Lb7, #58B1D4));
 }
 
 .bili-memo-input {

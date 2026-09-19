@@ -16,6 +16,18 @@ const wrapperCache = new WeakMap<HTMLElement, HTMLElement>();
 
 const middleClickBound = new WeakSet<HTMLElement>();
 
+/**
+ * 元素内部是否已有非空文字选区（用户正在/刚做完拖选，打算自己复制）
+ */
+function hasTextSelectionInside(element: HTMLElement): boolean {
+  const selection = window.getSelection();
+  if (!selection || selection.isCollapsed || selection.rangeCount === 0) return false;
+  if (!selection.toString().trim()) return false;
+  // 允许部分包含：选区从标签内拖到外面（或反过来）时也算「标签里有选中文字」
+  // 注意：双击选词救不了 —— 第一下 click 时选区还没产生，那时已经进编辑态了
+  return selection.containsNode(element, true);
+}
+
 function openMemoDetailDialog(uid: string) {
   try {
     (Alpine.store("memoDetailDialog") as { open?: (uid: string) => void })?.open?.(uid);
@@ -111,6 +123,9 @@ function renderEditable(
     }
     wrapper.addEventListener("click", (e) => {
       e.stopPropagation();
+      // 按住 Alt、或标签内已有选中文字时都不进入编辑态：
+      // 留给用户自己选中复制，避免弹出 input 顶掉选区
+      if (e.altKey || hasTextSelectionInside(wrapper!)) return;
       e.preventDefault();
       const uid = wrapper?.dataset.bilimemoUid;
       const originalName = wrapper?.dataset.bilimemoOriginal || meta.originalName;

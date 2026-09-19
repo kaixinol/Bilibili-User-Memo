@@ -41,31 +41,31 @@ export function registerPanelBindings() {
     type: "button",
     class: "panel-btn",
     title: "导入JSON文件，支持老格式",
-    "@click": "userList.importData()",
+    "@click": "$store.userList.importData()",
   }));
 
   Alpine.bind("panelMultiSelectBtn", () => ({
     type: "button",
     title: "按Ctrl + A 全选 / 反选",
-    ":class": "{ 'panel-btn': true, 'btn-active': userList.isMultiSelect }",
-    "@click": "userList.toggleMultiSelect()",
+    ":class": "{ 'panel-btn': true, 'btn-active': $store.userList.isMultiSelect }",
+    "@click": "$store.userList.toggleMultiSelect()",
   }));
 
   Alpine.bind("panelRefreshBtn", () => ({
     type: "button",
     ":disabled":
-      "userList.isRefreshing || (userList.isMultiSelect && userList.selectedIds.length === 0)",
+      "$store.userList.isRefreshing || ($store.userList.isMultiSelect && $store.userList.selectedIds.length === 0)",
     ":class":
-      "{ 'panel-btn': true, 'btn-disabled': userList.isRefreshing || (userList.isMultiSelect && userList.selectedIds.length === 0) }",
+      "{ 'panel-btn': true, 'btn-disabled': $store.userList.isRefreshing || ($store.userList.isMultiSelect && $store.userList.selectedIds.length === 0) }",
     ":title":
-      "userList.isRefreshing ? '正在同步 Bilibili 最新数据...' : (userList.isMultiSelect ? (userList.selectedIds.length === 0 ? '请选择要刷新的用户' : '刷新所选用户数据') : '刷新UP主名字和头像')",
-    "@click": "userList.refreshData()",
+      "$store.userList.isRefreshing ? '正在同步 Bilibili 最新数据...' : ($store.userList.isMultiSelect ? ($store.userList.selectedIds.length === 0 ? '请选择要刷新的用户' : '刷新所选用户数据') : '刷新UP主名字和头像')",
+    "@click": "$store.userList.refreshData()",
   }));
 
   Alpine.bind("panelExportBtn", () => ({
     type: "button",
     class: "panel-btn",
-    "@click": "userList.exportData()",
+    "@click": "$store.userList.exportData()",
   }));
 }
 

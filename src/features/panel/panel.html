@@ -114,14 +114,14 @@
         添加
       </button>
       <button x-bind="panelMultiSelectBtn">
-        <span x-show="!userList.isMultiSelect">多选用户</span>
-        <span x-show="userList.isMultiSelect">退出多选</span>
+        <span x-show="!$store.userList.isMultiSelect">多选用户</span>
+        <span x-show="$store.userList.isMultiSelect">退出多选</span>
       </button>
       <button
         class="panel-icon-btn"
-        x-show="userList.isMultiSelect"
+        x-show="$store.userList.isMultiSelect"
         x-transition.opacity.scale
-        :disabled="userList.selectedIds.length === 0"
+        :disabled="$store.userList.selectedIds.length === 0"
         @click="confirmRemoveSelected()"
         title="删除所选用户"
       >
@@ -140,22 +140,22 @@
           <path d="M3 6h18" />
           <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
         </svg>
-        <span class="panel-icon-text" x-show="userList.isMultiSelect">已选
-          <span x-text="userList.selectedIds.length"></span></span>
+        <span class="panel-icon-text" x-show="$store.userList.isMultiSelect">已选
+          <span x-text="$store.userList.selectedIds.length"></span></span>
       </button>
       <div class="panel-title">备注列表</div>
       <button x-bind="panelRefreshBtn">
         <span
-          x-show="!userList.isRefreshing && (!userList.isMultiSelect || userList.selectedIds.length === 0)"
+          x-show="!$store.userList.isRefreshing && (!$store.userList.isMultiSelect || $store.userList.selectedIds.length === 0)"
         >⚡️一键刷新数据</span>
         <span
-          x-show="!userList.isRefreshing && userList.isMultiSelect && userList.selectedIds.length > 0"
+          x-show="!$store.userList.isRefreshing && $store.userList.isMultiSelect && $store.userList.selectedIds.length > 0"
         >⚡️刷新所选</span>
 
-        <span x-show="userList.isRefreshing">
+        <span x-show="$store.userList.isRefreshing">
           <span class="loading-spinner">⏳</span>
-          正在刷新 (<span x-text="userList.refreshCurrent"></span>/<span
-            x-text="userList.refreshTotal"
+          正在刷新 (<span x-text="$store.userList.refreshCurrent"></span>/<span
+            x-text="$store.userList.refreshTotal"
           ></span>)
         </span>
       </button>
@@ -183,7 +183,7 @@
       >
         <input
           type="checkbox"
-          :checked="userList.fuzzySearchEnabled"
+          :checked="$store.userList.fuzzySearchEnabled"
           @change="toggleFuzzySearch($event)"
         />
         <span>模糊搜索</span>
@@ -191,12 +191,12 @@
       <label
         class="panel-deleted-filter"
         title="按账号注销状态筛选"
-        x-show="userList.hasDeletedUsers"
+        x-show="$store.userList.hasDeletedUsers"
       >
         <span>注销筛选</span>
         <select
-          :value="userList.deletedFilter"
-          @change="userList.setDeletedFilter($event.target.value)"
+          :value="$store.userList.deletedFilter"
+          @change="$store.userList.setDeletedFilter($event.target.value)"
         >
           <option value="all">全部</option>
           <option value="deleted">仅显示已注销</option>

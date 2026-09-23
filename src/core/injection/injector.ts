@@ -229,7 +229,7 @@ class PageInjector {
         let preResolvedUid: string | null = null;
         if (storedUid) {
           const originalName =
-            rule.originalNameResolver?.(el, rule) || getElementOriginalName(el, rule);
+            rule.originalNameResolver?.(el) || getElementOriginalName(el, rule);
           preResolvedUid = await this.resolveElementUid(el, rule, originalName);
           if (preResolvedUid && storedUid === preResolvedUid) continue;
         }
@@ -259,7 +259,7 @@ class PageInjector {
 
     try {
       const originalName =
-        rule.originalNameResolver?.(el, rule) || getElementOriginalName(el, rule);
+        rule.originalNameResolver?.(el) || getElementOriginalName(el, rule);
       const uid = preResolvedUid ?? await this.resolveElementUid(el, rule, originalName);
       uidResolved = Boolean(uid);
       if (!uid) return;
@@ -289,7 +289,7 @@ class PageInjector {
     originalName: string,
   ): Promise<string | null> {
     if (rule.uidResolver) {
-      const uid = await rule.uidResolver(el, rule);
+      const uid = await rule.uidResolver(el);
       if (uid) return uid;
       logger.warn("[resolveElementUid] uidResolver returned empty", {
         ruleName: rule.name,

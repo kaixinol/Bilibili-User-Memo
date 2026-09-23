@@ -107,7 +107,7 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Minimal,
             aSelector: ".up-name",
             container: "div.popular-container",
-            uidResolver: (el) =>
+            uidResolver: el =>
                 (el.closest(".video-card") as HTMLElement | null)?.__vue__?.$props?.videoData
                     ?.owner?.mid?.toString() ||
                 null,
@@ -150,7 +150,7 @@ const rawConfig: RawConfig[] = [
             aSelector: 'div[data-id^="contact"]',
             textSelector: 'div[class*="_SessionItem__Name"]',
             container: 'div[class^="_Sidebar_"]',
-            uidResolver: (el) =>
+            uidResolver: el =>
                 el.closest('[data-id^="contact_"]')?.getAttribute("data-id")?.split("_")?.[1] || null,
         }
     },
@@ -203,9 +203,7 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Editable,
             textSelector: "span.bili-dyn-title__text",
             container: "div.bili-dyn-item__main",
-            uidResolver: (el) => {
-                return getUidFromVueInstance(el.parentElement!)
-            }
+            uidResolver: el => getUidFromVueInstance(el.parentElement),
         }
     },
     {
@@ -267,9 +265,7 @@ const rawConfig: RawConfig[] = [
             name: "动态（新）",
             styleScope: StyleScope.Editable,
             aSelector: "div.opus-module-author__name",
-            uidResolver: el => {
-                return getOpusAuthorUid(el);
-            }
+            uidResolver: getOpusAuthorUid,
         }
     },
     {
@@ -278,9 +274,7 @@ const rawConfig: RawConfig[] = [
             name: "动态（旧）",
             styleScope: StyleScope.Minimal,
             textSelector: "span.bili-dyn-title__text",
-            uidResolver: el => {
-                return getUidFromVueInstance((el as HTMLSpanElement).parentElement);
-            }
+            uidResolver: el => getUidFromVueInstance(el.parentElement),
         }
     }, {
         urlPattern: new RegExp(`${USER_SPACE_DYNAMIC.source}|${NEW_DYNAMIC_OPUS_ONE.source}|${DYNAMIC_PAGE.source}|${OLD_DYNAMIC_PAGE.source}`),
@@ -289,9 +283,7 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Minimal,
             textSelector: "span.dyn-orig-author__name",
             container: "div.dyn-orig-author",
-            uidResolver: el => {
-                return getOpusAuthorUid(el.parentElement) || getOpusAuthorUid(el);
-            }
+            uidResolver: el => getOpusAuthorUid(el.parentElement) || getOpusAuthorUid(el),
         }
     },
     {

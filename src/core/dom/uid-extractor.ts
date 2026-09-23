@@ -51,6 +51,30 @@ export function getOpusAuthorUid(el: Element | null | undefined): string | null 
   );
 }
 
+/**
+ * 从元素上的 Vue 组件 props 取作者 mid（内部 API，非稳定公共接口）。
+ *
+ * ⚠️ 依赖 `closest("a").__vueParentComponent.props.info.author_mid`，
+ * 不发请求；组件没渲染该字段时返回 null，交给 matchByName 兜底。
+ */
+export function getMidFromVueProps(el: Element | null | undefined): string | null {
+  const card = el?.closest("a") as any;
+  return _normalizeUid(card?.__vueParentComponent?.props?.info?.author_mid);
+}
+
+/**
+ * 从「正在直播」列表项的 Vue 组件 props 取 mid（内部 API，非稳定公共接口）。
+ *
+ * ⚠️ 依赖 `closest("a").__vueParentComponent.props.list[].mid`（按 link 匹配）；
+ * href 里的数字是直播间 ID 不是 UID，不能用。缺失时返回 null，交给 matchByName 兜底。
+ */
+export function getMidFromLiveUpItem(el: Element | null | undefined): string | null {
+  const item = el?.closest("a") as any;
+  const href = item?.getAttribute("href") ?? "";
+  const list = item?.__vueParentComponent?.props?.list;
+  return _normalizeUid(list?.find((i: any) => i.link && href.startsWith(i.link))?.mid);
+}
+
 function _getAttr(el: Element, name: string): string | null {
   return _normalizeUid(el.getAttribute(name));
 }

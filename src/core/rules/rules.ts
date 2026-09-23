@@ -1,4 +1,9 @@
-import { getOpusAuthorUid, getUidFromVueInstance } from "@/core/dom/uid-extractor";
+import {
+    getMidFromLiveUpItem,
+    getMidFromVueProps,
+    getOpusAuthorUid,
+    getUidFromVueInstance,
+} from "@/core/dom/uid-extractor";
 import { type RawConfig, StyleScope } from "./rule-types";
 
 export { StyleScope, } from "./rule-types";
@@ -240,7 +245,8 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Minimal,
             textSelector: "div.header-history-card__info--name span",
             container: "div.history-panel-popover",
-            matchByName: true,
+            uidResolver: getMidFromVueProps,
+            matchByName: true, // 兜底
         }
     },
     {
@@ -251,7 +257,8 @@ const rawConfig: RawConfig[] = [
             aSelector: "a.up-item",
             textSelector: "div.up-name",
             container: "div.living-up-list",
-            matchByName: true, // 因为直播间ID不是UID
+            uidResolver: getMidFromLiveUpItem, // href 是直播间ID不是UID，mid 只能在组件 props 里取
+            matchByName: true,
         }
     },
     {

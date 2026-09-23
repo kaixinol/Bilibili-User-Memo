@@ -40,7 +40,7 @@
 p a.bili-memo-tag[href*="space.bilibili.com"],
 .basic-desc-info a.mention-user.bili-memo-tag,
 a.bili-memo-tag[data-type="mention"] {
-  color: var(--custom-font-color, var(--Lb7, #58B1D4));
+  color: var(--Lb7, #58B1D4);
 }
 
 .bili-memo-input {

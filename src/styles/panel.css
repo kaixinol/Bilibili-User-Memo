@@ -511,15 +511,12 @@
   &:not([open]) {
     display: none;
   }
-}
 
-.add-user-dialog-backdrop {
-  position: absolute;
-  inset: 0;
-  background: rgb(0 0 0 / 50%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  /* 变暗交给原生 top layer，省掉一层居中用的 backdrop div。
+     命中测试实测：点空白区时 event.target 就是 dialog 本身，@click.self 照样成立。 */
+  &::backdrop {
+    background: rgb(0 0 0 / 50%);
+  }
 }
 
 .add-user-dialog-content {

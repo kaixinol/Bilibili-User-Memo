@@ -291,98 +291,94 @@
   class="add-user-dialog"
   x-effect="if ($store.addUserDialog.isOpen) { $el.showModal(); $nextTick(() => $refs.addUserUid?.focus()); } else { $el.close(); }"
   @keydown.escape.window="$store.addUserDialog.close()"
+  @click.self="$store.addUserDialog.close()"
 >
-  <div
-    class="add-user-dialog-backdrop"
-    @click.self="$store.addUserDialog.close()"
-  >
-    <div class="add-user-dialog-content">
-      <div class="add-user-dialog-header">
-        <h3>添加用户</h3>
+  <div class="add-user-dialog-content">
+    <div class="add-user-dialog-header">
+      <h3>添加用户</h3>
+      <button
+        type="button"
+        class="add-user-dialog-close"
+        @click="$store.addUserDialog.close()"
+      >
+        ×
+      </button>
+    </div>
+    <form
+      @submit.prevent="$store.addUserDialog.submit()"
+    >
+      <div class="add-user-dialog-body">
+        <div class="add-user-field">
+          <label for="add-user-uid">UID <span class="required"
+            >*</span></label>
+          <input
+            id="add-user-uid"
+            type="text"
+            inputmode="numeric"
+            pattern="[0-9]+"
+            title="UID 只能包含数字"
+            required
+            x-ref="addUserUid"
+            x-model.trim="$store.addUserDialog.uid"
+            placeholder="请输入用户 UID"
+            :disabled="$store.addUserDialog.isLoading"
+          />
+        </div>
+        <div class="add-user-field">
+          <label for="add-user-memo">备注 <span class="required"
+            >*</span></label>
+          <input
+            id="add-user-memo"
+            type="text"
+            pattern=".*\S.*"
+            title="请输入备注"
+            required
+            x-model.trim="$store.addUserDialog.memo"
+            placeholder="请输入备注（必填）"
+            :disabled="$store.addUserDialog.isLoading"
+          />
+        </div>
+        <div class="add-user-field">
+          <label for="add-user-detail">详细备注（可选）</label>
+          <textarea
+            id="add-user-detail"
+            x-model="$store.addUserDialog.memoDetail"
+            placeholder="选填，最多 240 字"
+            rows="3"
+            maxlength="240"
+            style="width: 100%; resize: vertical;"
+            :disabled="$store.addUserDialog.isLoading"
+          ></textarea>
+        </div>
+        <div class="add-user-field">
+          <label for="add-user-avatar">头像 URL（可选）</label>
+          <input
+            id="add-user-avatar"
+            type="text"
+            x-model.trim="$store.addUserDialog.avatar"
+            placeholder="留空将自动获取头像，支持 http(s) 或 data:"
+            :disabled="$store.addUserDialog.isLoading"
+          />
+        </div>
+      </div>
+      <div class="add-user-dialog-footer">
+        <button
+          type="submit"
+          class="panel-btn"
+          :disabled="$store.addUserDialog.isLoading"
+        >
+          <span x-show="$store.addUserDialog.isLoading">添加中...</span>
+          <span x-show="!$store.addUserDialog.isLoading">添加</span>
+        </button>
         <button
           type="button"
-          class="add-user-dialog-close"
+          class="panel-btn panel-btn-secondary"
           @click="$store.addUserDialog.close()"
         >
-          ×
+          取消
         </button>
       </div>
-      <form
-        @submit.prevent="$store.addUserDialog.submit()"
-      >
-        <div class="add-user-dialog-body">
-          <div class="add-user-field">
-            <label for="add-user-uid">UID <span class="required"
-              >*</span></label>
-            <input
-              id="add-user-uid"
-              type="text"
-              inputmode="numeric"
-              pattern="[0-9]+"
-              title="UID 只能包含数字"
-              required
-              x-ref="addUserUid"
-              x-model.trim="$store.addUserDialog.uid"
-              placeholder="请输入用户 UID"
-              :disabled="$store.addUserDialog.isLoading"
-            />
-          </div>
-          <div class="add-user-field">
-            <label for="add-user-memo">备注 <span class="required"
-              >*</span></label>
-            <input
-              id="add-user-memo"
-              type="text"
-              pattern=".*\S.*"
-              title="请输入备注"
-              required
-              x-model.trim="$store.addUserDialog.memo"
-              placeholder="请输入备注（必填）"
-              :disabled="$store.addUserDialog.isLoading"
-            />
-          </div>
-          <div class="add-user-field">
-            <label for="add-user-detail">详细备注（可选）</label>
-            <textarea
-              id="add-user-detail"
-              x-model="$store.addUserDialog.memoDetail"
-              placeholder="选填，最多 240 字"
-              rows="3"
-              maxlength="240"
-              style="width: 100%; resize: vertical;"
-              :disabled="$store.addUserDialog.isLoading"
-            ></textarea>
-          </div>
-          <div class="add-user-field">
-            <label for="add-user-avatar">头像 URL（可选）</label>
-            <input
-              id="add-user-avatar"
-              type="text"
-              x-model.trim="$store.addUserDialog.avatar"
-              placeholder="留空将自动获取头像，支持 http(s) 或 data:"
-              :disabled="$store.addUserDialog.isLoading"
-            />
-          </div>
-        </div>
-        <div class="add-user-dialog-footer">
-          <button
-            type="submit"
-            class="panel-btn"
-            :disabled="$store.addUserDialog.isLoading"
-          >
-            <span x-show="$store.addUserDialog.isLoading">添加中...</span>
-            <span x-show="!$store.addUserDialog.isLoading">添加</span>
-          </button>
-          <button
-            type="button"
-            class="panel-btn panel-btn-secondary"
-            @click="$store.addUserDialog.close()"
-          >
-            取消
-          </button>
-        </div>
-      </form>
-    </div>
+    </form>
   </div>
 </dialog>
 
@@ -392,40 +388,36 @@
   class="add-user-dialog"
   x-effect="if ($store.memoDetailDialog.isOpen) { $el.showModal(); $nextTick(() => $refs.memoDetailInput?.focus()); } else { $el.close(); }"
   @keydown.escape.window="$store.memoDetailDialog.close()"
+  @click.self="$store.memoDetailDialog.close()"
 >
-  <div
-    class="add-user-dialog-backdrop"
-    @click.self="$store.memoDetailDialog.close()"
-  >
-    <div class="add-user-dialog-content">
-      <div class="add-user-dialog-header">
-        <h3>详细备注</h3>
-        <button
-          type="button"
-          class="add-user-dialog-close"
-          title="关闭，不保存本次修改"
-          @mousedown.prevent
-          @click="$store.memoDetailDialog.close()"
-        >
-          ×
-        </button>
-      </div>
-      <form novalidate>
-        <div class="add-user-dialog-body">
-          <div class="add-user-field">
-            <textarea
-              x-ref="memoDetailInput"
-              x-model="$store.memoDetailDialog.detail"
-              placeholder="输入详细备注，失焦后自动保存"
-              rows="4"
-              maxlength="240"
-              @input="$store.memoDetailDialog.handleInput($el)"
-              @blur="$store.memoDetailDialog.save()"
-              style="width: 100%; resize: vertical;"
-            ></textarea>
-          </div>
-        </div>
-      </form>
+  <div class="add-user-dialog-content">
+    <div class="add-user-dialog-header">
+      <h3>详细备注</h3>
+      <button
+        type="button"
+        class="add-user-dialog-close"
+        title="关闭，不保存本次修改"
+        @mousedown.prevent
+        @click="$store.memoDetailDialog.close()"
+      >
+        ×
+      </button>
     </div>
+    <form novalidate>
+      <div class="add-user-dialog-body">
+        <div class="add-user-field">
+          <textarea
+            x-ref="memoDetailInput"
+            x-model="$store.memoDetailDialog.detail"
+            placeholder="输入详细备注，失焦后自动保存"
+            rows="4"
+            maxlength="240"
+            @input="$store.memoDetailDialog.handleInput($el)"
+            @blur="$store.memoDetailDialog.save()"
+            style="width: 100%; resize: vertical;"
+          ></textarea>
+        </div>
+      </div>
+    </form>
   </div>
 </dialog>

@@ -16,23 +16,17 @@ type ImportReadResult =
   | { status: "ok"; users: BiliUser[] };
 
 function pickJsonFile(): Promise<File | null> {
-  return new Promise((resolve) => {
-    const input = document.createElement("input");
-    let settled = false;
-    const finish = (file: File | null) => {
-      if (settled) return;
-      settled = true;
-      resolve(file);
-    };
+  // resolve 在 promise 已 settle 后是 no-op，change/cancel 重复触发天然安全
+  const { promise, resolve } = Promise.withResolvers<File | null>();
 
-    input.type = "file";
-    input.accept = "application/json";
-    input.onchange = () => {
-      finish(input.files?.[0] || null);
-    };
-    input.oncancel = () => finish(null);
-    input.click();
-  });
+  const input = document.createElement("input");
+  input.type = "file";
+  input.accept = "application/json";
+  input.onchange = () => resolve(input.files?.[0] ?? null);
+  input.oncancel = () => resolve(null);
+  input.click();
+
+  return promise;
 }
 
 export async function readImportUsersFromDialog(): Promise<ImportReadResult> {

@@ -270,12 +270,7 @@ export function createUserListStore(): InternalUserListStore {
 
     invertSelection(ids: string[]) {
       if (ids.length === 0) return;
-      const current = new Set(this.selectedIds);
-      const next = new Set(current);
-      ids.forEach((id) => {
-        if (next.has(id)) next.delete(id);
-        else next.add(id);
-      });
+      const next = new Set(this.selectedIds).symmetricDifference(new Set(ids));
       this.selectedIds = Array.from(next);
     },
 

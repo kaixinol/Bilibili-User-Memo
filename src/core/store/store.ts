@@ -53,22 +53,6 @@ interface UserDiffResult {
   rescanMatchByName: boolean;
 }
 
-function usersEqual(a: BiliUser[], b: BiliUser[]): boolean {
-  if (a.length !== b.length) return false;
-  for (let i = 0; i < a.length; i++) {
-    if (
-      a[i].id !== b[i].id ||
-      a[i].nickname !== b[i].nickname ||
-      a[i].avatar !== b[i].avatar ||
-      a[i].memo !== b[i].memo ||
-      a[i].memoDetail !== b[i].memoDetail
-    ) {
-      return false;
-    }
-  }
-  return true;
-}
-
 function userContentEqual(a: BiliUser, b: BiliUser): boolean {
   return (
     a.id === b.id &&
@@ -77,6 +61,10 @@ function userContentEqual(a: BiliUser, b: BiliUser): boolean {
     a.memo === b.memo &&
     a.memoDetail === b.memoDetail
   );
+}
+
+function usersEqual(a: BiliUser[], b: BiliUser[]): boolean {
+  return a.length === b.length && a.every((user, i) => userContentEqual(user, b[i]));
 }
 
 function diffUsers(previous: BiliUser[], next: BiliUser[]): UserDiffResult {
@@ -429,8 +417,9 @@ class UserStore {
     normalized.forEach((incoming) => {
       const existing = userMap.get(incoming.id);
       if (!existing) {
-        this.users.push({ ...incoming });
-        userMap.set(incoming.id, this.users[this.users.length - 1]);
+        const created = { ...incoming };
+        this.users.push(created);
+        userMap.set(created.id, created);
         added++;
         changedIds.push(incoming.id);
         return;

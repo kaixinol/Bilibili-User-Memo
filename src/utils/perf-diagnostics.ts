@@ -417,7 +417,7 @@ function pruneQueryEvents() {
 function trimSummaries() {
   if (ruleSummaries.size <= MAX_SUMMARIES) return;
 
-  const stale = Array.from(ruleSummaries.values()).sort(
+  const stale = Array.from(ruleSummaries.values()).toSorted(
     (a, b) => a.lastSeen - b.lastSeen,
   );
   for (const summary of stale.slice(0, ruleSummaries.size - MAX_SUMMARIES)) {

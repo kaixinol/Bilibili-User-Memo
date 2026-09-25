@@ -81,9 +81,7 @@ const md5 = (message: string): string => {
   const view = new DataView(outBuf);
   [a, b, c, d].forEach((val, i) => view.setUint32(i * 4, val, true));
 
-  return Array.from(new Uint8Array(outBuf))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+  return new Uint8Array(outBuf).toHex();
 };
 interface WbiCache {
   img_key: string;

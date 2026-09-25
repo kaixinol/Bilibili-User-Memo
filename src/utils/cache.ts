@@ -99,14 +99,10 @@ class FontSizeCache {
     }
     
     // 添加类名（按字母排序以保证一致性）
-    if (element.className && typeof element.className === 'string') {
-      const classes = element.className
-        .split(/\s+/)
-        .filter(Boolean)
-        .sort();
-      if (classes.length > 0) {
-        fallbackParts.push(`class:${classes.join('.')}`);
-      }
+    // 用 classList 而不是切 className：SVG 元素的 className 是 SVGAnimatedString，不是字符串
+    const classes = [...element.classList].sort();
+    if (classes.length > 0) {
+      fallbackParts.push(`class:${classes.join('.')}`);
     }
     
     // 如果既没有ID也没有类名，不再使用标签名，返回空字符串表示无法缓存

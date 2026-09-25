@@ -403,34 +403,27 @@
         <button
           type="button"
           class="add-user-dialog-close"
+          title="关闭，不保存本次修改"
+          @mousedown.prevent
           @click="$store.memoDetailDialog.close()"
         >
           ×
         </button>
       </div>
-      <form novalidate @submit.prevent="$store.memoDetailDialog.submit($refs.memoDetailInput)">
+      <form novalidate>
         <div class="add-user-dialog-body">
           <div class="add-user-field">
             <textarea
               x-ref="memoDetailInput"
               x-model="$store.memoDetailDialog.detail"
-              placeholder="输入详细备注..."
+              placeholder="输入详细备注，失焦后自动保存"
               rows="4"
               maxlength="240"
               @input="$store.memoDetailDialog.handleInput($el)"
+              @blur="$store.memoDetailDialog.save()"
               style="width: 100%; resize: vertical;"
             ></textarea>
           </div>
-        </div>
-        <div class="add-user-dialog-footer">
-          <button type="submit" class="panel-btn">保存</button>
-          <button
-            type="button"
-            class="panel-btn panel-btn-secondary"
-            @click="$store.memoDetailDialog.close()"
-          >
-            取消
-          </button>
         </div>
       </form>
     </div>

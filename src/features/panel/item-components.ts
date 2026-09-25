@@ -21,7 +21,8 @@ export type MemoDetailDialogStore = {
   open(uid: string): Promise<void>;
   close(): void;
   handleInput(input: HTMLTextAreaElement): void;
-  submit(input?: HTMLTextAreaElement | null): void;
+  /** 失焦即落库，无需再点保存按钮 */
+  save(): void;
 };
 
 export function registerMemoDetailDialog() {
@@ -44,17 +45,18 @@ export function registerMemoDetailDialog() {
     },
 
     close(this: MemoDetailDialogStore) {
+      // 关闭 = 放弃本次改动（× 和 Esc 都走这里），保存只由 textarea 失焦触发。
+      // 清掉 uid 是为了兜住「dialog 关闭时浏览器给仍聚焦的 textarea 补一次 blur」，
+      // 那次 blur 会晚于本次 close() 到达，不清就会把已经放弃的内容写回去。
+      this.uid = "";
       this.isOpen = false;
     },
 
-    submit(this: MemoDetailDialogStore, input?: HTMLTextAreaElement | null) {
+    save(this: MemoDetailDialogStore) {
       const uid = this.uid;
       if (!uid) return;
-      if (input && (input.validity.tooShort || input.validity.tooLong)) return;
-      const detail = this.detail.trim();
       // 传空串（而非 undefined）才能真正清空；undefined 会被 store 当成「未提供」
-      getUserListStore().updateUser(uid, { memoDetail: detail });
-      this.close();
+      getUserListStore().updateUser(uid, { memoDetail: this.detail.trim() });
     },
     handleInput(this: MemoDetailDialogStore, input: HTMLTextAreaElement) {
       validateInputLength(input);

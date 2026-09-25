@@ -6,6 +6,21 @@ interface RenderedNodeOptions {
   isEditableWrapper?: boolean;
 }
 
+const MEMO_DETAIL_LABEL = "详细备注：";
+
+/**
+ * 剥掉我们追加的详细备注段。标题可能已被 B 站或其他逻辑改写，
+ * 因此按「值是否变化」重算，而不是按「标记是否已存在」跳过。
+ */
+function stripMemoDetail(title: string): string {
+  return title.replace(/\n?详细备注：[\s\S]*$/, "").trim();
+}
+
+function buildTitle(base: string, detail: string): string {
+  if (!detail) return base;
+  return base ? `${base}\n${MEMO_DETAIL_LABEL}${detail}` : `${MEMO_DETAIL_LABEL}${detail}`;
+}
+
 export function syncRenderedNodeState(
   el: HTMLElement,
   user: BiliUser | undefined,
@@ -27,14 +42,10 @@ export function syncRenderedNodeState(
   el.classList.toggle("bili-memo-tag", isMemoTag);
 
   // 同步详细备注 title
-  if (user?.memoDetail) {
-    if (!el.title?.includes("详细备注：")) {
-      el.title = el.title
-        ?       `${el.title}\n详细备注：${user.memoDetail}`
-        : `详细备注：${user.memoDetail}`;
-    }
-  } else if (el.title?.includes("详细备注：")) {
-    el.title = el.title.replace(/\n详细备注：.*/, "").trim();
+  const nextDetail = user?.memoDetail?.trim() ?? "";
+  const nextTitle = buildTitle(stripMemoDetail(el.title ?? ""), nextDetail);
+  if (el.title !== nextTitle) {
+    el.title = nextTitle;
   }
 }
 

@@ -29,11 +29,19 @@ function hasTextSelectionInside(element: HTMLElement): boolean {
 }
 
 function openMemoDetailDialog(uid: string) {
-  try {
-    (Alpine.store("memoDetailDialog") as { open?: (uid: string) => void })?.open?.(uid);
-  } catch {
-    logger.debug("[renderer] 无法打开详细备注对话框");
+  // 之前这里是用 try/catch 兜住的，store 没注册时也会静默失败，看不出来是哪个环节断了
+  const dialog = Alpine.store("memoDetailDialog") as
+    | { open?: (uid: string) => Promise<void> }
+    | undefined;
+
+  if (!dialog?.open) {
+    logger.warn("[renderer] 详细备注对话框未注册，无法打开");
+    return;
   }
+
+  void dialog.open(uid).catch((error) => {
+    logger.warn("[renderer] 打开详细备注对话框失败", error);
+  });
 }
 
 let showOriginalInDebug = false;

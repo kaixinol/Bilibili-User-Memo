@@ -18,7 +18,7 @@ export type MemoDetailDialogStore = {
   isOpen: boolean;
   uid: string;
   detail: string;
-  open(uid: string): void;
+  open(uid: string): Promise<void>;
   close(): void;
   handleInput(input: HTMLTextAreaElement): void;
   submit(input?: HTMLTextAreaElement | null): void;
@@ -32,10 +32,14 @@ export function registerMemoDetailDialog() {
     uid: "",
     detail: "",
 
-    open(this: MemoDetailDialogStore, uid: string) {
-      const user = getUserListStore().getUserById(uid);
+    async open(this: MemoDetailDialogStore, uid: string) {
       this.uid = uid;
-      this.detail = user?.memoDetail || "";
+      this.detail = "";
+      const list = getUserListStore();
+      // 面板列表可能还没加载，先加载再回填草稿，否则会把已有的详细备注覆盖成新输入
+      await list.ensureUsersLoaded();
+      if (this.uid !== uid) return;
+      this.detail = list.getUserById(uid)?.memoDetail || "";
       this.isOpen = true;
     },
 
@@ -48,7 +52,8 @@ export function registerMemoDetailDialog() {
       if (!uid) return;
       if (input && (input.validity.tooShort || input.validity.tooLong)) return;
       const detail = this.detail.trim();
-      getUserListStore().updateUser(uid, { memoDetail: detail || undefined });
+      // 传空串（而非 undefined）才能真正清空；undefined 会被 store 当成「未提供」
+      getUserListStore().updateUser(uid, { memoDetail: detail });
       this.close();
     },
     handleInput(this: MemoDetailDialogStore, input: HTMLTextAreaElement) {

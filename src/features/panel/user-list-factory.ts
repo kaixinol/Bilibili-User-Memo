@@ -250,9 +250,11 @@ export function createUserListStore(): InternalUserListStore {
     },
 
     updateUser(id: string, updates: Partial<BiliUser>) {
+      // 不能因为面板列表还没加载（hasLoadedUsers=false）就丢弃写入：
+      // 页面中键弹出的详细备注对话框就是在这种状态下保存的。
+      // userStore 自带守卫：没有 memo 时不会凭空建档。
       const before = this.getUserById(id);
-      if (!before) return;
-      userStore.updateUser(id, updates, before.nickname || id);
+      userStore.updateUser(id, updates, before?.nickname || id);
     },
 
     toggleMultiSelect() {

@@ -342,6 +342,18 @@
             />
           </div>
           <div class="add-user-field">
+            <label for="add-user-detail">详细备注（可选）</label>
+            <textarea
+              id="add-user-detail"
+              x-model="$store.addUserDialog.memoDetail"
+              placeholder="选填，最多 240 字"
+              rows="3"
+              maxlength="240"
+              style="width: 100%; resize: vertical;"
+              :disabled="$store.addUserDialog.isLoading"
+            ></textarea>
+          </div>
+          <div class="add-user-field">
             <label for="add-user-avatar">头像 URL（可选）</label>
             <input
               id="add-user-avatar"

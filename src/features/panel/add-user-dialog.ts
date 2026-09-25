@@ -10,6 +10,7 @@ export type AddUserDialogStore = {
   isOpen: boolean;
   uid: string;
   memo: string;
+  memoDetail: string;
   avatar: string;
   isLoading: boolean;
   open(): void;
@@ -23,6 +24,7 @@ export function registerAddUserDialog() {
     isOpen: false,
     uid: "",
     memo: "",
+    memoDetail: "",
     avatar: "",
     isLoading: false,
 
@@ -63,11 +65,13 @@ export function registerAddUserDialog() {
           return;
         }
 
+        const detail = this.memoDetail.trim();
         const newUser: BiliUser = {
           id: uid,
           nickname: userInfo.nickname,
           avatar: avatar || (userInfo.avatar ?? DEFAULT_AVATAR_URL),
           memo,
+          ...(detail && { memoDetail: detail }),
           isDeleted: userInfo.isDeleted,
         };
 
@@ -84,6 +88,7 @@ export function registerAddUserDialog() {
     resetForm(this: AddUserDialogStore) {
       this.uid = "";
       this.memo = "";
+      this.memoDetail = "";
       this.avatar = "";
       this.isLoading = false;
     },

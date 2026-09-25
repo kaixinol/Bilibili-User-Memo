@@ -8,6 +8,7 @@ import { ensureStylesForElement } from "../style/style-manager";
 import { logger } from "@/utils/logger";
 import { syncElementMeta, syncRenderedNodeState } from "./rendered-node";
 import { markOwnedElement } from "../dom/owned-node";
+import { hasTextSelectionInside } from "../dom/selection";
 import { fontSizeCache } from "@/utils/cache";
 import Alpine from "alpinejs";
 
@@ -15,18 +16,6 @@ import Alpine from "alpinejs";
 const wrapperCache = new WeakMap<HTMLElement, HTMLElement>();
 
 const middleClickBound = new WeakSet<HTMLElement>();
-
-/**
- * 元素内部是否已有非空文字选区（用户正在/刚做完拖选，打算自己复制）
- */
-function hasTextSelectionInside(element: HTMLElement): boolean {
-  const selection = window.getSelection();
-  if (!selection || selection.isCollapsed || selection.rangeCount === 0) return false;
-  if (!selection.toString().trim()) return false;
-  // 允许部分包含：选区从标签内拖到外面（或反过来）时也算「标签里有选中文字」
-  // 注意：双击选词救不了 —— 第一下 click 时选区还没产生，那时已经进编辑态了
-  return selection.containsNode(element, true);
-}
 
 function openMemoDetailDialog(uid: string) {
   // 之前这里是用 try/catch 兜住的，store 没注册时也会静默失败，看不出来是哪个环节断了

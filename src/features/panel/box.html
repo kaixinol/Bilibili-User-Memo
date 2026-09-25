@@ -52,7 +52,7 @@
   </div>
   <div class="user-note-section"
     x-data="memoEditor(user.id)"
-    @contextmenu.prevent="$store.memoDetailDialog.open(user.id)"
+    @contextmenu="$store.memoDetailDialog.handleContextMenu(user.id, $event)"
     :title="currentUser?.memoDetail || '右键可设置详细备注'" maxlength="240"
     minlength="1">
     <div class="user-info-label">备注</div>

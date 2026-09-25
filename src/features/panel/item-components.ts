@@ -10,6 +10,7 @@ import { logger } from "@/utils/logger";
 import {
   getUserListStore,
 } from "./panel-core";
+import { hasTextSelectionInside } from "@/core/dom/selection";
 import { validateInputLength } from "@/core/dom/text-utils";
 
 const processedUID = new WeakSet<Element>();
@@ -23,6 +24,8 @@ export type MemoDetailDialogStore = {
   handleInput(input: HTMLTextAreaElement): void;
   /** 失焦即落库，无需再点保存按钮 */
   save(): void;
+  /** 备注区右键入口：有选区时让位给原生菜单（用户是要复制） */
+  handleContextMenu(uid: string, event: MouseEvent): void;
 };
 
 export function registerMemoDetailDialog() {
@@ -57,6 +60,16 @@ export function registerMemoDetailDialog() {
       if (!uid) return;
       // 传空串（而非 undefined）才能真正清空；undefined 会被 store 当成「未提供」
       getUserListStore().updateUser(uid, { memoDetail: this.detail.trim() });
+    },
+    handleContextMenu(
+      this: MemoDetailDialogStore,
+      uid: string,
+      event: MouseEvent,
+    ) {
+      const target = event.currentTarget;
+      if (target instanceof HTMLElement && hasTextSelectionInside(target)) return;
+      event.preventDefault();
+      void this.open(uid);
     },
     handleInput(this: MemoDetailDialogStore, input: HTMLTextAreaElement) {
       validateInputLength(input);

@@ -1,13 +1,18 @@
 import type {
   PageRule,
+  RawConfig,
   RawRule,
 } from "@/core/rules/rule-types";
 import { config } from "@/core/rules/rules";
 
+export function getMatchedRuleConfigs(
+  currentUrl = location.href,
+): RawConfig[] {
+  return config.filter((entry) => entry.urlPattern.test(currentUrl));
+}
+
 export function getMatchedRules(currentUrl = location.href): RawRule[] {
-  return config
-    .filter((entry) => entry.urlPattern.test(currentUrl))
-    .map((entry) => entry.rule);
+  return getMatchedRuleConfigs(currentUrl).map((entry) => entry.rule);
 }
 
 
@@ -31,8 +36,7 @@ export function buildMergedSelector(rules: PageRule[]): string | null {
       const containers = expandContainer(r.container);
       if (containers.length === 0) return [sel];
       return containers.map((c) => `${c} ${sel}`);
-    })
-    .filter((s): s is string => s !== null);
+    });
   const unique = [...new Set(selectors)];
   return unique.length > 0 ? unique.join(", ") : null;
 }

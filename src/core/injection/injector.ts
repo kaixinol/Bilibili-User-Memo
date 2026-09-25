@@ -22,7 +22,7 @@ import {
   getMatchedRules,
 } from "./rule-runtime";
 import { RemoteChangeBuffer } from "./remote-change-buffer";
-import { waitUntil } from "@/utils/scheduler";
+import { nextFrame, waitUntil } from "@/utils/scheduler";
 import {
   describeElementForDiagnostics,
   getLatestScan,
@@ -52,7 +52,7 @@ class PageInjector {
     this.urlMonitor.start();
     this.onDomReady(async () => {
       await this.waitForBiliEnvironment();
-      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await nextFrame();
       this.domReady = true;
       this.handleUrlChange();
     });
@@ -184,19 +184,10 @@ class PageInjector {
     }
     if (elements.length === 0) return;
 
-    const selectorRules = rules
-      .map((r) => {
-        const sel = buildRuleSelector(r);
-        return {
-          selector: sel,
-          matchSelector: sel,
-          rule: r,
-        };
-      })
-      .filter(
-        (r): r is { selector: string; matchSelector: string; rule: PageRule } =>
-          r.selector !== null,
-      );
+    const selectorRules = rules.flatMap((rule) => {
+      const selector = buildRuleSelector(rule);
+      return selector ? [{ selector, rule }] : [];
+    });
 
     const perRuleCounts: Record<string, number> = {};
     for (const { rule } of selectorRules) {
@@ -207,8 +198,8 @@ class PageInjector {
 
       let firstMatchedRule: string | null = null;
 
-      for (const { matchSelector, rule } of selectorRules) {
-        if (!el.matches(matchSelector)) continue;
+      for (const { selector, rule } of selectorRules) {
+        if (!el.matches(selector)) continue;
         if (rule.container && !el.closest(containerSelectorList(rule.container))) continue;
 
         if (firstMatchedRule) {

@@ -1,11 +1,12 @@
 import Alpine from "alpinejs";
 import { querySelectorAllDeep } from "@/utils/query-dom";
-import { config as defaultRules } from "@/core/rules/rules";
 import {
   StyleScope,
-  type RuleConfigEntry,
 } from "@/core/rules/rule-types";
-import { buildRuleSelector } from "@/core/injection/rule-runtime";
+import {
+  buildRuleSelector,
+  getMatchedRuleConfigs,
+} from "@/core/injection/rule-runtime";
 import {
   getLatestScan,
   recordLongTaskDiagnostic,
@@ -102,11 +103,6 @@ function renderDebuggerUI(appName: string) {
   document.body.appendChild(div);
 }
 
-function getMatchedRuleEntries(): RuleConfigEntry[] {
-  const currentUrl = location.href;
-  return defaultRules.filter((entry) => entry.urlPattern.test(currentUrl));
-}
-
 function adoptHighlightToRoot(element: HTMLElement) {
   const root = element.getRootNode();
   if (!(root instanceof ShadowRoot)) return;
@@ -170,7 +166,7 @@ export function initDebugger() {
         const snapshot = getLatestScan();
         this.batchQueryMs = snapshot?.queryMs ?? 0;
 
-        this.rules = getMatchedRuleEntries().map((entry, index) => {
+        this.rules = getMatchedRuleConfigs().map((entry, index) => {
           const rule = entry.rule;
           const selector = buildRuleSelector(rule) || "";
           return {
@@ -329,19 +325,18 @@ export function initDebugger() {
         };
         state.perfRafId = window.requestAnimationFrame(tick);
 
-        if ("PerformanceObserver" in window) {
-          try {
-            state.perfObserver = new PerformanceObserver((list) => {
-              const entries = list.getEntries();
-              if (__IS_DEBUG__) {
-                entries.forEach((entry) =>
-                  recordLongTaskDiagnostic(entry.duration, entry.startTime),
-                );
-              }
-            });
-            state.perfObserver.observe({ entryTypes: ["longtask"] });
-          } catch { }
-        }
+        // observe() 在不支持 longtask 的引擎上会抛，交给下面的 catch 兜住
+        try {
+          state.perfObserver = new PerformanceObserver((list) => {
+            const entries = list.getEntries();
+            if (__IS_DEBUG__) {
+              entries.forEach((entry) =>
+                recordLongTaskDiagnostic(entry.duration, entry.startTime),
+              );
+            }
+          });
+          state.perfObserver.observe({ entryTypes: ["longtask"] });
+        } catch { }
 
         state.perfTimer = window.setInterval(() => {
           const memory = (

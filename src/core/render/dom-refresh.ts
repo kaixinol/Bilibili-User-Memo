@@ -22,16 +22,16 @@ export function refreshRenderedMemoNodes(
   changedIds?: string[],
 ) {
   if (changedIds && changedIds.length > 0) {
-    const uniqueIds = Array.from(new Set(changedIds.filter(Boolean)));
+    const changedIdSet = new Set(changedIds.filter(Boolean));
     const userMap = new Map<string, BiliUser>();
-    users.forEach((user) => {
-      if (uniqueIds.includes(user.id)) {
+    for (const user of users) {
+      if (changedIdSet.has(user.id)) {
         userMap.set(user.id, user);
       }
-    });
+    }
 
-    const uidNodeMap = getTrackedElementsForIds(uniqueIds);
-    uniqueIds.forEach((uid) => {
+    const uidNodeMap = getTrackedElementsForIds([...changedIdSet]);
+    changedIdSet.forEach((uid) => {
       const nodes = uidNodeMap.get(uid) || [];
       const user = userMap.get(uid);
       nodes.forEach((node) => refreshRenderedNode(node, user, displayMode));

@@ -4,7 +4,7 @@ export function delay(ms: number): Promise<void> {
   });
 }
 
- function nextFrame(): Promise<void> {
+export function nextFrame(): Promise<void> {
   return new Promise((resolve) => {
     window.requestAnimationFrame(() => resolve());
   });

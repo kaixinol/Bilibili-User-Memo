@@ -9,9 +9,9 @@
  *   2. `Alpine.store("userList")` 的返回值在 getUserListStore() 这类 helper 里
  *      能拿到完整类型，组件里通过 helper 间接获得补全和校验。
  *
- * 注意：本文件必须保持「没有任何 top-level import/export」——一旦出现，
- * `declare module "alpinejs"` 的行为会变化，实测 augmentation 会静默失效，
- * Stores 退回 unknown。MagicThis 定义在同目录的 alpine-types.d.ts 里。
+ * 注意：顶部的 import 不能删——删掉本文件就变成全局脚本，`declare module "alpinejs"`
+ * 随之变成环境模块声明、整份覆盖 @types/alpinejs，所有 Alpine 属性都会 TS2339。
+ * 有 top-level import 时它才是 augmentation。
  */
 import type { AddUserDialogStore } from "./add-user-dialog";
 import type { MemoDetailDialogStore } from "./item-components";

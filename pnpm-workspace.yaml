@@ -1,6 +1,12 @@
+# 强制 @types/alpinejs 只有一份副本：@types/alpinejs__persist 依赖 "*"
+# 会被锁到旧版，两份不同版本的 @types/alpinejs 会让它的 module augmentation
+# 挂到错误的那份上（Alpine.$persist → TS2339）。
+overrides:
+  '@types/alpinejs': ^3.17.0
 allowBuilds:
   esbuild: true
 ignoredBuiltDependencies:
   - esbuild
 minimumReleaseAgeExclude:
   - query-selector-shadow-dom-modern@1.1.0
+  - '@types/alpinejs@3.17.0'

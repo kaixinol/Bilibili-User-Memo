@@ -131,6 +131,7 @@ src/
         container: "#app",                // 可选：限定扫描容器，支持 string | string[]（多个容器），匹配时校验 el.closest(containerSelectorList(...))
         uidResolver: (el) => ...,         // 可选：自定义 UID 提取
         matchByName: true,                // 可选：按名称匹配（无 UID 时回退，需同时设置 textSelector）
+        directText: true,                 // 可选：只取元素直接子文本节点作名称（忽略 SVG 等子元素文本）；Minimal 渲染也只改直接文本节点，不吞子元素
     }
 }
 ```

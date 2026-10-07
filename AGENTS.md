@@ -27,6 +27,7 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - `src/core/injection/rule-runtime.ts` — Selector building (`buildMergedSelector`, `containerSelectorList`, `expandContainer`)
 - `src/core/render/renderer.ts` — `renderMinimal` (class injection) vs `renderEditable` (wrapper span)
 - `src/core/render/rendered-node.ts` — `syncRenderedNodeState` for memoDetail title sync
+- `src/core/render/render-index.ts` — UID → rendered-element index (O(1) refresh); also holds the `directText` WeakMap
 - `src/core/store/store.ts` — `UserStore` singleton with listener pattern, GM_addValueChangeListener for cross-tab sync
 - `src/core/style/style-manager.ts` — Constructable Stylesheets API for Shadow DOM style injection
 - `src/features/panel/` — Alpine.js panel UI (box.html, panel.html, panel-core.ts, panel-settings.ts, item-components.ts)
@@ -51,6 +52,7 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - Dead code = any function/class not imported anywhere under `src/`
 
 - For non-DOM operations (store queries, search, selection, export, refresh) in debug builds, use the exposed Alpine store — `window.$biliMemoAlpine.store('userList')`, or the quick accessor `$$biliMemo` (returns the store) — instead of manipulating DOM. Both are injected only in debug (`__IS_DEBUG__`). When preload-all-cards is off (dev), the list is empty until loaded: `await $$biliMemo.ensureUsersLoaded()` first.
+- **Panel components must prefer Alpine's native reactivity over hand-rolled DOM updates.** Put global/cross-card state in a store (`Alpine.store`, with the type added to `Alpine.Stores` in `store-types.d.ts`), keep transient per-card state local (`x-data` + `@mouseenter="hovering = true"`), and bind derived values through getters + `x-bind` (`:href="href"`). `window.addEventListener` to capture global key events is fine — that's just feeding reactive store state — but never `setAttribute` a binding Alpine already manages. The space-link `/list/` Alt-preview (`uidFixLink` → `altKeys` store → `href` getter) is the reference implementation.
 - Panel list search matches nickname, memo, memoDetail and UID (via `matchesChineseSearch`); when a query hits the detailed memo, the card renders a highlighted snippet of the matched text (detailed-memo fragment + `<mark>`)
 - Deleted-user filter: `userList.deletedFilter` (`"all" | "deleted" | "active"`) provides a tri-state dropdown (All / Deleted only / Hide deleted); shown only when `hasDeletedUsers` is true, and resets to `"all"` each time the panel opens (not persisted). `isDeleted` is synced by data refresh (`getUserInfo` returns `false` for normal accounts, `true` for deleted), correcting the flag in both directions.
 - Dark theme is pure-CSS: JS only toggles the `dark` class on `<html>` (`applyTheme()` in `src/features/panel/custom-css.ts`); all dark visuals live under `html.dark`. `src/styles/global.css` holds the light tokens in `:root` and their dark overrides in `html.dark`; components consume semantic variables (`--surface-bg`, `--card-shadow`, `--fill-hover`, `--on-primary`, …) instead of writing per-theme rules. Only genuinely non-tokenizable tweaks (`box-shadow: none`, `border-width`, extra property in one theme) use `html.dark &` nested rules inside the component block. Never reintroduce a theme class like `.memo-container-dark-theme` or theme branches in TS/HTML (`x-show="isDark"`).
@@ -63,6 +65,7 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - `container` → optional scope selector, accepts `string | string[]` (multiple containers); `buildMergedSelector` generates one prefixed selector per container, and matches are validated via `el.closest(containerSelectorList(container))`. Rules without `container` scan globally. All rules share one `setInterval` (750ms) scanning via `buildMergedSelector`
 - `matchByName` → fallback to name-based lookup when UID is unavailable; requires `textSelector`
 - `uidResolver` / `originalNameResolver` → custom extraction for non-standard DOM structures
+- `directText` → extract the original name from the element's **direct child text nodes only** (ignores SVG/child-element text). For usernames sitting directly under an `<a>` that also contains an `<svg>`. The write-back path mirrors this (see Gotchas).
 
 ## Gotchas
 
@@ -73,5 +76,7 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - `a.bili-memo-tag` may render as `<a>` in mention scenarios → CSS must handle both
 - Panel toggle button cursor: base is `context-menu` with `.is-windows-chrome` override to `cursor: help`
 - memoDetail title sync: `syncRenderedNodeState` appends `详细备注：` to element title, uses `\n` separator for existing titles
+- **Minimal renders rewrite the display name via `el.textContent = text`, which destroys ALL child nodes** — e.g. the level-badge `<svg>` on search-result user names. Any Minimal rule whose element has child elements it must keep (SVG icons, etc.) must set `directText: true`, which makes the write-back replace only the direct text node. The `textContent` path warns (with a pre-mutation snapshot) when it would clobber child elements. Symmetric read/write is the point of `directText` — keep `getElementOriginalName` (read) and `syncRenderedNodeState` (write) agreeing.
+- The `directText` flag is carried into the refresh path (`dom-refresh.ts`) through a **WeakMap in `render-index.ts`**, not a DOM attribute — the refresh path only has the element + user, not the rule.
 - `readPreferredText` (src/core/dom/text-utils.ts) prefers live `textContent` over `data-bilimemo-original`; the data attr is only a fallback when DOM text is empty (avoids stale names read from reused DOM nodes)
 - Panel user cards (`.user-box`) use `content-visibility: auto` + `contain-intrinsic-size: auto 72px` to skip off-screen rendering, reducing list jank when there are many cards.

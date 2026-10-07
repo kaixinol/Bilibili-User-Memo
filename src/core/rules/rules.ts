@@ -213,7 +213,7 @@ const rawConfig: RawConfig[] = [
             styleScope: StyleScope.Minimal,
             aSelector:
                 "p a[href*='space.bilibili.com']",
-            container: ["div.bili-dyn-content","div.opus-module-content"]
+            container: ["div.bili-dyn-content", "div.opus-module-content"]
         }
     },
     // 弹出层规则
@@ -298,9 +298,17 @@ const rawConfig: RawConfig[] = [
         urlPattern: /^https:\/\/search\.bilibili\.com\/(all|live|upuser)/,
         rule: {
             name: "搜索页面-UP主",
-            styleScope: StyleScope.Minimal,
-            aSelector: "a.user-name, a.p_relative, a.live-title, a.bili-live-card__info--uname",
-            textSelector: "a.live-title span, span.bili-live-card__info--author",
+            styleScope: StyleScope.Minimal, //⬇️ ext install Kaesinol.inline-css-selector-comments
+            aSelector: /* css selector */ `
+a.user-name /* all */,
+a.p_relative /* upuser */,
+a.live-title /* live/全部 | 主播 */,
+a.bili-live-card__info--uname /* live/直播间 */`,
+            textSelector: /* css selector */ `
+a.user-name /* all */,
+a.live-title span/* live/全部 | 主播 */,
+span.bili-live-card__info--author/* live/直播间 */`,
+            directText: true,
             matchByName: true, // 因为搜索结果的UP主链接也可能不是UID
         }
     }, {

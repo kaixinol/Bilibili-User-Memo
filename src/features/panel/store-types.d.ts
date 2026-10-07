@@ -14,7 +14,7 @@
  * 有 top-level import 时它才是 augmentation。
  */
 import type { AddUserDialogStore } from "./add-user-dialog";
-import type { MemoDetailDialogStore } from "./item-components";
+import type { AltKeysStore, MemoDetailDialogStore } from "./item-components";
 import type { PanelPrefsStore } from "./panel-prefs";
 import type { UserListStore } from "./user-list-types";
 
@@ -22,6 +22,7 @@ declare module "alpinejs" {
   namespace Alpine {
     interface Stores {
       addUserDialog: AddUserDialogStore;
+      altKeys: AltKeysStore;
       memoDetailDialog: MemoDetailDialogStore;
       panelPrefs: PanelPrefsStore;
       userList: UserListStore;

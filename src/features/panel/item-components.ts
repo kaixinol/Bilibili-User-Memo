@@ -272,11 +272,43 @@ export function registerMemoEditor() {
   }));
 }
 
+// —— Alt+悬浮：把空间链接临时预览成已注销形态（/list/）——
+// 用 Alpine 响应式实现：Alt 态存store，href 用 getter + :href 绑定，DOM 更新交给 Alpine。
+export type AltKeysStore = { held: boolean };
+
+let altKeysBound = false;
+
+function bindAltKeys() {
+  if (altKeysBound) return;
+  altKeysBound = true;
+  if (!Alpine.store("altKeys")) Alpine.store("altKeys", { held: false } as AltKeysStore);
+  const store = Alpine.store("altKeys");
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Alt") store.held = true;
+  });
+  window.addEventListener("keyup", (e) => {
+    if (e.key === "Alt") store.held = false;
+  });
+  window.addEventListener("blur", () => {
+    store.held = false;
+  });
+}
+
 export function registerUidFixLink() {
+  bindAltKeys();
   Alpine.data("uidFixLink", (uid: string) => ({
     uid,
+    hovering: false,
     get isDeleted(): boolean | undefined {
       return getUserListStore().getUserById(this.uid)?.isDeleted;
+    },
+    get href(): string {
+      const altKeys = Alpine.store("altKeys");
+      // 注销用户保持 /list/ 形态（与 BiliFix 一致）；Alt 悬浮时把正常用户临时预览成 /list/
+      if (this.isDeleted || (this.hovering && altKeys.held)) {
+        return `https://www.bilibili.com/list/${this.uid}`;
+      }
+      return `https://space.bilibili.com/${this.uid}`;
     },
     async init() {
       const el = this.$el;

@@ -21,7 +21,7 @@
   "packageManager": "pnpm@11.22.0",
   "devDependencies": {
     "@types/alpinejs": "^3.17.0",
-    "@types/alpinejs__persist": "^3.13.4",
+    "@types/alpinejs__persist": "^3.17.0",
     "@types/node": "^26.6.3",
     "@typescript-eslint/eslint-plugin": "^8.70.1",
     "@typescript-eslint/parser": "^8.70.1",

@@ -34,8 +34,8 @@ importers:
         specifier: ^3.17.0
         version: 3.17.0
       '@types/alpinejs__persist':
-        specifier: ^3.13.4
-        version: 3.13.4
+        specifier: ^3.17.0
+        version: 3.17.0
       '@types/node':
         specifier: ^26.6.3
         version: 26.6.3
@@ -486,8 +486,8 @@ packages:
   '@types/alpinejs@3.17.0':
     resolution: {integrity: sha512-sVgCM7bI/tUiHZVpDTsx/UBhcck3WSed21CeraITFDL16nGJI/wCVEGCYu7QWtI9+/D2Ripx9wGXoSzQSDog6A==}
 
-  '@types/alpinejs__persist@3.13.4':
-    resolution: {integrity: sha512-H+cW7294EV5fGmIGD3BCJme54//KyWxZcP4uI9pk6W7fECR5hEwdO7j7wogz0o4vapS/kXiXiAjuqC9F+W0Vpw==}
+  '@types/alpinejs__persist@3.17.0':
+    resolution: {integrity: sha512-8fyCAXRdNEA32fZJ2cPQAtHMr5Sj36tJi7DKHyUHOk8Mk4LbW3wqygJtmg2ln4/LCKevI6AFyLQ2+QI7rGiRNg==}
 
   '@types/chai@5.2.3':
     resolution: {integrity: sha512-Mw558oeA9fFbv65/y4mHtXDs9bPnFMZAL/jxdPFUpOHHIXX91mcgEHbS5Lahr+pwZFR8A7GQleRWeI6cGFC2UA==}
@@ -2013,7 +2013,7 @@ snapshots:
 
   '@types/alpinejs@3.17.0': {}
 
-  '@types/alpinejs__persist@3.13.4':
+  '@types/alpinejs__persist@3.17.0':
     dependencies:
       '@types/alpinejs': 3.17.0
 

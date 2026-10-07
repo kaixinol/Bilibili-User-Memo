@@ -3,6 +3,7 @@ import { syncRenderedNodeState } from "./rendered-node";
 import {
   getAllTrackedEntries,
   getTrackedElementsForIds,
+  isElementDirectText,
 } from "./render-index";
 
 function refreshRenderedNode(
@@ -13,6 +14,7 @@ function refreshRenderedNode(
   const originalName = node.dataset.bilimemoOriginal || "";
   syncRenderedNodeState(node, user, originalName, displayMode, {
     isEditableWrapper: node.classList.contains("editable-textarea"),
+    directText: isElementDirectText(node),
   });
 }
 

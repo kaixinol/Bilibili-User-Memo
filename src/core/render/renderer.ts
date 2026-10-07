@@ -7,6 +7,7 @@ import { enterEditMode } from "./editor";
 import { ensureStylesForElement } from "../style/style-manager";
 import { logger } from "@/utils/logger";
 import { syncElementMeta, syncRenderedNodeState } from "./rendered-node";
+import { setElementDirectText } from "./render-index";
 import { markOwnedElement } from "../dom/owned-node";
 import { hasTextSelectionInside } from "../dom/selection";
 import { fontSizeCache } from "@/utils/cache";
@@ -58,6 +59,7 @@ export async function injectMemoRenderer(
         user,
         meta,
         displayMode,
+        rule.directText === true,
       );
     case StyleScope.Editable:
       return renderEditable(el, user, rule, meta, displayMode);
@@ -72,12 +74,16 @@ function renderMinimal(
   user: BiliUser,
   meta: ElementMeta,
   displayMode: number,
+  directText = false,
 ): boolean {
   if (!element) return false;
 
   ensureStylesForElement(element);
-  syncRenderedNodeState(element, user, meta.originalName, displayMode);
+  syncRenderedNodeState(element, user, meta.originalName, displayMode, { directText });
   syncElementMeta(element, meta);
+  // 刷新路径（dom-refresh）拿不到 rule，用内存标记把 directText 传下去，
+  // 否则 displayMode/备注变化后刷新会退回 textContent 把子元素吞掉
+  setElementDirectText(element, directText);
 
   if (user.memo && !middleClickBound.has(element)) {
     middleClickBound.add(element);

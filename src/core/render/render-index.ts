@@ -9,6 +9,9 @@
 
 const uidElementMap = new Map<string, Set<HTMLElement>>();
 const elementUidMap = new WeakMap<HTMLElement, string>();
+// 记录元素是否用 directText 渲染（只替换直接子文本节点，保留 SVG 等子元素）。
+// 刷新路径（dom-refresh）拿不到 rule，靠这里把该 bit 带到 refresh，避免退回 textContent 吞子元素。
+const elementDirectTextMap = new WeakMap<HTMLElement, boolean>();
 
 /**
  * 追踪已渲染元素。在 syncElementMeta 设置 UID 时调用。
@@ -35,6 +38,20 @@ export function trackRenderedElement(el: HTMLElement, uid: string): void {
   }
   set.add(el);
   elementUidMap.set(el, uid);
+}
+
+/** 标记元素是否用 directText 渲染，供刷新路径读取。false 时清除标记。 */
+export function setElementDirectText(el: HTMLElement, directText: boolean): void {
+  if (directText) {
+    elementDirectTextMap.set(el, true);
+  } else {
+    elementDirectTextMap.delete(el);
+  }
+}
+
+/** 读取元素的 directText 渲染标记。 */
+export function isElementDirectText(el: HTMLElement): boolean {
+  return elementDirectTextMap.get(el) === true;
 }
 
 /**

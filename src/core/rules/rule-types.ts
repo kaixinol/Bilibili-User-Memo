@@ -9,6 +9,8 @@ export type RawRule = {
   container?: string | string[];
   uidResolver?: UidResolverFn;
   originalNameResolver?: OriginalNameResolverFn;
+  // 只取直接子文本节点作名称，避免 textContent 吞掉同级 SVG/span 的文本
+  directText?: boolean;
 } & (
   | { aSelector: string; textSelector?: string; matchByName?: false }
   | { textSelector: string; aSelector?: string; matchByName?: false }

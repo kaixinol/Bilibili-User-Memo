@@ -17,6 +17,16 @@ function readPreferredText(node: HTMLElement | null): string | null {
   return null;
 }
 
+// 拼接直接子文本节点，跳过后代元素（SVG/span）的文本
+function readDirectText(el: HTMLElement): string | null {
+  const direct = Array.from(el.childNodes)
+    .filter((n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim())
+    .map((n) => n.textContent!.trim())
+    .join("")
+    .trim();
+  return direct || null;
+}
+
 function resolveSelfTextTarget(
   el: HTMLElement,
   textSelector: string,
@@ -71,8 +81,13 @@ export function resolveRuleTextTarget(
  * 获取元素应显示的原始名称。
  */
 export function getElementOriginalName(el: HTMLElement, rule: PageRule): string {
+  const target = resolveRuleTextTarget(el, rule);
+  if (rule.directText) {
+    const direct = readDirectText(target ?? el);
+    if (direct) return direct;
+  }
   return (
-    readPreferredText(resolveRuleTextTarget(el, rule)) ||
+    readPreferredText(target) ||
     readPreferredText(el) ||
     ""
   );

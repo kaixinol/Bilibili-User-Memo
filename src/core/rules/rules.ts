@@ -211,8 +211,10 @@ const rawConfig: RawConfig[] = [
         rule: {
             name: "动态正文-提及",
             styleScope: StyleScope.Minimal,
-            aSelector:
-                "p a[href*='space.bilibili.com']",
+            aSelector: /* css selector */`
+p a[href*='space.bilibili.com'], /* 动态主页 */
+[data-type='at'] /* 个人主页/动态页面的at */
+`,
             container: ["div.bili-dyn-content", "div.opus-module-content"]
         }
     },

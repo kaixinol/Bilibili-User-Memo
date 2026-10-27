@@ -10,7 +10,7 @@ export { StyleScope, } from "./rule-types";
 const COMMON_REG = /^https:\/\/[a-z0-9.]+\.bilibili\.com\/.*/;
 const VIDEO_REG = /^https:\/\/www\.bilibili\.com\/(video|list)\/.*/;
 
-const VIDEO_CARD_A_SELECTOR = "a.bili-video-card__info--owner[href*='space.bilibili.com'], .bili-video-card__author, a.up-name";
+const VIDEO_CARD_A_SELECTOR = /* css-selector*/ "a.bili-video-card__info--owner:is([href*='space.bilibili.com'], [href*='/list/']) /* 兼容BiliFix脚本 */, .bili-video-card__author, a.up-name";
 const VIDEO_CARD_TEXT_SELECTOR = ".bili-video-card__info--author, .bili-video-card__text span[title], .up-name__text";
 const NEW_DYNAMIC_OPUS_ONE = /^https:\/\/www\.bilibili\.com\/opus\/\d+/
 const USER_SPACE_DYNAMIC = /^https:\/\/space\.bilibili\.com\/\d+\/dynamic/;

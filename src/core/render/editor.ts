@@ -50,8 +50,14 @@ export function enterEditMode(targetElement: HTMLElement, user: BiliUser) {
     targetElement.style.display = "";
 
     if (shouldSave && (forceSave || newValue !== currentMemo)) {
-      const prevHref = targetElement.previousElementSibling?.getAttribute("href");
-      const isDeleted = prevHref?.includes("/list/") ? true : undefined;
+      // BiliFix 联动双信号：href 改写成 /list/<UID>（可能被 B 站重渲染冲掉）；
+      // title 的"注册时间推测"标注更稳定，且可能在祖先容器上（如 opus 页），故向上查
+      const prevEl = targetElement.previousElementSibling;
+      const isDeleted =
+        prevEl?.getAttribute("href")?.includes("/list/") ||
+        prevEl?.closest('[title*="注册时间推测"]')
+          ? true
+          : undefined;
       userStore.updateUserMemo(user.id, newValue, originalName, isDeleted);
       syncRenderedNodeState(
         targetElement,

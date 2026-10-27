@@ -41,7 +41,7 @@ URL-matched rules → DOM scanning/injection → render memo as Minimal (CSS cla
 - `verbatimModuleSyntax: true` → always `import type { X }` for type-only imports
 - `@/*` path alias → `./src/*`
 - `$` import → Tampermonkey GM API (from vite-plugin-monkey)
-- `pnpm lint` runs `knip`, which reports `Unresolved imports (3)` for the virtual `$` module (`import ... from "$"`) in `src/main.ts`, `src/core/store/store.ts` and `src/utils/gm-storage.ts`. These are false positives — vite-plugin-monkey provides the `$` GM API virtual module at build time — and can be safely ignored.
+- `pnpm lint` runs `knip`; the virtual `$` module (`import ... from "$"`) is provided by vite-plugin-monkey at build time, so it's whitelisted via `ignoreUnresolved` in `knip.json`.
 - Network requests (Bilibili API, e.g. `src/core/api/bilibili-user.ts`) use native `fetch` with `credentials: "include"` to read the login state.
 - `__IS_DEBUG__`, `__VERSION__` → compile-time defines in vite.config.ts
 - `externalGlobals` in vite.config.ts → alpinejs, opencc-js, query-selector-shadow-dom-modern are CDN-loaded (must have a UMD build exposing a global; it ships `dist/umd/index.min.js` → global `querySelectorShadowDom`). `@alpinejs/persist` is NOT externalized (CDN build auto-registers via `alpine:init`, no global).

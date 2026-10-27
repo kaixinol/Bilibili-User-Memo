@@ -26,4 +26,3 @@ type UidResolverFn = (el: HTMLElement) => string | null | Promise<string | null>
 type OriginalNameResolverFn = (el: HTMLElement) => string | null;
 
 export type PageRule = RawRule;
-export type RuleConfigEntry = RawConfig;

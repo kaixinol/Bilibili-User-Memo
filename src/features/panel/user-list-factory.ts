@@ -34,7 +34,7 @@ export interface InternalUserListStore extends UserListStore {
   getDetailMatch(userId: string): DetailMatch | null;
 }
 
-export interface FilterState {
+interface FilterState {
   /** 通过筛选的用户（保持原始顺序） */
   list: BiliUser[];
   /** 通过筛选的用户 id，供卡片 O(1) 判断是否可见 */
